@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Documentation | Runinback</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+    <nav class="nav-bar">
+        <a href="index.html" class="nav-logo ghost-nav-link">Runinback</a>
+        <div class="nav-links">
+            <a href="showcase.html" class="ghost-nav-link">Showcase</a>
+            <a href="developers.html" class="ghost-nav-link">Developers</a>
+            <a href="mechanics.html" class="ghost-nav-link">Mechanics</a>
+            <a href="docs.html" class="outlined-contact-btn">Docs</a>
+        </div>
+    </nav>
+
+    <section class="docs-section" style="display: flex; gap: var(--spacing-60); min-height: 80vh;">
+        <!-- Sidebar Navigation -->
+        <aside style="min-width: 250px; border-right: 1px solid var(--color-ash-border); padding-right: var(--spacing-40);">
+            <h3 class="eyebrow-label" style="font-size: 17px; margin-bottom: var(--spacing-20);">Getting Started</h3>
+            <ul style="list-style: none; padding: 0; display: flex; flex-direction: column; gap: var(--spacing-16);">
+                <li><a href="#" class="ghost-nav-link" style="color: var(--color-fog-blue);">Quick Start</a></li>
+                <li><a href="#" class="ghost-nav-link" style="color: var(--color-fog-blue);">Authentication</a></li>
+            </ul>
+
+            <h3 class="eyebrow-label" style="font-size: 17px; margin-top: var(--spacing-40); margin-bottom: var(--spacing-20);">API Reference</h3>
+            <ul style="list-style: none; padding: 0; display: flex; flex-direction: column; gap: var(--spacing-16);">
+                <li><a href="#" class="ghost-nav-link" style="color: var(--color-bone-white);">Runinback.createMatch()</a></li>
+                <li><a href="#" class="ghost-nav-link" style="color: var(--color-fog-blue);">Match.start()</a></li>
+                <li><a href="#" class="ghost-nav-link" style="color: var(--color-fog-blue);">Match.settle()</a></li>
+            </ul>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main style="flex: 1;">
+            <h1 class="display-headline-sm" style="margin-bottom: var(--spacing-20);">Runinback.createMatch()</h1>
+            <p class="hero-lead">Creates a new smart escrow session and pairs wallets together for a single game instance.</p>
+
+            <div class="terminal-window" style="margin-top: var(--spacing-40);">
+                <pre class="terminal-code" style="color: var(--color-prism-lime);"><code>const match = await Runinback.createMatch({
+  players: ['wallet_id_1', 'wallet_id_2'],
+  wager: { amount: 10, currency: 'USDC' },
+  oracleId: 'halo_infinite_1v1_slayer'
+});</code></pre>
+            </div>
+
+            <h2 class="section-heading" style="margin-top: var(--spacing-60);">Parameters</h2>
+            <div style="border-top: 1px solid var(--color-ash-border); padding-top: var(--spacing-20); margin-top: var(--spacing-20);">
+                <p><strong>players</strong>: Array of strings. The connected wallet addresses for the participants.</p>
+                <p style="margin-top: var(--spacing-16);"><strong>wager</strong>: Object containing amount (number) and currency (string).</p>
+                <p style="margin-top: var(--spacing-16);"><strong>oracleId</strong>: String. The ID identifying which game API to poll for the match result.</p>
+            </div>
+        </main>
+    </section>
+
+    <footer class="footer">
+        <div class="footer-divider"></div>
+        <div class="footer-content">
+            <div class="footer-brand">
+                <a href="index.html" class="ghost-nav-link footer-logo">Runinback</a>
+            </div>
+        </div>
+    </footer>
+</body>
+</html>

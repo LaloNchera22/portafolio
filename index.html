@@ -10,12 +10,12 @@
 
     <!-- Navigation -->
     <nav class="nav-bar">
-        <a href="#" class="nav-logo ghost-nav-link">Runinback</a>
+        <a href="index.html" class="nav-logo ghost-nav-link">Runinback</a>
         <div class="nav-links">
-            <a href="#showcase" class="ghost-nav-link">Showcase</a>
-            <a href="#developers" class="ghost-nav-link">Developers</a>
-            <a href="#mechanics" class="ghost-nav-link">Mechanics</a>
-            <a href="#contact" class="outlined-contact-btn">Contact</a>
+            <a href="showcase.html" class="ghost-nav-link">Showcase</a>
+            <a href="developers.html" class="ghost-nav-link">Developers</a>
+            <a href="mechanics.html" class="ghost-nav-link">Mechanics</a>
+            <a href="docs.html" class="outlined-contact-btn">Docs</a>
         </div>
     </nav>
 
@@ -37,7 +37,7 @@
                 Reset. Replay. Redeem.
             </p>
             <div class="hero-actions">
-                <a href="#developers" class="ghost-nav-link">Get API Access</a>
+                <a href="developers.html" class="ghost-nav-link">Get API Access</a>
                 <a href="#waitlist" class="outlined-contact-btn">Join Developer Waitlist</a>
             </div>
         </div>
@@ -51,10 +51,10 @@
         <div class="showcase-container">
             <div class="game-ui-blur">
                 <!-- Simulated UI -->
-                <div class="runinback-overlay-btn">Challenge: 1 SOL</div>
+                <button id="runinback-overlay-btn" class="runinback-overlay-btn">Challenge: 1 SOL</button>
 
                 <!-- Glassmorphism side panel -->
-                <div class="glass-panel">
+                <div id="glass-panel" class="glass-panel">
                     <p class="glass-title">Smart Escrow Confirmed</p>
                     <p class="crypto-amount">1 SOL Secured</p>
                     <p class="status">Ready in 1s</p>
@@ -76,8 +76,7 @@
                 <span class="dot"></span>
                 <span class="dot"></span>
             </div>
-            <pre class="terminal-code">
-<code>import { Runinback } from '@runinback/sdk';
+            <pre class="terminal-code"><code id="terminal-code-content">import { Runinback } from '@runinback/sdk';
 
 const match = await Runinback.createMatch({
   players: ['player1_wallet', 'player2_wallet'],
@@ -86,8 +85,7 @@ const match = await Runinback.createMatch({
 
 await match.start();
 // Wait for game result...
-await match.settle({ winner: 'player1_wallet' });</code>
-            </pre>
+await match.settle({ winner: 'player1_wallet' });</code><span class="cursor">|</span></pre>
         </div>
     </section>
 
@@ -128,17 +126,17 @@ await match.settle({ winner: 'player1_wallet' });</code>
         <div class="footer-divider"></div>
         <div class="footer-content">
             <div class="footer-brand">
-                <a href="#" class="ghost-nav-link footer-logo">Runinback</a>
+                <a href="index.html" class="ghost-nav-link footer-logo">Runinback</a>
             </div>
 
             <div class="footer-links-columns">
                 <div class="footer-column">
-                    <a href="#showcase" class="ghost-nav-link">Showcase</a>
-                    <a href="#developers" class="ghost-nav-link">Developers</a>
-                    <a href="#mechanics" class="ghost-nav-link">Mechanics</a>
+                    <a href="showcase.html" class="ghost-nav-link">Showcase</a>
+                    <a href="developers.html" class="ghost-nav-link">Developers</a>
+                    <a href="mechanics.html" class="ghost-nav-link">Mechanics</a>
                 </div>
                 <div class="footer-column">
-                    <a href="#" class="ghost-nav-link">Documentation</a>
+                    <a href="docs.html" class="ghost-nav-link">Documentation</a>
                     <a href="#" class="ghost-nav-link">Discord</a>
                     <a href="#" class="ghost-nav-link">Twitter</a>
                 </div>
@@ -146,5 +144,6 @@ await match.settle({ winner: 'player1_wallet' });</code>
         </div>
     </footer>
 
+    <script src="main.js"></script>
 </body>
 </html>

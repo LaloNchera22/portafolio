@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Developers | Runinback</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+    <nav class="nav-bar">
+        <a href="index.html" class="nav-logo ghost-nav-link">Runinback</a>
+        <div class="nav-links">
+            <a href="showcase.html" class="ghost-nav-link">Showcase</a>
+            <a href="developers.html" class="ghost-nav-link">Developers</a>
+            <a href="mechanics.html" class="ghost-nav-link">Mechanics</a>
+            <a href="docs.html" class="outlined-contact-btn">Docs</a>
+        </div>
+    </nav>
+
+    <section class="dev-section" style="background: transparent; min-height: 80vh;">
+        <h1 class="display-headline" style="max-width: 1000px;">
+            Built for Indie Developers.
+        </h1>
+        <p class="hero-lead">Monetize your player base immediately. Add competitive wagering with minimal engineering overhead using our Typescript and Rust SDKs.</p>
+
+        <div class="terminal-window" style="max-width: 100%; margin-top: var(--spacing-60);">
+            <div class="terminal-header">
+                <span class="dot"></span>
+                <span class="dot"></span>
+                <span class="dot"></span>
+            </div>
+            <pre class="terminal-code" style="color: var(--color-prism-lime);"><code>// Initialize Runinback Client
+const client = new RuninbackClient(process.env.RUNINBACK_API_KEY);
+
+// Setup Match Event Listener
+client.on('match_completed', async (matchId) => {
+    const results = await gameServer.getMatchResults(matchId);
+
+    // Push results to the Trustless Oracle for automatic settlement
+    await client.settleEscrow(matchId, {
+        winnerId: results.winner_wallet,
+        score: results.score
+    });
+});</code></pre>
+        </div>
+
+        <div style="margin-top: var(--spacing-60);">
+            <a href="docs.html" class="outlined-contact-btn">Read the full documentation</a>
+        </div>
+    </section>
+
+    <footer class="footer">
+        <div class="footer-divider"></div>
+        <div class="footer-content">
+            <div class="footer-brand">
+                <a href="index.html" class="ghost-nav-link footer-logo">Runinback</a>
+            </div>
+        </div>
+    </footer>
+</body>
+</html>
