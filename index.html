@@ -20,7 +20,7 @@
     </nav>
 
     <!-- Hero Section -->
-    <section id="home" class="hero-section">
+    <section id="home" class="hero-section scroll-reveal">
         <!-- Prism Artifact -->
         <div class="prism-artifact">
             <div class="prism-cube prism-red"></div>
@@ -44,7 +44,7 @@
     </section>
 
     <!-- The "One-Click Showcase" Section -->
-    <section id="showcase" class="showcase-section">
+    <section id="showcase" class="showcase-section scroll-reveal">
         <h2 class="section-heading">AAA Vision</h2>
         <h3 class="eyebrow-label">One-Click Showcase</h3>
 
@@ -64,7 +64,7 @@
     </section>
 
     <!-- Developer Experience Section -->
-    <section id="developers" class="dev-section">
+    <section id="developers" class="dev-section scroll-reveal">
         <h2 class="section-heading">Indie Focus</h2>
         <h3 class="eyebrow-label">Developer Experience</h3>
 
@@ -92,7 +92,7 @@ await match.settle({ winner: 'player1_wallet' });</code>
     </section>
 
     <!-- Mechanics Section -->
-    <section id="mechanics" class="mechanics-section">
+    <section id="mechanics" class="mechanics-section scroll-reveal">
         <h2 class="section-heading">The Engine</h2>
         <h3 class="eyebrow-label">Trustless Layer</h3>
 
@@ -113,7 +113,7 @@ await match.settle({ winner: 'player1_wallet' });</code>
     </section>
 
     <!-- Final Call to Action -->
-    <section id="waitlist" class="cta-section">
+    <section id="waitlist" class="cta-section scroll-reveal">
         <h2 class="display-headline-sm">Build the next generation of competitive gaming.</h2>
         <p class="hero-lead">Ship with Runinback.</p>
 
@@ -146,5 +146,24 @@ await match.settle({ winner: 'player1_wallet' });</code>
         </div>
     </footer>
 
+    <!-- Scroll Reveal Script -->
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach((entry) => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add("is-visible");
+                    }
+                });
+            }, {
+                threshold: 0.1,
+                rootMargin: "0px 0px -50px 0px"
+            });
+
+            document.querySelectorAll(".scroll-reveal").forEach((element) => {
+                observer.observe(element);
+            });
+        });
+    </script>
 </body>
 </html>
