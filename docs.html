@@ -37,11 +37,11 @@
 
         <!-- Main Content Area -->
         <main style="flex: 1;">
-            <h1 class="display-headline-sm" style="margin-bottom: var(--spacing-20);">Runinback.createMatch()</h1>
+            <h1 class="case-study-title" style="margin-bottom: var(--spacing-20); font-size: 56px;">Runinback.createMatch()</h1>
             <p class="hero-lead">Creates a new smart escrow session and pairs wallets together for a single game instance.</p>
 
             <div class="terminal-window" style="margin-top: var(--spacing-40);">
-                <pre class="terminal-code" style="color: var(--color-prism-lime);"><code>const match = await Runinback.createMatch({
+                <pre class="terminal-code" ><code>const match = await Runinback.createMatch({
   players: ['wallet_id_1', 'wallet_id_2'],
   wager: { amount: 10, currency: 'USDC' },
   oracleId: 'halo_infinite_1v1_slayer'

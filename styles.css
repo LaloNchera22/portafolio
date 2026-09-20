@@ -73,14 +73,14 @@
   --element-gap: 7px;
 
   /* Border Radius */
-  --radius-md: 5px;
-  --radius-xl: 15px;
-  --radius-full: 9999px;
+  --radius-md: 0px;
+  --radius-xl: 0px;
+  --radius-full: 0px;
 
   /* Named Radii */
-  --radius-nav: 5px;
-  --radius-tags: 9999px;
-  --radius-cards: 15px;
+  --radius-nav: 0px;
+  --radius-tags: 0px;
+  --radius-cards: 0px;
   --radius-buttons: 0px;
 
   /* Surfaces */
@@ -246,7 +246,12 @@ section {
 .hero-content {
     position: relative;
     z-index: 2;
-    max-width: 800px; /* Let headline wrap naturally but somewhat constrained */
+    max-width: 800px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    margin: 0 auto;
 }
 .hero-actions {
     display: flex;
@@ -273,7 +278,7 @@ section {
     position: absolute;
     width: 150px;
     height: 150px;
-    background: var(--color-pure-black);
+    background: transparent;
     mix-blend-mode: screen;
 }
 /* Staggered glass cubes */
@@ -331,7 +336,7 @@ section {
 /* Developer Section - Terminal */
 .terminal-window {
     background: #000;
-    border: 1px solid var(--color-ash-border);
+    border: none;
     border-radius: var(--radius-nav);
     padding: var(--spacing-20);
     max-width: 800px;
@@ -350,7 +355,7 @@ section {
 .terminal-code {
     font-family: monospace;
     font-size: 14px;
-    color: var(--color-prism-lime);
+    color: var(--color-bone-white);
     line-height: 1.5;
     overflow-x: auto;
 }
@@ -361,20 +366,20 @@ section {
     width: 100%;
     height: 500px;
     background: #000; /* Placeholder for video/game UI */
-    border: 1px solid var(--color-ash-border);
+    border: none;
     overflow: hidden;
 }
 .game-ui-blur {
     width: 100%; height: 100%;
-    background: linear-gradient(135deg, rgba(42,127,255,0.1), rgba(255,42,42,0.1));
+    background: transparent;
     display: flex;
     align-items: center;
     justify-content: center;
 }
 .runinback-overlay-btn {
-    background: var(--color-pure-black);
+    background: transparent;
     color: var(--color-bone-white);
-    border: 1px solid var(--color-bone-white);
+    border: none;
     padding: 15px 30px;
     font-size: var(--text-body);
     text-transform: uppercase;
@@ -385,9 +390,9 @@ section {
     position: absolute;
     right: 0; top: 0; bottom: 0;
     width: 300px;
-    background: rgba(255, 253, 249, 0.05);
+    background: transparent;
     backdrop-filter: blur(10px);
-    border-left: 1px solid var(--color-ash-border);
+    border: none;
     padding: var(--spacing-40);
     display: flex;
     flex-direction: column;
@@ -401,7 +406,7 @@ section {
 }
 .crypto-amount {
     font-size: var(--text-body-lg);
-    color: var(--color-prism-cyan);
+    color: var(--color-fog-blue);
 }
 .status {
     color: var(--color-fog-blue);
@@ -419,7 +424,7 @@ section {
 .email-input {
     flex: 1;
     background: transparent;
-    border: 1px solid var(--color-ash-border);
+    border: none;
     border-radius: var(--radius-buttons);
     padding: 15px;
     color: var(--color-bone-white);
@@ -460,12 +465,12 @@ section {
 
 /* Enhancements for UX / Mechanics */
 .mechanic-card {
-    transition: transform 0.5s cubic-bezier(0.52, 0.01, 0, 1), box-shadow 0.5s cubic-bezier(0.52, 0.01, 0, 1);
-    padding: var(--spacing-20);
+    transition: transform 0.5s cubic-bezier(0.52, 0.01, 0, 1);
+padding: var(--spacing-20);
 }
 .mechanic-card:hover {
     transform: translateY(-5px);
-    box-shadow: 0 15px 30px rgba(42, 127, 255, 0.05), inset 0 0 0 1px var(--color-fog-blue);
+
     border-radius: var(--radius-md);
 }
 
