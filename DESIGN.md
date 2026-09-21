@@ -51,6 +51,56 @@ Type scale: caption 14 · body-sm 16 · body 19 · body-lg 23 · subheading 34 �
 heading-sm 44 · heading 66 · heading-lg 101 · display 224 (all fluid via
 `clamp()`).
 
+## Logo
+
+The identity is the ascending **peak / lightning mark** — a four-point angular
+peak with a detached spark stroke. It is drawn as **inline SVG** (never a raster
+file), always in brand green (`#0ae448`) on the dark canvas, with
+`stroke-linecap: square` and `stroke-linejoin: miter` so every corner stays hard
+and angular. The source artwork lives in the repo (`IMG_0133/0134/0135.PNG`) as
+reference; the shipped site re-draws the mark in code for crispness at any size,
+theming and the draw-on-load animation.
+
+### Variant per context
+
+| Context | Where | Composition | Rendered size |
+|---------|-------|-------------|---------------|
+| **Wordmark lockup** | Nav + footer, every page (`.brand` + `.brand__mark`) | Mark (viewBox `0 0 44 36`, peak stroke 5.2 + spark 4.2) followed by the "Runinback" wordmark in Inter Tight 20px | Mark `30 × 25px` |
+| **Hero backdrop mark** | Landing hero only (`.hero__mark`) | Oversized mark (viewBox `0 0 200 150`) — ghost outline (stroke 2), peak (stroke 16, green glow), spark (stroke 13) | `clamp(280px, 34vw, 520px)` |
+| **Favicon** | `<link rel="icon">`, all pages | Mark on a `#0e100f` rounded square (rx 7), green stroke, viewBox `0 0 32 32` | `32px` |
+| **PWA / app icon** | `site.webmanifest` | Solid green rounded square (rx 128), no interior mark, for maskable app tiles | `512px` (`sizes: any`) |
+
+### Minimum sizes
+
+- **Wordmark lockup:** the mark holds at its `30 × 25px` default; do not render
+  the mark-plus-wordmark below this. Below ~24px the wordmark stops being legible
+  — use the mark alone (favicon variant) instead of shrinking the lockup.
+- **Favicon:** `32px` is the floor; the square backing keeps the mark readable at
+  tab size where a bare stroke would disappear.
+- **Hero mark:** decorative only (`aria-hidden`); it never carries brand meaning
+  on its own, so no legibility floor applies.
+
+### Clear space
+
+- The lockup reserves a **10px gap** between the mark and the wordmark
+  (`.brand { gap: 10px }`); keep this proportional if the lockup is scaled.
+- Treat the mark's own bounding box as the minimum keep-clear margin on all
+  sides — no other element crowds inside it.
+- The favicon bakes its clear space into the rounded square; the mark is inset
+  from the edges rather than bleeding to them.
+
+### Behavior on mobile
+
+- The **wordmark lockup stays fixed** at `30 × 25px` across every breakpoint and
+  remains in the top bar even when the nav links collapse into the slide-in menu
+  (`max-width: 640px`) — the logo is always the persistent anchor of the header.
+- The **hero mark recedes to a faint background texture** at `max-width: 900px`:
+  opacity drops to `0.16` and it widens to `78vw` (`right: -14vw`) so it reads as
+  ambient geometry behind the headline rather than competing with the type.
+- All logo motion (the `mark-draw` stroke animation on load, the hover lift) is
+  **fully disabled under `prefers-reduced-motion: reduce`**; the mark simply
+  renders in its final state.
+
 ## Structure
 
 Static, dependency-free site (HTML + CSS + vanilla JS).
