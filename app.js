@@ -219,4 +219,114 @@
       }, 480);
     });
   }
+
+  /* --- Reactive technical grid in the landing hero -------------------- */
+  const heroGrid = document.getElementById("hero-grid");
+  if (heroGrid) {
+    const hero = heroGrid.closest(".hero");
+    const gctx = heroGrid.getContext("2d");
+    const pointer = { x: -9999, y: -9999, active: false };
+    let gw = 0,
+      gh = 0,
+      gdpr = 1,
+      cell = 68;
+    let running = false,
+      rafId = 0,
+      visible = true;
+
+    const gResize = () => {
+      const r = hero.getBoundingClientRect();
+      gw = Math.max(1, r.width);
+      gh = Math.max(1, r.height);
+      gdpr = Math.min(window.devicePixelRatio || 1, 1.5); // cap DPR on mobile
+      heroGrid.width = Math.floor(gw * gdpr);
+      heroGrid.height = Math.floor(gh * gdpr);
+      gctx.setTransform(gdpr, 0, 0, gdpr, 0, 0);
+      cell = gw < 640 ? 46 : gw < 1000 ? 58 : 68; // lighter grid on small screens
+    };
+
+    // draw the whole square grid (straight lines) with a given stroke style
+    const strokeGrid = (style) => {
+      gctx.strokeStyle = style;
+      gctx.lineWidth = 1;
+      gctx.beginPath();
+      for (let x = 0; x <= gw; x += cell) {
+        gctx.moveTo(x + 0.5, 0);
+        gctx.lineTo(x + 0.5, gh);
+      }
+      for (let y = 0; y <= gh; y += cell) {
+        gctx.moveTo(0, y + 0.5);
+        gctx.lineTo(gw, y + 0.5);
+      }
+      gctx.stroke();
+    };
+
+    const glowAt = (cx, cy, radius, peak) => {
+      const g = gctx.createRadialGradient(cx, cy, 0, cx, cy, radius);
+      g.addColorStop(0, "rgba(255,255,255," + peak + ")");
+      g.addColorStop(1, "rgba(255,255,255,0)");
+      return g;
+    };
+
+    const gRender = (t) => {
+      gctx.clearRect(0, 0, gw, gh);
+      strokeGrid("rgba(255,255,255,0.05)"); // faint base grid, always straight
+      if (!reduceMotion) {
+        const time = t * 0.001;
+        const ax = gw * (0.5 + 0.42 * Math.cos(time * 0.35));
+        const ay = gh * (0.42 + 0.3 * Math.sin(time * 0.28));
+        strokeGrid(glowAt(ax, ay, Math.max(gw, gh) * 0.34, 0.14)); // ambient drift
+      }
+      if (pointer.active && finePointer) {
+        strokeGrid(glowAt(pointer.x, pointer.y, cell * 4.2, 0.5)); // cursor glow
+      }
+      if (running && !reduceMotion && visible) rafId = requestAnimationFrame(gRender);
+      else running = false;
+    };
+
+    const gStart = () => {
+      if (reduceMotion || !visible) {
+        gRender(performance.now());
+        return;
+      }
+      if (running) return;
+      running = true;
+      rafId = requestAnimationFrame(gRender);
+    };
+    const gStop = () => {
+      running = false;
+      if (rafId) cancelAnimationFrame(rafId);
+    };
+
+    hero.addEventListener("pointermove", (e) => {
+      const r = hero.getBoundingClientRect();
+      pointer.x = e.clientX - r.left;
+      pointer.y = e.clientY - r.top;
+      pointer.active = true;
+      if (!running) gRender(performance.now()); // pointer response even when paused
+    });
+    hero.addEventListener("pointerleave", () => {
+      pointer.active = false;
+      if (!running) gRender(performance.now());
+    });
+
+    if ("IntersectionObserver" in window) {
+      new IntersectionObserver(
+        (entries) => {
+          visible = entries[0].isIntersecting;
+          if (visible) gStart();
+          else gStop(); // pause when the hero scrolls off-screen
+        },
+        { threshold: 0.01 }
+      ).observe(hero);
+    }
+
+    window.addEventListener("resize", () => {
+      gResize();
+      if (!running) gRender(performance.now());
+    });
+
+    gResize();
+    gStart();
+  }
 })();
