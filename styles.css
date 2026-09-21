@@ -1287,7 +1287,8 @@ ul {
 [data-reveal] {
   opacity: 0;
   transform: translateY(28px);
-  transition: opacity 0.8s var(--ease-out), transform 0.8s var(--ease-out);
+  /* decisive reference curve, shared with the landing's [data-rise] motion */
+  transition: opacity 0.9s var(--ease-in-out), transform 0.9s var(--ease-in-out);
   transition-delay: var(--reveal-delay, 0s);
   will-change: opacity, transform;
 }
@@ -1461,9 +1462,9 @@ ul {
     rgba(14, 16, 15, 0.2);
 }
 
-/* Landing: all body copy reads in cream (per request), muted greys included.
+/* All pages: body copy reads in cream (per request), muted greys included.
    Scoped to #main so the shared nav/footer keep the muted taxonomy. */
-body.home #main { --color-surface-50: var(--color-surface-cream); }
+#main { --color-surface-50: var(--color-surface-cream); }
 
 /* Story section — what / why / how */
 .section-story .story-triad {
@@ -1486,6 +1487,9 @@ body.home #main { --color-surface-50: var(--color-surface-cream); }
   .section-story .story-triad { grid-template-columns: 1fr; gap: 0; }
   .section-story .move { padding-block: var(--spacing-32); }
 }
+
+/* Keep long words in big headings from overflowing on narrow phones */
+.display, .h1 { overflow-wrap: break-word; }
 
 /* Feature blocks without illustrations — two text columns */
 .feature--text {
@@ -1530,6 +1534,11 @@ body.home #main { --color-surface-50: var(--color-surface-cream); }
 
 [data-clip] {
   clip-path: inset(0 0 100% 0);
+  /* padding + equal negative margin enlarges the clip box (border-box) so the
+     curtain never crops ascenders/descenders on the tight line-height:.9 display
+     type, while flow spacing stays unchanged. */
+  padding-block: 0.22em;
+  margin-block: -0.22em;
   transition: clip-path 1.05s var(--ease-in-out);
   transition-delay: var(--d, 0s);
 }
