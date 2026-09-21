@@ -68,7 +68,6 @@
       <nav class="nav__links" aria-label="Primary">
         <a href="how-it-works.html" class="nav__link">How it works</a>
         <a href="developers.html" class="nav__link">Developers</a>
-        <a href="showcase.html" class="nav__link">Showcase</a>
         <a href="contact.html" class="nav__link">Contact</a>
         <a href="developers.html" class="btn btn--cta btn--sm">Get API access</a>
       </nav>
@@ -100,43 +99,8 @@
           <a href="developers.html" class="btn btn--cta">Get API access <span class="arrow">→</span></a>
           <a href="how-it-works.html" class="btn btn--ghost">See how it works</a>
         </div>
-
-        <div class="hero__stats" data-reveal>
-          <div class="stat">
-            <div class="stat__num">&lt;10</div>
-            <div class="stat__label">lines to integrate</div>
-          </div>
-          <div class="stat">
-            <div class="stat__num">~1s</div>
-            <div class="stat__label">settlement time</div>
-          </div>
-          <div class="stat">
-            <div class="stat__num">0%</div>
-            <div class="stat__label">custody risk</div>
-          </div>
-          <div class="stat">
-            <div class="stat__num">24/7</div>
-            <div class="stat__label">on-chain oracle</div>
-          </div>
-        </div>
       </div>
     </section>
-
-    <!-- Marquee -->
-    <div class="marquee" aria-hidden="true">
-      <div class="marquee__track">
-        <span class="marquee__item">Matchmaking</span>
-        <span class="marquee__item">Smart Escrow</span>
-        <span class="marquee__item">Automated Settlement</span>
-        <span class="marquee__item">Skill-Based</span>
-        <span class="marquee__item">Non-Custodial</span>
-        <span class="marquee__item">Matchmaking</span>
-        <span class="marquee__item">Smart Escrow</span>
-        <span class="marquee__item">Automated Settlement</span>
-        <span class="marquee__item">Skill-Based</span>
-        <span class="marquee__item">Non-Custodial</span>
-      </div>
-    </div>
 
     <!-- Feature blocks -->
     <section class="section-tools" aria-labelledby="tools-heading">
@@ -165,10 +129,12 @@
           <div class="feature__visual" data-reveal="right">
             <div class="viz viz--match">
               <svg class="viz__art" viewBox="0 0 160 120" fill="none" aria-hidden="true">
-                <path data-draw style="--dl:200" d="M60 24L32 24L32 96L60 96"/>
-                <path data-draw style="--dl:200" d="M100 24L128 24L128 96L100 96"/>
-                <path class="vz-dim" data-draw style="--dl:60" d="M70 60L90 60"/>
-                <path class="viz__pulse" data-fill d="M80 46L94 60L80 74L66 60Z" fill="currentColor"/>
+                <circle data-draw style="--dl:100" cx="56" cy="46" r="15"/>
+                <circle data-draw style="--dl:100" cx="104" cy="46" r="15"/>
+                <path data-draw style="--dl:120" d="M36 92v-4a12 12 0 0 1 12-12h8"/>
+                <path data-draw style="--dl:120" d="M124 92v-4a12 12 0 0 0-12-12h-8"/>
+                <path class="vz-dim" data-draw style="--dl:40" d="M68 76h24"/>
+                <circle class="viz__pulse" data-fill cx="80" cy="76" r="5" fill="currentColor"/>
               </svg>
             </div>
           </div>
@@ -190,10 +156,10 @@
           <div class="feature__visual" data-reveal="left">
             <div class="viz viz--escrow">
               <svg class="viz__art" viewBox="0 0 160 120" fill="none" aria-hidden="true">
-                <path data-draw style="--dl:420" d="M80 14L128 33V63C128 89 106 103 80 110C54 103 32 89 32 63V33Z"/>
-                <path class="vz-dim" data-draw style="--dl:80" d="M60 56H100"/>
-                <circle data-fill cx="80" cy="70" r="7" fill="currentColor"/>
-                <path data-fill d="M77 70H83V86H77Z" fill="currentColor"/>
+                <rect data-draw style="--dl:230" x="48" y="52" width="64" height="46" rx="8"/>
+                <path data-draw style="--dl:130" d="M60 52v-10a20 20 0 0 1 40 0v10"/>
+                <circle data-fill cx="80" cy="72" r="6" fill="currentColor"/>
+                <path data-fill d="M77 72h6v14h-6z" fill="currentColor"/>
               </svg>
             </div>
           </div>
@@ -215,10 +181,8 @@
           <div class="feature__visual" data-reveal="right">
             <div class="viz viz--settle">
               <svg class="viz__art" viewBox="0 0 160 120" fill="none" aria-hidden="true">
-                <path class="vz-dim" data-draw style="--dl:120" d="M24 96H136"/>
-                <path data-draw style="--dl:320" d="M28 84L60 52L82 70L120 28"/>
-                <path data-draw style="--dl:60" d="M104 28H120V44"/>
-                <circle class="viz__pulse" data-fill cx="120" cy="28" r="6" fill="currentColor"/>
+                <circle data-draw style="--dl:250" cx="80" cy="60" r="36"/>
+                <path data-draw style="--dl:90" d="M64 61l11 11 21-24"/>
               </svg>
             </div>
           </div>
@@ -259,51 +223,6 @@
       </div>
     </section>
 
-    <!-- Showcase teaser -->
-    <section class="section">
-      <div class="shell">
-        <div class="section-head" data-reveal>
-          <p class="eyebrow">Showcase</p>
-          <h2 class="h1">Built for the games players already love.</h2>
-        </div>
-        <div class="grid grid--3">
-          <a href="showcase.html" class="showcase-card" data-reveal>
-            <div class="showcase-card__preview" style="--cover:#00bae2;"><svg class="cover-art" viewBox="0 0 320 200" fill="none" aria-hidden="true" preserveAspectRatio="xMidYMid slice"><path data-draw d="M0 150L70 84L120 120L200 44L260 92L320 40"/><path data-draw opacity="0.45" d="M0 182L90 124L150 160L230 96L320 128"/></svg><span>1v1 FPS</span></div>
-            <div class="showcase-card__body">
-              <div class="showcase-card__meta">
-                <span class="showcase-card__title">Duel Arena</span>
-                <span class="showcase-card__tag">Shooter</span>
-              </div>
-              <p class="showcase-card__text">Ranked 1v1 gun duels with instant SOL payouts on the winning frag.</p>
-            </div>
-          </a>
-          <a href="showcase.html" class="showcase-card" data-reveal>
-            <div class="showcase-card__preview" style="--cover:#ff8709;"><svg class="cover-art" viewBox="0 0 320 200" fill="none" aria-hidden="true" preserveAspectRatio="xMidYMid slice"><path data-draw d="M0 150L70 84L120 120L200 44L260 92L320 40"/><path data-draw opacity="0.45" d="M0 182L90 124L150 160L230 96L320 128"/></svg><span>Racing</span></div>
-            <div class="showcase-card__body">
-              <div class="showcase-card__meta">
-                <span class="showcase-card__title">Apex Circuit</span>
-                <span class="showcase-card__tag">Racing</span>
-              </div>
-              <p class="showcase-card__text">Time-trial wagers settled by the on-chain oracle in under a second.</p>
-            </div>
-          </a>
-          <a href="showcase.html" class="showcase-card" data-reveal>
-            <div class="showcase-card__preview" style="--cover:#fec5fb;"><svg class="cover-art" viewBox="0 0 320 200" fill="none" aria-hidden="true" preserveAspectRatio="xMidYMid slice"><path data-draw d="M0 150L70 84L120 120L200 44L260 92L320 40"/><path data-draw opacity="0.45" d="M0 182L90 124L150 160L230 96L320 128"/></svg><span>Strategy</span></div>
-            <div class="showcase-card__body">
-              <div class="showcase-card__meta">
-                <span class="showcase-card__title">Grid Tactics</span>
-                <span class="showcase-card__tag">Strategy</span>
-              </div>
-              <p class="showcase-card__text">Best-of-three ranked ladders with escrowed prize pools.</p>
-            </div>
-          </a>
-        </div>
-        <div class="mt-48 center" data-reveal>
-          <a href="showcase.html" class="btn btn--ghost">Explore all showcases <span class="arrow">→</span></a>
-        </div>
-      </div>
-    </section>
-
     <!-- CTA -->
     <section class="section">
       <div class="shell cta-band" data-reveal>
@@ -335,7 +254,6 @@
           <h4>Product</h4>
           <ul>
             <li><a href="how-it-works.html">How it works</a></li>
-            <li><a href="showcase.html">Showcase</a></li>
             <li><a href="developers.html">Developers</a></li>
             <li><a href="developers.html">Pricing</a></li>
           </ul>

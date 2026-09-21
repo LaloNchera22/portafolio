@@ -111,10 +111,9 @@ Static, dependency-free site (HTML + CSS + vanilla JS).
 
 | File | Purpose |
 |------|---------|
-| `index.html` | Landing: hero, marquee, feature blocks, dev teaser, showcase, CTA |
+| `index.html` | Landing: hero, feature blocks, dev teaser, CTA |
 | `how-it-works.html` | The trustless loop: steps, benefits, FAQ |
 | `developers.html` | Quickstart, toolkit, waitlist form |
-| `showcase.html` | Games grid, metrics, quote |
 | `contact.html` | Contact channels + form |
 | `404.html` | Not-found page |
 | `styles.css` | Full design system + components |
@@ -133,9 +132,8 @@ Static, dependency-free site (HTML + CSS + vanilla JS).
 - **Page-transition curtain** on same-origin navigation.
 - **Sticky nav** that hides on scroll-down, reveals on scroll-up, and blurs once
   scrolled. Mobile slide-in menu.
-- **FAQ accordion**, **infinite marquee** (masked edges, pauses on hover),
-  smooth in-page anchor scrolling, and hover micro-interactions on cards,
-  buttons and social icons.
+- **FAQ accordion**, smooth in-page anchor scrolling, and hover
+  micro-interactions on cards, buttons and social icons.
 - **Accessibility:** skip-to-content link, visible focus rings, `main` landmark.
   All motion is fully disabled under `prefers-reduced-motion: reduce`.
 
