@@ -51,7 +51,7 @@
   }
   </script>
 </head>
-<body>
+<body class="home">
   <a class="skip-link" href="#main">Skip to content</a>
 
   <!-- Nav -->
@@ -79,45 +79,73 @@
 
   <main id="main">
     <!-- Hero -->
-    <section class="hero hero--live">
-      <div class="backdrop" aria-hidden="true"></div>
-      <canvas class="hero__canvas" id="hero-grid" aria-hidden="true"></canvas>
-      <div class="hero__logo" aria-hidden="true">
-        <img src="logo-icon.png" alt="" decoding="async" />
-      </div>
+    <section class="hero" data-band>
+      <video class="hero__video" id="hero-video" muted playsinline autoplay preload="auto" aria-hidden="true">
+        <source src="video_de_segundos_donde_rec.mp4" type="video/mp4" />
+      </video>
+      <div class="hero__scrim" aria-hidden="true"></div>
       <div class="shell">
-        <p class="eyebrow hero__eyebrow" data-reveal>Reset · Replay · Redeem</p>
-        <h1 class="display hero__title" data-reveal>
+        <p class="eyebrow hero__eyebrow" data-rise>Reset · Replay · Redeem</p>
+        <h1 class="display hero__title" data-clip>
           The wagering layer for competitive gaming.
         </h1>
-        <p class="lead hero__lead" data-reveal>
+        <p class="lead hero__lead" data-rise style="--d:.12s">
           Runinback is a trustless escrow and settlement engine. Let players stake
           skill-based matches, secure the pot on-chain, and pay out the winner
           automatically — all through one clean API.
         </p>
-        <div class="hero__actions" data-reveal>
+        <div class="hero__actions" data-rise style="--d:.2s">
           <a href="developers.html" class="btn btn--cta">Get API access <span class="arrow">→</span></a>
           <a href="how-it-works.html" class="btn btn--ghost">See how it works</a>
         </div>
       </div>
     </section>
 
-    <!-- Feature blocks -->
-    <section class="section-tools" aria-labelledby="tools-heading">
+    <!-- Story: what / why / how, from the gaming-fan premise -->
+    <section class="section-story" data-band aria-labelledby="story-heading">
       <div class="shell">
-        <div class="section-head" style="padding-top: var(--section-gap);" data-reveal>
-          <p class="eyebrow">The engine</p>
-          <h2 class="h1" id="tools-heading">Four primitives. One trustless loop.</h2>
-          <p class="lead muted">Every Runinback match runs the same verifiable path — from pairing players to paying the winner — without you touching a single wallet.</p>
+        <div class="section-head" style="padding-top: var(--section-gap);">
+          <p class="eyebrow" data-rise>Built by players</p>
+          <h2 class="h1" id="story-heading" data-clip style="max-width: 18ch;">We're gamers first — so we made competition pay out fairly.</h2>
+        </div>
+        <div class="story-triad">
+          <div class="move" data-rise>
+            <p class="move__tag">What we do</p>
+            <h3 class="h3">The wagering layer for competitive games.</h3>
+            <p class="muted">Runinback lets players stake a real, skill-based match, secures the pot, and pays the winner automatically — all through one clean API you drop into your game.</p>
+          </div>
+          <div class="move" data-rise style="--d:.12s">
+            <p class="move__tag">Why we do it</p>
+            <h3 class="h3">The best matches deserve real stakes.</h3>
+            <p class="muted">We grew up on ranked ladders and money matches settled on a handshake. Great games should carry real stakes — without the scams, the middlemen, or the house skimming the pot.</p>
+          </div>
+          <div class="move" data-rise style="--d:.24s">
+            <p class="move__tag">How we do it</p>
+            <h3 class="h3">No middlemen. No trust required.</h3>
+            <p class="muted">The pot lives in an audited on-chain program neither side can touch. Your server reports the result, an oracle verifies it, and the winner is paid in about a second.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Feature blocks -->
+    <section class="section-tools" data-band aria-labelledby="tools-heading">
+      <div class="shell">
+        <div class="section-head" style="padding-top: var(--section-gap);">
+          <p class="eyebrow" data-rise>The engine</p>
+          <h2 class="h1" id="tools-heading" data-clip>Four primitives. One trustless loop.</h2>
+          <p class="lead muted" data-rise style="--d:.12s">Every Runinback match runs the same verifiable path — from pairing players to paying the winner — without you touching a single wallet.</p>
         </div>
       </div>
 
       <div class="shell">
         <!-- Matchmaking -->
-        <article class="feature">
-          <div class="feature__body" data-reveal>
+        <article class="feature feature--text" data-band>
+          <div class="feature__body" data-rise>
             <span class="label label--match">Matchmaking</span>
             <h3 class="h2">Pair players, connect wallets, agree the stake.</h3>
+          </div>
+          <div class="feature__body" data-rise="right" style="--d:.12s">
             <p class="lead muted">Drop in a challenge overlay that connects both players' wallets and locks the wager terms before the first frame renders.</p>
             <ul class="feature__list">
               <li>Wallet connect for Solana &amp; embedded custodial accounts</li>
@@ -126,25 +154,15 @@
             </ul>
             <a href="how-it-works.html" class="text-link">Explore matchmaking <span class="arrow">→</span></a>
           </div>
-          <div class="feature__visual" data-reveal="right">
-            <div class="viz viz--match">
-              <svg class="viz__art" viewBox="0 0 160 120" fill="none" aria-hidden="true">
-                <circle data-draw style="--dl:100" cx="56" cy="46" r="15"/>
-                <circle data-draw style="--dl:100" cx="104" cy="46" r="15"/>
-                <path data-draw style="--dl:120" d="M36 92v-4a12 12 0 0 1 12-12h8"/>
-                <path data-draw style="--dl:120" d="M124 92v-4a12 12 0 0 0-12-12h-8"/>
-                <path class="vz-dim" data-draw style="--dl:40" d="M68 76h24"/>
-                <circle class="viz__pulse" data-fill cx="80" cy="76" r="5" fill="currentColor"/>
-              </svg>
-            </div>
-          </div>
         </article>
 
         <!-- Escrow -->
-        <article class="feature feature--reverse">
-          <div class="feature__body" data-reveal>
+        <article class="feature feature--text" data-band>
+          <div class="feature__body" data-rise>
             <span class="label label--escrow">Smart Escrow</span>
             <h3 class="h2">Funds locked on-chain the moment the match starts.</h3>
+          </div>
+          <div class="feature__body" data-rise="left" style="--d:.12s">
             <p class="lead muted">The pot lives in an audited program, not your treasury. Neither player — nor Runinback — can move it until the result is verified.</p>
             <ul class="feature__list">
               <li>Non-custodial: you never hold player funds</li>
@@ -153,23 +171,15 @@
             </ul>
             <a href="how-it-works.html" class="text-link">Explore escrow <span class="arrow">→</span></a>
           </div>
-          <div class="feature__visual" data-reveal="left">
-            <div class="viz viz--escrow">
-              <svg class="viz__art" viewBox="0 0 160 120" fill="none" aria-hidden="true">
-                <rect data-draw style="--dl:230" x="48" y="52" width="64" height="46" rx="8"/>
-                <path data-draw style="--dl:130" d="M60 52v-10a20 20 0 0 1 40 0v10"/>
-                <circle data-fill cx="80" cy="72" r="6" fill="currentColor"/>
-                <path data-fill d="M77 72h6v14h-6z" fill="currentColor"/>
-              </svg>
-            </div>
-          </div>
         </article>
 
         <!-- Settlement -->
-        <article class="feature">
-          <div class="feature__body" data-reveal>
+        <article class="feature feature--text" data-band>
+          <div class="feature__body" data-rise>
             <span class="label label--settle">Settlement</span>
             <h3 class="h2">The oracle verifies the winner and pays out instantly.</h3>
+          </div>
+          <div class="feature__body" data-rise="right" style="--d:.12s">
             <p class="lead muted">Report the result from your game server; the Runinback oracle validates it and releases the pot to the winner in about a second.</p>
             <ul class="feature__list">
               <li>Signed result submission from your backend</li>
@@ -178,23 +188,15 @@
             </ul>
             <a href="how-it-works.html" class="text-link">Explore settlement <span class="arrow">→</span></a>
           </div>
-          <div class="feature__visual" data-reveal="right">
-            <div class="viz viz--settle">
-              <svg class="viz__art" viewBox="0 0 160 120" fill="none" aria-hidden="true">
-                <circle data-draw style="--dl:250" cx="80" cy="60" r="36"/>
-                <path data-draw style="--dl:90" d="M64 61l11 11 21-24"/>
-              </svg>
-            </div>
-          </div>
         </article>
       </div>
     </section>
 
     <!-- Developer teaser -->
-    <section class="section">
+    <section class="section" data-band>
       <div class="shell">
         <div class="grid grid--2" style="align-items:center; gap: clamp(32px,6vw,80px);">
-          <div data-reveal>
+          <div data-rise>
             <span class="label label--sdk">Developer experience</span>
             <h2 class="h1 mt-16">Plug &amp; play escrow in <span class="text-green">under 10 lines</span>.</h2>
             <p class="lead muted mt-24">Monetize competition in your game without becoming a payments company. Install the SDK, create a match, settle the result. That's it.</p>
@@ -203,7 +205,7 @@
               <a href="developers.html" class="btn btn--ghost">Join waitlist</a>
             </div>
           </div>
-          <div class="terminal" data-reveal>
+          <div class="terminal" data-rise="right" style="--d:.12s">
             <div class="terminal__bar">
               <span class="dot"></span><span class="dot"></span><span class="dot"></span>
               <span class="terminal__file">match.ts</span>
@@ -224,12 +226,12 @@
     </section>
 
     <!-- CTA -->
-    <section class="section">
-      <div class="shell cta-band" data-reveal>
-        <p class="eyebrow">Get started</p>
-        <h2 class="display">Ship the next competitive hit.</h2>
-        <p class="lead muted mx-auto">Join the developer waitlist and get early SDK access, sandbox credits and integration support.</p>
-        <div class="cta-band__actions">
+    <section class="section" data-band>
+      <div class="shell cta-band">
+        <p class="eyebrow" data-rise>Get started</p>
+        <h2 class="display" data-clip>Ship the next competitive hit.</h2>
+        <p class="lead muted mx-auto" data-rise style="--d:.12s">Join the developer waitlist and get early SDK access, sandbox credits and integration support.</p>
+        <div class="cta-band__actions" data-rise style="--d:.2s">
           <a href="developers.html" class="btn btn--cta">Join developer waitlist <span class="arrow">→</span></a>
           <a href="contact.html" class="btn btn--ghost">Talk to us</a>
         </div>
