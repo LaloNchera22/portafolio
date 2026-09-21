@@ -123,12 +123,16 @@ Static, dependency-free site (HTML + CSS + vanilla JS).
 
 - **Scroll reveal** via `IntersectionObserver` on `[data-reveal]`, with
   directional/`zoom`/`clip` variants and staggering.
-- **Section transitions (landing)** via `IntersectionObserver` on `[data-band]`
-  (adds `.is-in`): a hairline wipes each band's top edge, headings clip-reveal
-  (`[data-clip]`), content rises or slides in (`[data-rise]`, `="left"`/`="right"`)
-  and feature bullets cascade — all on the decisive `--ease-in-out` curve. On the
-  landing, body copy (including muted greys) reads in cream via
-  `body.home #main { --color-surface-50: var(--color-surface-cream) }`.
+- **Section transitions** via `IntersectionObserver` on `[data-band]` (adds
+  `.is-in`): a hairline wipes each band's top edge, headings clip-reveal
+  (`[data-clip]`, padded so the tight display line-height never crops glyphs),
+  content rises or slides in (`[data-rise]`, `="left"`/`="right"`) and feature
+  bullets cascade. The landing uses the full set; `how-it-works`, `developers` and
+  `contact` carry the band hairline over their existing `[data-reveal]` motion.
+  All reveals share the decisive `--ease-in-out` curve. Across every page, `#main`
+  body copy (muted greys included) reads in cream via
+  `#main { --color-surface-50: var(--color-surface-cream) }`; nav and footer keep
+  the muted taxonomy.
 - **Hero video** loops seconds 0–7 of the background clip, muted and `playsinline`;
   paused under reduced motion.
 - **Self-drawing SVG** — the brand mark, hero mark and feature illustrations
