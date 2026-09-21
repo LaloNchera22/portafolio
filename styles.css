@@ -658,42 +658,6 @@ ul {
 }
 
 /* ==========================================================================
-   Marquee
-   ========================================================================== */
-
-.marquee {
-  border-block: 1px solid var(--color-surface-25);
-  padding-block: var(--spacing-20);
-  overflow: hidden;
-  white-space: nowrap;
-  -webkit-mask: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent);
-  mask: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent);
-}
-.marquee__track {
-  display: inline-flex;
-  gap: var(--spacing-48);
-  animation: marquee 28s linear infinite;
-  will-change: transform;
-}
-.marquee:hover .marquee__track { animation-play-state: paused; }
-.marquee__item {
-  font-size: var(--text-body-lg);
-  color: var(--color-surface-50);
-  display: inline-flex;
-  align-items: center;
-  gap: var(--spacing-48);
-}
-.marquee__item::after {
-  content: "◆";
-  color: var(--color-surface-25);
-  font-size: 12px;
-}
-@keyframes marquee {
-  from { transform: translateX(0); }
-  to   { transform: translateX(-50%); }
-}
-
-/* ==========================================================================
    Feature blocks (tool sections)
    ========================================================================== */
 
@@ -769,7 +733,8 @@ ul {
   width: 72%;
   height: auto;
   overflow: visible;
-  color: var(--viz-accent, var(--color-shockingly-green));
+  /* Sober monochrome glyphs — category color stays on the label, not the icon */
+  color: var(--color-surface-cream);
 }
 .viz--match  { --viz-accent: var(--accent-match); }
 .viz--escrow { --viz-accent: var(--accent-escrow); }
