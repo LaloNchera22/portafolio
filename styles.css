@@ -1532,17 +1532,17 @@ ul {
 .is-in [data-rise="left"],
 .is-in [data-rise="right"] { transform: none; }
 
+/* Headings reveal with a clean fade + rise (no clip-path: the curtain cropped
+   glyph tails on the tight display line-height, and padding hacks to fix that
+   overlapped the element above). */
 [data-clip] {
-  clip-path: inset(0 0 100% 0);
-  /* padding + equal negative margin enlarges the clip box (border-box) so the
-     curtain never crops ascenders/descenders on the tight line-height:.9 display
-     type, while flow spacing stays unchanged. */
-  padding-block: 0.22em;
-  margin-block: -0.22em;
-  transition: clip-path 1.05s var(--ease-in-out);
+  opacity: 0;
+  transform: translateY(24px);
+  transition: opacity 0.9s var(--ease-in-out), transform 0.9s var(--ease-in-out);
   transition-delay: var(--d, 0s);
+  will-change: opacity, transform;
 }
-.is-in [data-clip] { clip-path: inset(0 0 0 0); }
+.is-in [data-clip] { opacity: 1; transform: none; }
 
 /* Bullet cascade (landing only, so developers.html lists are untouched). */
 body.home .feature__list li {
