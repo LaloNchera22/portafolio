@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <title>Developers — Runinback SDK, docs &amp; waitlist</title>
+  <meta name="description" content="Integrate skill-based wagering with the Runinback SDK. Quickstart, API reference and the developer preview waitlist — escrow and settlement in under 10 lines." />
+  <meta name="keywords" content="Runinback SDK, game monetization API, escrow SDK, Solana wagering API, developer docs, quickstart" />
+  <meta name="author" content="Runinback" />
+  <meta name="robots" content="index, follow" />
+  <meta name="theme-color" content="#0e100f" />
+  <link rel="canonical" href="https://runinback.com/developers.html" />
+
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="Runinback" />
+  <meta property="og:title" content="Runinback for Developers — SDK, docs &amp; waitlist" />
+  <meta property="og:description" content="Add match escrow and automated settlement to your game in under 10 lines of code." />
+  <meta property="og:url" content="https://runinback.com/developers.html" />
+  <meta property="og:image" content="https://runinback.com/og-image.png" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="Runinback for Developers" />
+  <meta name="twitter:description" content="SDK, docs and developer preview waitlist." />
+  <meta name="twitter:image" content="https://runinback.com/og-image.png" />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='%230ae448'/></svg>" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+  <header class="nav" data-nav>
+    <div class="shell nav__inner">
+      <a href="index.html" class="brand" aria-label="Runinback home">
+        <span class="brand__mark" aria-hidden="true"></span> Runinback
+      </a>
+      <nav class="nav__links" aria-label="Primary">
+        <a href="how-it-works.html" class="nav__link">How it works</a>
+        <a href="developers.html" class="nav__link" aria-current="page">Developers</a>
+        <a href="showcase.html" class="nav__link">Showcase</a>
+        <a href="contact.html" class="nav__link">Contact</a>
+        <a href="#waitlist" class="btn btn--cta btn--sm">Join waitlist</a>
+      </nav>
+      <button class="nav__toggle" data-nav-toggle aria-label="Toggle menu" aria-expanded="false">
+        <span></span>
+      </button>
+    </div>
+  </header>
+
+  <main>
+    <!-- Page head -->
+    <section class="page-head">
+      <div class="blob blob--1"></div>
+      <div class="shell">
+        <p class="eyebrow" data-reveal><span style="color:var(--accent-sdk)">Developer experience</span></p>
+        <h1 class="h-lg page-head__title" data-reveal>Monetize competition, not your roadmap.</h1>
+        <p class="lead" data-reveal>Install the SDK, create a match, settle the result. Runinback handles wallets, escrow and payouts so you can stay focused on the game.</p>
+        <div class="hero__actions mt-32" data-reveal>
+          <a href="#waitlist" class="btn btn--cta">Join developer waitlist <span class="arrow">→</span></a>
+          <a href="#quickstart" class="btn btn--ghost">Read the quickstart</a>
+        </div>
+      </div>
+    </section>
+
+    <div class="shell"><hr class="hairline" /></div>
+
+    <!-- Quickstart -->
+    <section class="section" id="quickstart">
+      <div class="shell">
+        <div class="section-head" data-reveal>
+          <p class="eyebrow">Quickstart</p>
+          <h2 class="h1">From zero to a wagered match in three steps.</h2>
+        </div>
+
+        <div class="stack-24">
+          <div class="grid grid--2" style="align-items:center; gap:clamp(24px,5vw,64px);">
+            <div data-reveal>
+              <div class="step__num">01 · Install</div>
+              <h3 class="h3 mt-16">Add the SDK</h3>
+              <p class="lead muted mt-16">One package for the client and server. TypeScript types included.</p>
+            </div>
+            <div class="terminal" data-reveal>
+              <div class="terminal__bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="terminal__file">terminal</span></div>
+              <pre><code><span class="tok-com"># npm</span>
+npm install <span class="tok-str">@runinback/sdk</span>
+
+<span class="tok-com"># or pnpm</span>
+pnpm add <span class="tok-str">@runinback/sdk</span></code></pre>
+            </div>
+          </div>
+
+          <div class="grid grid--2" style="align-items:center; gap:clamp(24px,5vw,64px);">
+            <div data-reveal>
+              <div class="step__num">02 · Configure</div>
+              <h3 class="h3 mt-16">Initialize the client</h3>
+              <p class="lead muted mt-16">Authenticate with your sandbox key. Point at <code style="font-family:var(--font-mono);color:var(--color-light-green)">sandbox</code> until you're ready for production.</p>
+            </div>
+            <div class="terminal" data-reveal>
+              <div class="terminal__bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="terminal__file">client.ts</span></div>
+              <pre><code><span class="tok-kw">import</span> { Runinback } <span class="tok-kw">from</span> <span class="tok-str">'@runinback/sdk'</span>;
+
+<span class="tok-kw">const</span> rib = <span class="tok-kw">new</span> <span class="tok-fn">Runinback</span>({
+  apiKey: process.env.RIB_KEY,
+  network: <span class="tok-str">'sandbox'</span>
+});</code></pre>
+            </div>
+          </div>
+
+          <div class="grid grid--2" style="align-items:center; gap:clamp(24px,5vw,64px);">
+            <div data-reveal>
+              <div class="step__num">03 · Ship</div>
+              <h3 class="h3 mt-16">Create, start, settle</h3>
+              <p class="lead muted mt-16">Three calls cover the whole lifecycle. The oracle pays the winner automatically.</p>
+            </div>
+            <div class="terminal" data-reveal>
+              <div class="terminal__bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="terminal__file">match.ts</span></div>
+              <pre><code><span class="tok-kw">const</span> match = <span class="tok-kw">await</span> rib.<span class="tok-fn">createMatch</span>({
+  players: [p1, p2],
+  wager: { amount: <span class="tok-num">1</span>, currency: <span class="tok-str">'SOL'</span> }
+});
+
+<span class="tok-kw">await</span> match.<span class="tok-fn">start</span>();
+<span class="tok-kw">await</span> match.<span class="tok-fn">settle</span>({ winner: p1 });</code></pre>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- What you get -->
+    <section class="section">
+      <div class="shell">
+        <div class="section-head" data-reveal>
+          <p class="eyebrow">What's in the box</p>
+          <h2 class="h1">A complete wagering toolkit.</h2>
+        </div>
+        <div class="grid grid--3">
+          <div class="card" data-reveal>
+            <div class="card__icon">🧩</div>
+            <h3 class="card__title">Drop-in SDK</h3>
+            <p class="card__text">First-class TypeScript, framework-agnostic client and server helpers, and a hosted challenge overlay.</p>
+          </div>
+          <div class="card" data-reveal>
+            <div class="card__icon">🪝</div>
+            <h3 class="card__title">Webhooks &amp; events</h3>
+            <p class="card__text">Subscribe to match lifecycle events — created, funded, started, settled, refunded — with signed payloads.</p>
+          </div>
+          <div class="card" data-reveal>
+            <div class="card__icon">🧪</div>
+            <h3 class="card__title">Sandbox &amp; credits</h3>
+            <p class="card__text">Test the full escrow-to-payout loop on devnet with free sandbox credits before going live.</p>
+          </div>
+          <div class="card" data-reveal>
+            <div class="card__icon">📊</div>
+            <h3 class="card__title">Dashboard</h3>
+            <p class="card__text">Monitor matches, volume and payouts in real time, and manage keys and webhooks in one place.</p>
+          </div>
+          <div class="card" data-reveal>
+            <div class="card__icon">🛡️</div>
+            <h3 class="card__title">Audited contracts</h3>
+            <p class="card__text">Escrow programs are independently audited, with public transaction proofs for every pot.</p>
+          </div>
+          <div class="card" data-reveal>
+            <div class="card__icon">🤝</div>
+            <h3 class="card__title">Integration support</h3>
+            <p class="card__text">Preview partners get a shared channel with our engineers to ship the first integration fast.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Waitlist -->
+    <section class="section" id="waitlist">
+      <div class="shell">
+        <div class="grid grid--2" style="gap:clamp(32px,6vw,80px); align-items:start;">
+          <div data-reveal>
+            <p class="eyebrow">Developer preview</p>
+            <h2 class="h1 mt-16">Join the waitlist.</h2>
+            <p class="lead muted mt-24">Tell us about your game and we'll get you early SDK access, sandbox credits and a direct line for integration help. No spam — just your access details.</p>
+            <ul class="feature__list mt-32">
+              <li>Early access to the v1.0 SDK</li>
+              <li>Free devnet sandbox credits</li>
+              <li>Priority integration support</li>
+            </ul>
+          </div>
+          <div data-reveal>
+            <form class="form form--wide" data-form novalidate>
+              <div class="form__row">
+                <div class="field">
+                  <label for="name">Name</label>
+                  <input id="name" name="name" type="text" autocomplete="name" required />
+                </div>
+                <div class="field">
+                  <label for="email">Work email</label>
+                  <input id="email" name="email" type="email" autocomplete="email" required />
+                </div>
+              </div>
+              <div class="field">
+                <label for="studio">Studio / game</label>
+                <input id="studio" name="studio" type="text" required />
+              </div>
+              <div class="field">
+                <label for="engine">Engine</label>
+                <select id="engine" name="engine">
+                  <option>Unity</option>
+                  <option>Unreal</option>
+                  <option>Godot</option>
+                  <option>Web / JavaScript</option>
+                  <option>Other</option>
+                </select>
+              </div>
+              <div class="field">
+                <label for="notes">What are you building? (optional)</label>
+                <textarea id="notes" name="notes"></textarea>
+              </div>
+              <button type="submit" class="btn btn--cta">Request access <span class="arrow">→</span></button>
+              <p class="form__note">By joining you agree to receive preview updates. Unsubscribe anytime.</p>
+              <div class="form__success" data-form-success>
+                🎉 You're on the list. Check your inbox for sandbox credentials and next steps.
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="shell">
+      <div class="footer__top">
+        <div class="footer__brand">
+          <a href="index.html" class="brand"><span class="brand__mark" aria-hidden="true"></span> Runinback</a>
+          <p class="footer__tagline">The trustless wagering layer for competitive gaming. Reset. Replay. Redeem.</p>
+          <div class="footer__social">
+            <a href="#" aria-label="Runinback on X">𝕏</a>
+            <a href="#" aria-label="Runinback on Discord">◇</a>
+            <a href="#" aria-label="Runinback on GitHub">⌥</a>
+          </div>
+        </div>
+        <div class="footer__col">
+          <h4>Product</h4>
+          <ul>
+            <li><a href="how-it-works.html">How it works</a></li>
+            <li><a href="showcase.html">Showcase</a></li>
+            <li><a href="developers.html">Developers</a></li>
+            <li><a href="developers.html">Pricing</a></li>
+          </ul>
+        </div>
+        <div class="footer__col">
+          <h4>Developers</h4>
+          <ul>
+            <li><a href="developers.html">Documentation</a></li>
+            <li><a href="developers.html">SDK reference</a></li>
+            <li><a href="#waitlist">Sandbox</a></li>
+            <li><a href="developers.html">Status</a></li>
+          </ul>
+        </div>
+        <div class="footer__col">
+          <h4>Company</h4>
+          <ul>
+            <li><a href="contact.html">Contact</a></li>
+            <li><a href="#">Careers</a></li>
+            <li><a href="#">Privacy</a></li>
+            <li><a href="#">Terms</a></li>
+          </ul>
+        </div>
+      </div>
+      <div class="footer__bottom">
+        <span>© <span data-year>2026</span> Runinback. All rights reserved.</span>
+        <nav aria-label="Legal">
+          <a href="#">Privacy</a>
+          <a href="#">Terms</a>
+          <a href="contact.html">Contact</a>
+        </nav>
+      </div>
+    </div>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>

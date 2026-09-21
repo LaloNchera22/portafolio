@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <title>How it works — Runinback trustless match engine</title>
+  <meta name="description" content="See how Runinback pairs players, escrows the pot on-chain, verifies the winner with an oracle and settles automatically — a fully trustless wagering loop." />
+  <meta name="keywords" content="smart escrow, trustless settlement, on-chain oracle, matchmaking, Solana wagering, how it works" />
+  <meta name="author" content="Runinback" />
+  <meta name="robots" content="index, follow" />
+  <meta name="theme-color" content="#0e100f" />
+  <link rel="canonical" href="https://runinback.com/how-it-works.html" />
+
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="Runinback" />
+  <meta property="og:title" content="How Runinback works — the trustless match engine" />
+  <meta property="og:description" content="Pairing, escrow, verification and instant settlement — the full non-custodial wagering loop explained." />
+  <meta property="og:url" content="https://runinback.com/how-it-works.html" />
+  <meta property="og:image" content="https://runinback.com/og-image.png" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="How Runinback works" />
+  <meta name="twitter:description" content="The trustless wagering loop: pairing, escrow, verification, settlement." />
+  <meta name="twitter:image" content="https://runinback.com/og-image.png" />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='%230ae448'/></svg>" />
+  <link rel="stylesheet" href="styles.css" />
+
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "HowTo",
+    "name": "How a Runinback wagered match works",
+    "step": [
+      { "@type": "HowToStep", "name": "Matchmaking", "text": "Players connect wallets and agree the stake." },
+      { "@type": "HowToStep", "name": "Escrow", "text": "The pot is locked in an on-chain program when the match starts." },
+      { "@type": "HowToStep", "name": "Verification", "text": "The game server submits a signed result the oracle validates." },
+      { "@type": "HowToStep", "name": "Settlement", "text": "The verified winner is paid out automatically in about a second." }
+    ]
+  }
+  </script>
+</head>
+<body>
+
+  <header class="nav" data-nav>
+    <div class="shell nav__inner">
+      <a href="index.html" class="brand" aria-label="Runinback home">
+        <span class="brand__mark" aria-hidden="true"></span> Runinback
+      </a>
+      <nav class="nav__links" aria-label="Primary">
+        <a href="how-it-works.html" class="nav__link" aria-current="page">How it works</a>
+        <a href="developers.html" class="nav__link">Developers</a>
+        <a href="showcase.html" class="nav__link">Showcase</a>
+        <a href="contact.html" class="nav__link">Contact</a>
+        <a href="developers.html" class="btn btn--cta btn--sm">Get API access</a>
+      </nav>
+      <button class="nav__toggle" data-nav-toggle aria-label="Toggle menu" aria-expanded="false">
+        <span></span>
+      </button>
+    </div>
+  </header>
+
+  <main>
+    <!-- Page head -->
+    <section class="page-head">
+      <div class="blob blob--2"></div>
+      <div class="shell">
+        <p class="eyebrow" data-reveal>The engine</p>
+        <h1 class="h-lg page-head__title" data-reveal>A trustless loop from pairing to payout.</h1>
+        <p class="lead" data-reveal>No treasury. No manual payouts. No custody risk. Runinback runs every wagered match through the same verifiable four-step path, secured by an audited on-chain program.</p>
+      </div>
+    </section>
+
+    <div class="shell"><hr class="hairline" /></div>
+
+    <!-- Steps -->
+    <section class="section">
+      <div class="shell">
+        <div class="steps">
+          <div class="step" data-reveal>
+            <div class="step__num">01</div>
+            <div>
+              <h2 class="step__title"><span class="label--match" style="color:var(--accent-match)">Matchmaking</span> — pair &amp; agree</h2>
+              <p class="step__text">Both players connect a wallet (native Solana or an embedded custodial account) and confirm the stake, currency and match rules through a drop-in challenge overlay. Anti-collusion heuristics run before a match is ever created.</p>
+            </div>
+          </div>
+          <div class="step" data-reveal>
+            <div class="step__num">02</div>
+            <div>
+              <h2 class="step__title"><span style="color:var(--accent-escrow)">Smart Escrow</span> — lock the pot</h2>
+              <p class="step__text">When the match starts, each stake is transferred into an audited escrow program. The funds are provably locked on-chain — neither player, nor your game, nor Runinback can move them until a verified result arrives.</p>
+            </div>
+          </div>
+          <div class="step" data-reveal>
+            <div class="step__num">03</div>
+            <div>
+              <h2 class="step__title"><span style="color:var(--accent-sdk)">Verification</span> — prove the result</h2>
+              <p class="step__text">Your game server submits a signed result. The Runinback oracle validates the signature and opens a short dispute window backed by cryptographic evidence, so a bad actor can't fake an outcome.</p>
+            </div>
+          </div>
+          <div class="step" data-reveal>
+            <div class="step__num">04</div>
+            <div>
+              <h2 class="step__title"><span style="color:var(--accent-settle)">Settlement</span> — pay the winner</h2>
+              <p class="step__text">Once verified, the escrow releases the full pot to the winner automatically — typically in about a second. If a match is voided, funds are refunded to both players along the same trustless path.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Why trustless -->
+    <section class="section">
+      <div class="shell">
+        <div class="section-head" data-reveal>
+          <p class="eyebrow">Why trustless matters</p>
+          <h2 class="h1">You keep the players. We remove the risk.</h2>
+        </div>
+        <div class="grid grid--3">
+          <div class="card" data-reveal>
+            <div class="card__icon">🔒</div>
+            <h3 class="card__title">Non-custodial by design</h3>
+            <p class="card__text">You never touch player funds, so you avoid money-transmitter exposure and the operational weight of a payments stack.</p>
+          </div>
+          <div class="card" data-reveal>
+            <div class="card__icon">🧾</div>
+            <h3 class="card__title">Verifiable on-chain</h3>
+            <p class="card__text">Every locked pot and payout is a public, auditable transaction. Players can confirm the stake is real before they ever queue up.</p>
+          </div>
+          <div class="card" data-reveal>
+            <div class="card__icon">⚡</div>
+            <h3 class="card__title">Instant &amp; automatic</h3>
+            <p class="card__text">No support tickets, no batch payouts. The oracle settles the moment a result is verified, sub-second on Solana.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- FAQ -->
+    <section class="section">
+      <div class="shell">
+        <div class="section-head" data-reveal>
+          <p class="eyebrow">FAQ</p>
+          <h2 class="h1">Questions, answered.</h2>
+        </div>
+        <div data-reveal>
+          <div class="faq__item" data-faq>
+            <button class="faq__q">Do you ever hold player money? <span class="faq__icon" aria-hidden="true"></span></button>
+            <div class="faq__a"><p>No. Stakes go directly into an audited on-chain escrow program. Runinback coordinates the match and settlement logic but is never a custodian of funds.</p></div>
+          </div>
+          <div class="faq__item" data-faq>
+            <button class="faq__q">What stops someone from faking a win? <span class="faq__icon" aria-hidden="true"></span></button>
+            <div class="faq__a"><p>Results are submitted as signed messages from your authenticated game server, then validated by the oracle with a dispute window. Unsigned or contradictory results are rejected before any payout.</p></div>
+          </div>
+          <div class="faq__item" data-faq>
+            <button class="faq__q">Which chains and currencies are supported? <span class="faq__icon" aria-hidden="true"></span></button>
+            <div class="faq__a"><p>The developer preview runs on Solana with SOL and major SPL tokens. Additional chains are on the roadmap — join the waitlist to help prioritize.</p></div>
+          </div>
+          <div class="faq__item" data-faq>
+            <button class="faq__q">What happens if a match is interrupted? <span class="faq__icon" aria-hidden="true"></span></button>
+            <div class="faq__a"><p>If a match is voided or times out without a valid result, the escrow follows its refund path and returns each stake to the original player automatically.</p></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- CTA -->
+    <section class="section">
+      <div class="shell cta-band" data-reveal>
+        <h2 class="display">See it in your game.</h2>
+        <p class="lead muted mx-auto">Grab the SDK and wire up a sandbox match in minutes.</p>
+        <div class="cta-band__actions">
+          <a href="developers.html" class="btn btn--cta">Get API access <span class="arrow">→</span></a>
+          <a href="showcase.html" class="btn btn--ghost">See the showcase</a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="shell">
+      <div class="footer__top">
+        <div class="footer__brand">
+          <a href="index.html" class="brand"><span class="brand__mark" aria-hidden="true"></span> Runinback</a>
+          <p class="footer__tagline">The trustless wagering layer for competitive gaming. Reset. Replay. Redeem.</p>
+          <div class="footer__social">
+            <a href="#" aria-label="Runinback on X">𝕏</a>
+            <a href="#" aria-label="Runinback on Discord">◇</a>
+            <a href="#" aria-label="Runinback on GitHub">⌥</a>
+          </div>
+        </div>
+        <div class="footer__col">
+          <h4>Product</h4>
+          <ul>
+            <li><a href="how-it-works.html">How it works</a></li>
+            <li><a href="showcase.html">Showcase</a></li>
+            <li><a href="developers.html">Developers</a></li>
+            <li><a href="developers.html">Pricing</a></li>
+          </ul>
+        </div>
+        <div class="footer__col">
+          <h4>Developers</h4>
+          <ul>
+            <li><a href="developers.html">Documentation</a></li>
+            <li><a href="developers.html">SDK reference</a></li>
+            <li><a href="developers.html">Sandbox</a></li>
+            <li><a href="developers.html">Status</a></li>
+          </ul>
+        </div>
+        <div class="footer__col">
+          <h4>Company</h4>
+          <ul>
+            <li><a href="contact.html">Contact</a></li>
+            <li><a href="#">Careers</a></li>
+            <li><a href="#">Privacy</a></li>
+            <li><a href="#">Terms</a></li>
+          </ul>
+        </div>
+      </div>
+      <div class="footer__bottom">
+        <span>© <span data-year>2026</span> Runinback. All rights reserved.</span>
+        <nav aria-label="Legal">
+          <a href="#">Privacy</a>
+          <a href="#">Terms</a>
+          <a href="contact.html">Contact</a>
+        </nav>
+      </div>
+    </div>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>

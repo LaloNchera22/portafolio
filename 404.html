@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Page not found — Runinback</title>
+  <meta name="description" content="This page took a wrong turn. Head back to Runinback." />
+  <meta name="robots" content="noindex, follow" />
+  <meta name="theme-color" content="#0e100f" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='%230ae448'/></svg>" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="nav is-scrolled" data-nav>
+    <div class="shell nav__inner">
+      <a href="index.html" class="brand" aria-label="Runinback home">
+        <span class="brand__mark" aria-hidden="true"></span> Runinback
+      </a>
+      <nav class="nav__links" aria-label="Primary">
+        <a href="how-it-works.html" class="nav__link">How it works</a>
+        <a href="developers.html" class="nav__link">Developers</a>
+        <a href="showcase.html" class="nav__link">Showcase</a>
+        <a href="contact.html" class="nav__link">Contact</a>
+        <a href="developers.html" class="btn btn--cta btn--sm">Get API access</a>
+      </nav>
+      <button class="nav__toggle" data-nav-toggle aria-label="Toggle menu" aria-expanded="false">
+        <span></span>
+      </button>
+    </div>
+  </header>
+
+  <main>
+    <section class="hero" style="min-height:80vh; display:grid; place-items:center; text-align:center;">
+      <div class="blob blob--2"></div>
+      <div class="shell cta-band">
+        <p class="eyebrow" data-reveal>Error 404</p>
+        <h1 class="display" data-reveal>Off the map.</h1>
+        <p class="lead muted mx-auto" data-reveal>This page didn't make it back. Let's reset and get you home.</p>
+        <div class="cta-band__actions" data-reveal>
+          <a href="index.html" class="btn btn--cta">Back to home <span class="arrow">→</span></a>
+          <a href="developers.html" class="btn btn--ghost">Developer docs</a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>

@@ -1,169 +1,350 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Runinback | Reset. Replay. Redeem.</title>
-    <link rel="stylesheet" href="styles.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <!-- Primary SEO -->
+  <title>Runinback — The Skill-Based Wagering Layer for Competitive Gaming</title>
+  <meta name="description" content="Runinback is a trustless, Solana-powered wagering layer for competitive games. Add skill-based match escrow and automated settlement in under 10 lines of code." />
+  <meta name="keywords" content="skill-based wagering, competitive gaming, smart escrow, Solana, game SDK, match settlement, web3 gaming, developer API" />
+  <meta name="author" content="Runinback" />
+  <meta name="robots" content="index, follow" />
+  <meta name="theme-color" content="#0e100f" />
+  <link rel="canonical" href="https://runinback.com/" />
+
+  <!-- Open Graph -->
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="Runinback" />
+  <meta property="og:title" content="Runinback — Skill-Based Wagering Layer for Competitive Gaming" />
+  <meta property="og:description" content="Add trustless, skill-based match escrow and instant automated settlement to your game in under 10 lines of code." />
+  <meta property="og:url" content="https://runinback.com/" />
+  <meta property="og:image" content="https://runinback.com/og-image.png" />
+  <meta property="og:locale" content="en_US" />
+
+  <!-- Twitter -->
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="Runinback — Skill-Based Wagering Layer for Competitive Gaming" />
+  <meta name="twitter:description" content="Trustless, Solana-powered match escrow and automated settlement for competitive games. Ship in under 10 lines." />
+  <meta name="twitter:image" content="https://runinback.com/og-image.png" />
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='%230ae448'/></svg>" />
+  <link rel="stylesheet" href="styles.css" />
+
+  <!-- Structured data -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    "name": "Runinback",
+    "applicationCategory": "DeveloperApplication",
+    "operatingSystem": "Web, iOS, Android",
+    "description": "A trustless, Solana-powered wagering layer that adds skill-based match escrow and automated settlement to competitive games.",
+    "url": "https://runinback.com/",
+    "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" }
+  }
+  </script>
 </head>
 <body>
 
-    <!-- Navigation -->
-    <nav class="nav-bar">
-        <a href="#" class="nav-logo ghost-nav-link">Runinback</a>
-        <div class="nav-links">
-            <a href="#showcase" class="ghost-nav-link">Showcase</a>
-            <a href="#developers" class="ghost-nav-link">Developers</a>
-            <a href="#mechanics" class="ghost-nav-link">Mechanics</a>
-            <a href="#contact" class="outlined-contact-btn">Contact</a>
-        </div>
-    </nav>
+  <!-- Announcement -->
+  <div class="announce">
+    Runinback SDK v1.0 is in developer preview — <a href="developers.html">join the waitlist →</a>
+  </div>
 
-    <!-- Hero Section -->
-    <section id="home" class="hero-section scroll-reveal">
-        <!-- Prism Artifact -->
-        <div class="prism-artifact">
-            <div class="prism-cube prism-red"></div>
-            <div class="prism-cube prism-cyan"></div>
-            <div class="prism-cube prism-lime"></div>
-            <div class="prism-cube prism-core"></div>
+  <!-- Nav -->
+  <header class="nav" data-nav>
+    <div class="shell nav__inner">
+      <a href="index.html" class="brand" aria-label="Runinback home">
+        <span class="brand__mark" aria-hidden="true"></span> Runinback
+      </a>
+      <nav class="nav__links" aria-label="Primary">
+        <a href="how-it-works.html" class="nav__link">How it works</a>
+        <a href="developers.html" class="nav__link">Developers</a>
+        <a href="showcase.html" class="nav__link">Showcase</a>
+        <a href="contact.html" class="nav__link">Contact</a>
+        <a href="developers.html" class="btn btn--cta btn--sm">Get API access</a>
+      </nav>
+      <button class="nav__toggle" data-nav-toggle aria-label="Toggle menu" aria-expanded="false">
+        <span></span>
+      </button>
+    </div>
+  </header>
+
+  <main>
+    <!-- Hero -->
+    <section class="hero">
+      <div class="blob blob--1"></div>
+      <div class="blob blob--2"></div>
+      <div class="blob blob--3"></div>
+      <div class="shell">
+        <p class="eyebrow hero__eyebrow" data-reveal>Reset · Replay · Redeem</p>
+        <h1 class="display hero__title" data-reveal>
+          The wagering layer for competitive&nbsp;gaming.
+        </h1>
+        <p class="lead hero__lead" data-reveal>
+          Runinback is a trustless escrow and settlement engine. Let players stake
+          skill-based matches, secure the pot on-chain, and pay out the winner
+          automatically — all through one clean API.
+        </p>
+        <div class="hero__actions" data-reveal>
+          <a href="developers.html" class="btn btn--cta">Get API access <span class="arrow">→</span></a>
+          <a href="how-it-works.html" class="btn btn--ghost">See how it works</a>
         </div>
 
-        <div class="hero-content">
-            <h1 class="display-headline">
-                The Skill-Based Wagering Layer for Competitive Gaming.
-            </h1>
-            <p class="hero-lead">
-                Reset. Replay. Redeem.
-            </p>
-            <div class="hero-actions">
-                <a href="#developers" class="ghost-nav-link">Get API Access</a>
-                <a href="#waitlist" class="outlined-contact-btn">Join Developer Waitlist</a>
-            </div>
+        <div class="hero__stats" data-reveal>
+          <div class="stat">
+            <div class="stat__num">&lt;10</div>
+            <div class="stat__label">lines to integrate</div>
+          </div>
+          <div class="stat">
+            <div class="stat__num">~1s</div>
+            <div class="stat__label">settlement time</div>
+          </div>
+          <div class="stat">
+            <div class="stat__num">0%</div>
+            <div class="stat__label">custody risk</div>
+          </div>
+          <div class="stat">
+            <div class="stat__num">24/7</div>
+            <div class="stat__label">on-chain oracle</div>
+          </div>
         </div>
+      </div>
     </section>
 
-    <!-- The "One-Click Showcase" Section -->
-    <section id="showcase" class="showcase-section scroll-reveal">
-        <h2 class="section-heading">AAA Vision</h2>
-        <h3 class="eyebrow-label">One-Click Showcase</h3>
+    <!-- Marquee -->
+    <div class="marquee" aria-hidden="true">
+      <div class="marquee__track">
+        <span class="marquee__item">Matchmaking</span>
+        <span class="marquee__item">Smart Escrow</span>
+        <span class="marquee__item">Automated Settlement</span>
+        <span class="marquee__item">Skill-Based</span>
+        <span class="marquee__item">Non-Custodial</span>
+        <span class="marquee__item">Matchmaking</span>
+        <span class="marquee__item">Smart Escrow</span>
+        <span class="marquee__item">Automated Settlement</span>
+        <span class="marquee__item">Skill-Based</span>
+        <span class="marquee__item">Non-Custodial</span>
+      </div>
+    </div>
 
-        <div class="showcase-container">
-            <div class="game-ui-blur">
-                <!-- Simulated UI -->
-                <div class="runinback-overlay-btn">Challenge: 1 SOL</div>
-
-                <!-- Glassmorphism side panel -->
-                <div class="glass-panel">
-                    <p class="glass-title">Smart Escrow Confirmed</p>
-                    <p class="crypto-amount">1 SOL Secured</p>
-                    <p class="status">Ready in 1s</p>
-                </div>
-            </div>
+    <!-- Feature blocks -->
+    <section class="section-tools" aria-labelledby="tools-heading">
+      <div class="shell">
+        <div class="section-head" style="padding-top: var(--section-gap);" data-reveal>
+          <p class="eyebrow">The engine</p>
+          <h2 class="h1" id="tools-heading">Four primitives. One trustless loop.</h2>
+          <p class="lead muted">Every Runinback match runs the same verifiable path — from pairing players to paying the winner — without you touching a single wallet.</p>
         </div>
+      </div>
+
+      <div class="shell">
+        <!-- Matchmaking -->
+        <article class="feature">
+          <div class="feature__body" data-reveal>
+            <span class="label label--match">Matchmaking</span>
+            <h3 class="h2">Pair players, connect wallets, agree the stake.</h3>
+            <p class="lead muted">Drop in a challenge overlay that connects both players' wallets and locks the wager terms before the first frame renders.</p>
+            <ul class="feature__list">
+              <li>Wallet connect for Solana &amp; embedded custodial accounts</li>
+              <li>Configurable stake, currency and match rules</li>
+              <li>Anti-collusion checks baked into pairing</li>
+            </ul>
+            <a href="how-it-works.html" class="text-link">Explore matchmaking <span class="arrow">→</span></a>
+          </div>
+          <div class="feature__visual" data-reveal>
+            <div class="viz viz--match"><div class="viz__shape"></div></div>
+          </div>
+        </article>
+
+        <!-- Escrow -->
+        <article class="feature feature--reverse">
+          <div class="feature__body" data-reveal>
+            <span class="label label--escrow">Smart Escrow</span>
+            <h3 class="h2">Funds locked on-chain the moment the match starts.</h3>
+            <p class="lead muted">The pot lives in an audited program, not your treasury. Neither player — nor Runinback — can move it until the result is verified.</p>
+            <ul class="feature__list">
+              <li>Non-custodial: you never hold player funds</li>
+              <li>Transparent, on-chain proof of the locked pot</li>
+              <li>Automatic refund path if a match is voided</li>
+            </ul>
+            <a href="how-it-works.html" class="text-link">Explore escrow <span class="arrow">→</span></a>
+          </div>
+          <div class="feature__visual" data-reveal>
+            <div class="viz viz--escrow"><div class="viz__shape"></div></div>
+          </div>
+        </article>
+
+        <!-- Settlement -->
+        <article class="feature">
+          <div class="feature__body" data-reveal>
+            <span class="label label--settle">Settlement</span>
+            <h3 class="h2">The oracle verifies the winner and pays out instantly.</h3>
+            <p class="lead muted">Report the result from your game server; the Runinback oracle validates it and releases the pot to the winner in about a second.</p>
+            <ul class="feature__list">
+              <li>Signed result submission from your backend</li>
+              <li>Dispute window with cryptographic evidence</li>
+              <li>Sub-second payout once verified</li>
+            </ul>
+            <a href="how-it-works.html" class="text-link">Explore settlement <span class="arrow">→</span></a>
+          </div>
+          <div class="feature__visual" data-reveal>
+            <div class="viz viz--settle"><div class="viz__shape"></div></div>
+          </div>
+        </article>
+      </div>
     </section>
 
-    <!-- Developer Experience Section -->
-    <section id="developers" class="dev-section scroll-reveal">
-        <h2 class="section-heading">Indie Focus</h2>
-        <h3 class="eyebrow-label">Developer Experience</h3>
-
-        <p class="hero-lead">Plug & Play Escrow. Monetize the competition in your game with less than 10 lines of code.</p>
-
-        <div class="terminal-window">
-            <div class="terminal-header">
-                <span class="dot"></span>
-                <span class="dot"></span>
-                <span class="dot"></span>
+    <!-- Developer teaser -->
+    <section class="section">
+      <div class="shell">
+        <div class="grid grid--2" style="align-items:center; gap: clamp(32px,6vw,80px);">
+          <div data-reveal>
+            <span class="label label--sdk">Developer experience</span>
+            <h2 class="h1 mt-16">Plug &amp; play escrow in <span class="text-green">under 10 lines</span>.</h2>
+            <p class="lead muted mt-24">Monetize competition in your game without becoming a payments company. Install the SDK, create a match, settle the result. That's it.</p>
+            <div class="mt-32" style="display:flex; gap:var(--spacing-16); flex-wrap:wrap;">
+              <a href="developers.html" class="btn btn--cta">Read the docs <span class="arrow">→</span></a>
+              <a href="developers.html" class="btn btn--ghost">Join waitlist</a>
             </div>
-            <pre class="terminal-code">
-<code>import { Runinback } from '@runinback/sdk';
+          </div>
+          <div class="terminal" data-reveal>
+            <div class="terminal__bar">
+              <span class="dot"></span><span class="dot"></span><span class="dot"></span>
+              <span class="terminal__file">match.ts</span>
+            </div>
+            <pre><code><span class="tok-kw">import</span> { Runinback } <span class="tok-kw">from</span> <span class="tok-str">'@runinback/sdk'</span>;
 
-const match = await Runinback.createMatch({
-  players: ['player1_wallet', 'player2_wallet'],
-  wager: { amount: 1, currency: 'SOL' }
+<span class="tok-kw">const</span> match = <span class="tok-kw">await</span> Runinback.<span class="tok-fn">createMatch</span>({
+  players: [<span class="tok-str">'player1_wallet'</span>, <span class="tok-str">'player2_wallet'</span>],
+  wager: { amount: <span class="tok-num">1</span>, currency: <span class="tok-str">'SOL'</span> }
 });
 
-await match.start();
-// Wait for game result...
-await match.settle({ winner: 'player1_wallet' });</code>
-            </pre>
+<span class="tok-kw">await</span> match.<span class="tok-fn">start</span>();
+<span class="tok-com">// …play the game, then report the result</span>
+<span class="tok-kw">await</span> match.<span class="tok-fn">settle</span>({ winner: <span class="tok-str">'player1_wallet'</span> });</code></pre>
+          </div>
         </div>
+      </div>
     </section>
 
-    <!-- Mechanics Section -->
-    <section id="mechanics" class="mechanics-section scroll-reveal">
-        <h2 class="section-heading">The Engine</h2>
-        <h3 class="eyebrow-label">Trustless Layer</h3>
-
-        <div class="mechanics-grid">
-            <div class="mechanic-card">
-                <h4 class="case-study-title">Matchmaking</h4>
-                <p class="ghost-service-label">Wallet connection and player pairing.</p>
-            </div>
-            <div class="mechanic-card">
-                <h4 class="case-study-title">Smart Escrow</h4>
-                <p class="ghost-service-label">Funds secured transparently during the match.</p>
-            </div>
-            <div class="mechanic-card">
-                <h4 class="case-study-title">Automated Settlement</h4>
-                <p class="ghost-service-label">API Oracle verifies the winner and transfers instantly.</p>
-            </div>
+    <!-- Showcase teaser -->
+    <section class="section">
+      <div class="shell">
+        <div class="section-head" data-reveal>
+          <p class="eyebrow">Showcase</p>
+          <h2 class="h1">Built for the games players already love.</h2>
         </div>
+        <div class="grid grid--3">
+          <a href="showcase.html" class="showcase-card" data-reveal>
+            <div class="showcase-card__preview" style="background:linear-gradient(135deg,#00bae2,#0e2f3a);"><span>1v1 FPS</span></div>
+            <div class="showcase-card__body">
+              <div class="showcase-card__meta">
+                <span class="showcase-card__title">Duel Arena</span>
+                <span class="showcase-card__tag">Shooter</span>
+              </div>
+              <p class="showcase-card__text">Ranked 1v1 gun duels with instant SOL payouts on the winning frag.</p>
+            </div>
+          </a>
+          <a href="showcase.html" class="showcase-card" data-reveal>
+            <div class="showcase-card__preview" style="background:linear-gradient(135deg,#ff8709,#3a2000);"><span>Racing</span></div>
+            <div class="showcase-card__body">
+              <div class="showcase-card__meta">
+                <span class="showcase-card__title">Apex Circuit</span>
+                <span class="showcase-card__tag">Racing</span>
+              </div>
+              <p class="showcase-card__text">Time-trial wagers settled by the on-chain oracle in under a second.</p>
+            </div>
+          </a>
+          <a href="showcase.html" class="showcase-card" data-reveal>
+            <div class="showcase-card__preview" style="background:linear-gradient(135deg,#fec5fb,#3a1f37);"><span>Strategy</span></div>
+            <div class="showcase-card__body">
+              <div class="showcase-card__meta">
+                <span class="showcase-card__title">Grid Tactics</span>
+                <span class="showcase-card__tag">Strategy</span>
+              </div>
+              <p class="showcase-card__text">Best-of-three ranked ladders with escrowed prize pools.</p>
+            </div>
+          </a>
+        </div>
+        <div class="mt-48 center" data-reveal>
+          <a href="showcase.html" class="btn btn--ghost">Explore all showcases <span class="arrow">→</span></a>
+        </div>
+      </div>
     </section>
 
-    <!-- Final Call to Action -->
-    <section id="waitlist" class="cta-section scroll-reveal">
-        <h2 class="display-headline-sm">Build the next generation of competitive gaming.</h2>
-        <p class="hero-lead">Ship with Runinback.</p>
-
-        <form class="email-form">
-            <input type="email" placeholder="Enter your email" class="email-input">
-            <button type="submit" class="outlined-contact-btn">Subscribe</button>
-        </form>
-    </section>
-
-    <!-- Footer -->
-    <footer class="footer">
-        <div class="footer-divider"></div>
-        <div class="footer-content">
-            <div class="footer-brand">
-                <a href="#" class="ghost-nav-link footer-logo">Runinback</a>
-            </div>
-
-            <div class="footer-links-columns">
-                <div class="footer-column">
-                    <a href="#showcase" class="ghost-nav-link">Showcase</a>
-                    <a href="#developers" class="ghost-nav-link">Developers</a>
-                    <a href="#mechanics" class="ghost-nav-link">Mechanics</a>
-                </div>
-                <div class="footer-column">
-                    <a href="#" class="ghost-nav-link">Documentation</a>
-                    <a href="#" class="ghost-nav-link">Discord</a>
-                    <a href="#" class="ghost-nav-link">Twitter</a>
-                </div>
-            </div>
+    <!-- CTA -->
+    <section class="section">
+      <div class="shell cta-band" data-reveal>
+        <p class="eyebrow">Get started</p>
+        <h2 class="display">Ship the next competitive hit.</h2>
+        <p class="lead muted mx-auto">Join the developer waitlist and get early SDK access, sandbox credits and integration support.</p>
+        <div class="cta-band__actions">
+          <a href="developers.html" class="btn btn--cta">Join developer waitlist <span class="arrow">→</span></a>
+          <a href="contact.html" class="btn btn--ghost">Talk to us</a>
         </div>
-    </footer>
+      </div>
+    </section>
+  </main>
 
-    <!-- Scroll Reveal Script -->
-    <script>
-        document.addEventListener("DOMContentLoaded", () => {
-            const observer = new IntersectionObserver((entries) => {
-                entries.forEach((entry) => {
-                    if (entry.isIntersecting) {
-                        entry.target.classList.add("is-visible");
-                    }
-                });
-            }, {
-                threshold: 0.1,
-                rootMargin: "0px 0px -50px 0px"
-            });
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="shell">
+      <div class="footer__top">
+        <div class="footer__brand">
+          <a href="index.html" class="brand"><span class="brand__mark" aria-hidden="true"></span> Runinback</a>
+          <p class="footer__tagline">The trustless wagering layer for competitive gaming. Reset. Replay. Redeem.</p>
+          <div class="footer__social">
+            <a href="#" aria-label="Runinback on X">𝕏</a>
+            <a href="#" aria-label="Runinback on Discord">◇</a>
+            <a href="#" aria-label="Runinback on GitHub">⌥</a>
+          </div>
+        </div>
+        <div class="footer__col">
+          <h4>Product</h4>
+          <ul>
+            <li><a href="how-it-works.html">How it works</a></li>
+            <li><a href="showcase.html">Showcase</a></li>
+            <li><a href="developers.html">Developers</a></li>
+            <li><a href="developers.html">Pricing</a></li>
+          </ul>
+        </div>
+        <div class="footer__col">
+          <h4>Developers</h4>
+          <ul>
+            <li><a href="developers.html">Documentation</a></li>
+            <li><a href="developers.html">SDK reference</a></li>
+            <li><a href="developers.html">Sandbox</a></li>
+            <li><a href="developers.html">Status</a></li>
+          </ul>
+        </div>
+        <div class="footer__col">
+          <h4>Company</h4>
+          <ul>
+            <li><a href="contact.html">Contact</a></li>
+            <li><a href="#">Careers</a></li>
+            <li><a href="#">Privacy</a></li>
+            <li><a href="#">Terms</a></li>
+          </ul>
+        </div>
+      </div>
+      <div class="footer__bottom">
+        <span>© <span data-year>2026</span> Runinback. All rights reserved.</span>
+        <nav aria-label="Legal">
+          <a href="#">Privacy</a>
+          <a href="#">Terms</a>
+          <a href="contact.html">Contact</a>
+        </nav>
+      </div>
+    </div>
+  </footer>
 
-            document.querySelectorAll(".scroll-reveal").forEach((element) => {
-                observer.observe(element);
-            });
-        });
-    </script>
+  <script src="app.js"></script>
 </body>
 </html>
