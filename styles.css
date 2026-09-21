@@ -621,34 +621,35 @@ ul {
   100% { transform: translate(-40px, 30px) scale(1.12); opacity: 1; }
 }
 
-/* Large signature mark floating in the hero */
-.hero__mark {
+/* Reactive technical grid (canvas) — landing hero only */
+.hero__canvas {
   position: absolute;
-  right: clamp(-40px, 2vw, 40px);
-  top: 50%;
-  transform: translateY(-46%);
-  width: clamp(280px, 34vw, 520px);
-  color: var(--color-shockingly-green);
+  inset: 0;
   z-index: 0;
-  opacity: 0.9;
+  width: 100%;
+  height: 100%;
+  display: block;
   pointer-events: none;
 }
-.hero__mark svg { width: 100%; height: auto; overflow: visible; }
-.hero__mark .hm-line {
-  fill: none;
-  stroke: currentColor;
-  stroke-linecap: square;
-  stroke-linejoin: miter;
-  stroke-dasharray: var(--l, 600);
-  stroke-dashoffset: var(--l, 600);
-  animation: mark-draw 1.6s var(--ease-out) 0.2s forwards;
+/* The live canvas grid owns the hero backdrop, so drop the static CSS grid there */
+.hero--live .backdrop::before { display: none; }
+
+/* Original mountain mark as a soft hero backdrop (replaces the drawn SVG) */
+.hero__logo {
+  position: absolute;
+  right: clamp(-30px, 3vw, 60px);
+  top: 50%;
+  transform: translateY(-50%);
+  width: clamp(300px, 40vw, 620px);
+  z-index: 0;
+  opacity: 0.28;
+  pointer-events: none;
+  filter: drop-shadow(0 0 60px rgba(255, 255, 255, 0.10));
 }
-.hero__mark .hm-peak  { stroke-width: 16; --l: 560; filter: drop-shadow(0 0 24px rgba(255, 255, 255, 0.20)); }
-.hero__mark .hm-spark { stroke-width: 13; --l: 150; animation-delay: 0.7s; }
-.hero__mark .hm-ghost { stroke: var(--color-surface-25); stroke-width: 2; --l: 620; animation-delay: 0s; opacity: 0.7; }
+.hero__logo img { width: 100%; height: auto; display: block; }
 
 @media (max-width: 900px) {
-  .hero__mark { opacity: 0.16; width: 78vw; right: -14vw; }
+  .hero__logo { opacity: 0.12; width: 82vw; right: -16vw; }
 }
 
 .hero > .shell {

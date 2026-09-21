@@ -80,14 +80,11 @@
 
   <main id="main">
     <!-- Hero -->
-    <section class="hero">
+    <section class="hero hero--live">
       <div class="backdrop" aria-hidden="true"></div>
-      <div class="hero__mark" aria-hidden="true">
-        <svg viewBox="0 0 200 150" fill="none">
-          <path class="hm-ghost" d="M10 128L74 36L106 82L168 8"/>
-          <path class="hm-peak" d="M14 120L78 28L110 74L172 2"/>
-          <path class="hm-spark" d="M182 92L196 34"/>
-        </svg>
+      <canvas class="hero__canvas" id="hero-grid" aria-hidden="true"></canvas>
+      <div class="hero__logo" aria-hidden="true">
+        <img src="logo-icon.png" alt="" decoding="async" />
       </div>
       <div class="shell">
         <p class="eyebrow hero__eyebrow" data-reveal>Reset · Replay · Redeem</p>

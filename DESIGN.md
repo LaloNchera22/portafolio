@@ -22,7 +22,8 @@ display headlines, and a discipline-based color taxonomy.
    Feature blocks are divided by 1px `#42433d` hairlines.
 6. **Angular brand geometry.** The identity is an ascending **peak / lightning
    mark** (see the logos). It appears as the nav/footer/favicon logo (an inline
-   SVG that draws itself on load), as an oversized hero backdrop mark, and as
+   SVG that draws itself on load), as the original mountain logo floating behind
+   the landing hero over a cursor-reactive technical grid, and as
    the visual language for every illustration: crafted angular SVG art replaces
    organic blur-blobs, emoji icons and flat gradient placeholders.
 7. **Depth via geometry, never shadow.** No decorative `box-shadow`; separation
@@ -66,7 +67,7 @@ theming and the draw-on-load animation.
 | Context | Where | Composition | Rendered size |
 |---------|-------|-------------|---------------|
 | **Wordmark lockup** | Nav + footer, every page (`.brand` + `.brand__mark`) | Mark (viewBox `0 0 44 36`, peak stroke 5.2 + spark 4.2) followed by the "Runinback" wordmark in Inter Tight 20px | Mark `30 × 25px` |
-| **Hero backdrop mark** | Landing hero only (`.hero__mark`) | Oversized mark (viewBox `0 0 200 150`) — ghost outline (stroke 2), peak (stroke 16, green glow), spark (stroke 13) | `clamp(280px, 34vw, 520px)` |
+| **Hero backdrop logo** | Landing hero only (`.hero__logo` + `.hero__canvas`) | The original mountain logo (`logo-icon.png`, white on transparent) at `opacity 0.28`, over a canvas technical grid that brightens toward the cursor | `clamp(300px, 40vw, 620px)` |
 | **Favicon** | `<link rel="icon">`, all pages | Mark on a `#0e100f` rounded square (rx 7), green stroke, viewBox `0 0 32 32` | `32px` |
 | **PWA / app icon** | `site.webmanifest` | Solid green rounded square (rx 128), no interior mark, for maskable app tiles | `512px` (`sizes: any`) |
 
@@ -77,8 +78,8 @@ theming and the draw-on-load animation.
   — use the mark alone (favicon variant) instead of shrinking the lockup.
 - **Favicon:** `32px` is the floor; the square backing keeps the mark readable at
   tab size where a bare stroke would disappear.
-- **Hero mark:** decorative only (`aria-hidden`); it never carries brand meaning
-  on its own, so no legibility floor applies.
+- **Hero backdrop logo:** decorative only (`aria-hidden`); it never carries brand
+  meaning on its own, so no legibility floor applies.
 
 ### Clear space
 
@@ -94,12 +95,15 @@ theming and the draw-on-load animation.
 - The **wordmark lockup stays fixed** at `30 × 25px` across every breakpoint and
   remains in the top bar even when the nav links collapse into the slide-in menu
   (`max-width: 640px`) — the logo is always the persistent anchor of the header.
-- The **hero mark recedes to a faint background texture** at `max-width: 900px`:
-  opacity drops to `0.16` and it widens to `78vw` (`right: -14vw`) so it reads as
+- The **hero backdrop logo recedes to a faint texture** at `max-width: 900px`:
+  opacity drops to `0.12` and it widens to `82vw` (`right: -16vw`) so it reads as
   ambient geometry behind the headline rather than competing with the type.
-- All logo motion (the `mark-draw` stroke animation on load, the hover lift) is
-  **fully disabled under `prefers-reduced-motion: reduce`**; the mark simply
-  renders in its final state.
+- The **hero grid** caps its device-pixel ratio, lowers cell density on small
+  screens, drops the cursor-reactive glow on coarse (touch) pointers, and pauses
+  its render loop when the hero scrolls off-screen.
+- All logo motion (the `mark-draw` stroke animation on load, the hover lift) and
+  the hero grid's animation are **fully disabled under
+  `prefers-reduced-motion: reduce`**; the grid renders as a static lattice.
 
 ## Structure
 
