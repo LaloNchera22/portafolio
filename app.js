@@ -57,16 +57,20 @@
     /* Mobile menu toggle */
     const toggle = nav.querySelector("[data-nav-toggle]");
     if (toggle) {
-      toggle.addEventListener("click", () => {
-        const open = nav.classList.toggle("is-open");
+      const setMenu = (open) => {
         toggle.setAttribute("aria-expanded", String(open));
         document.body.style.overflow = open ? "hidden" : "";
+        document.body.classList.toggle("menu-open", open);
+        const hv = document.getElementById("hero-video");
+        if (hv) { if (open) hv.pause(); else hv.play().catch(() => {}); }
+      };
+      toggle.addEventListener("click", () => {
+        setMenu(nav.classList.toggle("is-open"));
       });
       nav.querySelectorAll(".nav__link, .nav__links .btn").forEach((link) => {
         link.addEventListener("click", () => {
           nav.classList.remove("is-open");
-          toggle.setAttribute("aria-expanded", "false");
-          document.body.style.overflow = "";
+          setMenu(false);
         });
       });
     }
