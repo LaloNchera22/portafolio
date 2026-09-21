@@ -9,8 +9,24 @@
 
   const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
+  const finePointer = window.matchMedia("(pointer: fine)").matches;
+
+  /* --- Scroll progress bar --------------------------------------------- */
+  const progress = document.createElement("div");
+  progress.className = "progress";
+  progress.setAttribute("aria-hidden", "true");
+  document.body.appendChild(progress);
+
   /* --- Sticky / hide-on-scroll nav ------------------------------------- */
   const nav = document.querySelector("[data-nav]");
+  let ticking = false;
+  const updateProgress = () => {
+    const h = document.documentElement;
+    const max = h.scrollHeight - h.clientHeight;
+    const p = max > 0 ? Math.min(1, window.scrollY / max) : 0;
+    progress.style.setProperty("--p", p.toFixed(4));
+  };
+
   if (nav) {
     let lastY = window.scrollY;
     const onScroll = () => {
@@ -22,9 +38,21 @@
         nav.classList.remove("is-hidden");
       }
       lastY = y;
+      updateProgress();
     };
     window.addEventListener("scroll", onScroll, { passive: true });
     onScroll();
+  } else {
+    window.addEventListener("scroll", () => {
+      if (!ticking) {
+        ticking = true;
+        requestAnimationFrame(() => { updateProgress(); ticking = false; });
+      }
+    }, { passive: true });
+    updateProgress();
+  }
+
+  if (nav) {
 
     /* Mobile menu toggle */
     const toggle = nav.querySelector("[data-nav-toggle]");
@@ -100,6 +128,50 @@
   /* --- Footer year ------------------------------------------------------ */
   const yearEl = document.querySelector("[data-year]");
   if (yearEl) yearEl.textContent = new Date().getFullYear();
+
+  /* --- Magnetic buttons / brand mark ----------------------------------- */
+  if (finePointer && !reduceMotion) {
+    document.querySelectorAll(".btn--cta, .brand").forEach((el) => {
+      el.setAttribute("data-magnetic", "");
+      const strength = el.classList.contains("brand") ? 10 : 16;
+      el.addEventListener("pointermove", (e) => {
+        const r = el.getBoundingClientRect();
+        const mx = e.clientX - (r.left + r.width / 2);
+        const my = e.clientY - (r.top + r.height / 2);
+        el.style.transform = `translate(${(mx / r.width) * strength}px, ${(my / r.height) * strength}px)`;
+      });
+      el.addEventListener("pointerleave", () => {
+        el.style.transform = "";
+      });
+    });
+
+    /* --- Subtle tilt / parallax on illustration surfaces --------------- */
+    document.querySelectorAll(".viz, .showcase-card__preview").forEach((el) => {
+      el.addEventListener("pointermove", (e) => {
+        const r = el.getBoundingClientRect();
+        const px = (e.clientX - r.left) / r.width - 0.5;
+        const py = (e.clientY - r.top) / r.height - 0.5;
+        el.style.transform = `perspective(700px) rotateX(${(-py * 5).toFixed(2)}deg) rotateY(${(px * 6).toFixed(2)}deg)`;
+      });
+      el.addEventListener("pointerleave", () => {
+        el.style.transform = "";
+      });
+    });
+  }
+
+  /* --- Smooth in-page anchor scrolling (with nav offset) --------------- */
+  document.querySelectorAll('a[href^="#"]').forEach((link) => {
+    const id = link.getAttribute("href");
+    if (!id || id === "#") return;
+    link.addEventListener("click", (e) => {
+      const target = document.querySelector(id);
+      if (!target) return;
+      e.preventDefault();
+      const top = target.getBoundingClientRect().top + window.scrollY - 88;
+      window.scrollTo({ top, behavior: reduceMotion ? "auto" : "smooth" });
+      if (history.replaceState) history.replaceState(null, "", id);
+    });
+  });
 
   /* --- Page-transition curtain ----------------------------------------- */
   if (!reduceMotion) {

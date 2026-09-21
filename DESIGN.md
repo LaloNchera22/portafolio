@@ -20,8 +20,14 @@ display headlines, and a discipline-based color taxonomy.
    gradient-stroked primary CTA. No filled solid buttons.
 5. **Signatures.** Every section opens with a `{ curly-bracket }` eyebrow.
    Feature blocks are divided by 1px `#42433d` hairlines.
-6. **Depth via gradient, never shadow.** No `box-shadow`; separation comes from
-   surface steps, hairlines and internal multi-stop gradient blobs.
+6. **Angular brand geometry.** The identity is an ascending **peak / lightning
+   mark** (see the logos). It appears as the nav/footer/favicon logo (an inline
+   SVG that draws itself on load), as an oversized hero backdrop mark, and as
+   the visual language for every illustration: crafted angular SVG art replaces
+   organic blur-blobs, emoji icons and flat gradient placeholders.
+7. **Depth via geometry, never shadow.** No decorative `box-shadow`; separation
+   comes from surface steps, hairlines, a fine technical grid and a single
+   restrained brand glow — no blurry blob soup.
 
 ## Tokens
 
@@ -63,14 +69,21 @@ Static, dependency-free site (HTML + CSS + vanilla JS).
 
 ## Interactions
 
-- **Scroll reveal** via `IntersectionObserver` on `[data-reveal]` (staggered).
-- **Page-transition curtain** on same-origin navigation (respects
-  `prefers-reduced-motion`).
+- **Scroll reveal** via `IntersectionObserver` on `[data-reveal]`, with
+  directional/`zoom`/`clip` variants and staggering.
+- **Self-drawing SVG** — the brand mark, hero mark and feature illustrations
+  animate their strokes (`stroke-dashoffset`) on load / on reveal.
+- **Scroll progress bar** pinned to the top of the viewport.
+- **Magnetic** CTA + brand mark and subtle **tilt/parallax** on illustration
+  surfaces (pointer-fine devices only).
+- **Page-transition curtain** on same-origin navigation.
 - **Sticky nav** that hides on scroll-down, reveals on scroll-up, and blurs once
   scrolled. Mobile slide-in menu.
-- **FAQ accordion**, **animated blobs**, **infinite marquee**, gradient-hover
-  buttons.
-- All motion is disabled under `prefers-reduced-motion: reduce`.
+- **FAQ accordion**, **infinite marquee** (masked edges, pauses on hover),
+  smooth in-page anchor scrolling, and hover micro-interactions on cards,
+  buttons and social icons.
+- **Accessibility:** skip-to-content link, visible focus rings, `main` landmark.
+  All motion is fully disabled under `prefers-reduced-motion: reduce`.
 
 ## SEO
 

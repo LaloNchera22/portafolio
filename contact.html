@@ -26,7 +26,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='%230ae448'/></svg>" />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='7' fill='%230e100f'/><path d='M6 23L14 10L18.5 17L26 6' fill='none' stroke='%230ae448' stroke-width='3.2' stroke-linecap='square' stroke-linejoin='miter'/><path d='M28 17L30 8' stroke='%230ae448' stroke-width='2.6' stroke-linecap='square'/></svg>" />
   <link rel="stylesheet" href="styles.css" />
 
   <script type="application/ld+json">
@@ -39,11 +39,12 @@
   </script>
 </head>
 <body>
+  <a class="skip-link" href="#main">Skip to content</a>
 
   <header class="nav" data-nav>
     <div class="shell nav__inner">
       <a href="index.html" class="brand" aria-label="Runinback home">
-        <span class="brand__mark" aria-hidden="true"></span> Runinback
+        <span class="brand__mark" aria-hidden="true"><svg viewBox="0 0 44 36"><path class="mark__peak" d="M3 29L15.5 9L23 19L35.5 3"/><path class="mark__spark" d="M38 22L41.5 8"/></svg></span> Runinback
       </a>
       <nav class="nav__links" aria-label="Primary">
         <a href="how-it-works.html" class="nav__link">How it works</a>
@@ -58,9 +59,9 @@
     </div>
   </header>
 
-  <main>
+  <main id="main">
     <section class="page-head">
-      <div class="blob blob--2"></div>
+      <div class="backdrop" aria-hidden="true"></div>
       <div class="shell">
         <p class="eyebrow" data-reveal>Contact</p>
         <h1 class="h-lg page-head__title" data-reveal>Let's talk.</h1>
@@ -126,7 +127,7 @@
               <button type="submit" class="btn btn--cta">Send message <span class="arrow">→</span></button>
               <p class="form__note">We'll only use your details to reply. No lists, no spam.</p>
               <div class="form__success" data-form-success>
-                ✅ Thanks — your message is in. We'll reply within one business day.
+                Thanks — your message is in. We'll reply within one business day.
               </div>
             </form>
           </div>
@@ -149,12 +150,12 @@
     <div class="shell">
       <div class="footer__top">
         <div class="footer__brand">
-          <a href="index.html" class="brand"><span class="brand__mark" aria-hidden="true"></span> Runinback</a>
+          <a href="index.html" class="brand"><span class="brand__mark" aria-hidden="true"><svg viewBox="0 0 44 36"><path class="mark__peak" d="M3 29L15.5 9L23 19L35.5 3"/><path class="mark__spark" d="M38 22L41.5 8"/></svg></span> Runinback</a>
           <p class="footer__tagline">The trustless wagering layer for competitive gaming. Reset. Replay. Redeem.</p>
           <div class="footer__social">
-            <a href="#" aria-label="Runinback on X">𝕏</a>
-            <a href="#" aria-label="Runinback on Discord">◇</a>
-            <a href="#" aria-label="Runinback on GitHub">⌥</a>
+            <a href="#" aria-label="Runinback on X"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M18.9 1.6h3.4l-7.5 8.6L23.5 22h-6.8l-5.3-7-6.1 7H1.9l8-9.2L1 1.6h7l4.8 6.4ZM17.7 20h1.9L7.1 3.5H5.1Z"/></svg></a>
+            <a href="#" aria-label="Runinback on Discord"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M20.3 4.6A19 19 0 0 0 15.6 3l-.3.5c1.6.4 2.3.9 3.1 1.5a13 13 0 0 0-10.8 0C8.4 4.4 9.2 3.9 10.7 3.5L10.4 3A19 19 0 0 0 5.7 4.6C2.7 9 1.9 13.4 2.3 17.7a19 19 0 0 0 5.8 2.9l.7-1.1c-.7-.3-1.3-.6-1.9-1l.5-.3a13.6 13.6 0 0 0 11.6 0l.5.3c-.6.4-1.2.7-1.9 1l.7 1.1a19 19 0 0 0 5.8-2.9c.5-5-.8-9.4-3.4-13.1ZM9.2 15.1c-.9 0-1.7-.9-1.7-1.9s.8-1.9 1.7-1.9 1.7.9 1.7 1.9-.7 1.9-1.7 1.9Zm5.6 0c-.9 0-1.7-.9-1.7-1.9s.8-1.9 1.7-1.9 1.7.9 1.7 1.9-.7 1.9-1.7 1.9Z"/></svg></a>
+            <a href="#" aria-label="Runinback on GitHub"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 1.5A10.5 10.5 0 0 0 8.7 22c.5.1.7-.2.7-.5v-1.8c-2.9.6-3.5-1.4-3.5-1.4-.5-1.2-1.2-1.5-1.2-1.5-.9-.6.1-.6.1-.6 1 .1 1.6 1 1.6 1 .9 1.6 2.4 1.1 3 .9.1-.7.4-1.1.6-1.4-2.3-.3-4.7-1.1-4.7-5a4 4 0 0 1 1-2.7c-.1-.3-.5-1.4.1-2.8 0 0 .8-.3 2.7 1a9.3 9.3 0 0 1 4.9 0c1.9-1.3 2.7-1 2.7-1 .6 1.4.2 2.5.1 2.8a4 4 0 0 1 1 2.7c0 3.9-2.4 4.7-4.7 5 .4.3.7.9.7 1.9v2.7c0 .3.2.6.7.5A10.5 10.5 0 0 0 12 1.5Z"/></svg></a>
           </div>
         </div>
         <div class="footer__col">

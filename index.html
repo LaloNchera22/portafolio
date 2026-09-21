@@ -33,7 +33,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
 
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='%230ae448'/></svg>" />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='7' fill='%230e100f'/><path d='M6 23L14 10L18.5 17L26 6' fill='none' stroke='%230ae448' stroke-width='3.2' stroke-linecap='square' stroke-linejoin='miter'/><path d='M28 17L30 8' stroke='%230ae448' stroke-width='2.6' stroke-linecap='square'/></svg>" />
   <link rel="stylesheet" href="styles.css" />
 
   <!-- Structured data -->
@@ -51,6 +51,7 @@
   </script>
 </head>
 <body>
+  <a class="skip-link" href="#main">Skip to content</a>
 
   <!-- Announcement -->
   <div class="announce">
@@ -61,7 +62,7 @@
   <header class="nav" data-nav>
     <div class="shell nav__inner">
       <a href="index.html" class="brand" aria-label="Runinback home">
-        <span class="brand__mark" aria-hidden="true"></span> Runinback
+        <span class="brand__mark" aria-hidden="true"><svg viewBox="0 0 44 36"><path class="mark__peak" d="M3 29L15.5 9L23 19L35.5 3"/><path class="mark__spark" d="M38 22L41.5 8"/></svg></span> Runinback
       </a>
       <nav class="nav__links" aria-label="Primary">
         <a href="how-it-works.html" class="nav__link">How it works</a>
@@ -76,16 +77,21 @@
     </div>
   </header>
 
-  <main>
+  <main id="main">
     <!-- Hero -->
     <section class="hero">
-      <div class="blob blob--1"></div>
-      <div class="blob blob--2"></div>
-      <div class="blob blob--3"></div>
+      <div class="backdrop" aria-hidden="true"></div>
+      <div class="hero__mark" aria-hidden="true">
+        <svg viewBox="0 0 200 150" fill="none">
+          <path class="hm-ghost" d="M10 128L74 36L106 82L168 8"/>
+          <path class="hm-peak" d="M14 120L78 28L110 74L172 2"/>
+          <path class="hm-spark" d="M182 92L196 34"/>
+        </svg>
+      </div>
       <div class="shell">
         <p class="eyebrow hero__eyebrow" data-reveal>Reset · Replay · Redeem</p>
         <h1 class="display hero__title" data-reveal>
-          The wagering layer for competitive&nbsp;gaming.
+          The wagering layer for competitive gaming.
         </h1>
         <p class="lead hero__lead" data-reveal>
           Runinback is a trustless escrow and settlement engine. Let players stake
@@ -158,8 +164,15 @@
             </ul>
             <a href="how-it-works.html" class="text-link">Explore matchmaking <span class="arrow">→</span></a>
           </div>
-          <div class="feature__visual" data-reveal>
-            <div class="viz viz--match"><div class="viz__shape"></div></div>
+          <div class="feature__visual" data-reveal="right">
+            <div class="viz viz--match">
+              <svg class="viz__art" viewBox="0 0 160 120" fill="none" aria-hidden="true">
+                <path data-draw style="--dl:200" d="M60 24L32 24L32 96L60 96"/>
+                <path data-draw style="--dl:200" d="M100 24L128 24L128 96L100 96"/>
+                <path class="vz-dim" data-draw style="--dl:60" d="M70 60L90 60"/>
+                <path class="viz__pulse" data-fill d="M80 46L94 60L80 74L66 60Z" fill="currentColor"/>
+              </svg>
+            </div>
           </div>
         </article>
 
@@ -176,8 +189,15 @@
             </ul>
             <a href="how-it-works.html" class="text-link">Explore escrow <span class="arrow">→</span></a>
           </div>
-          <div class="feature__visual" data-reveal>
-            <div class="viz viz--escrow"><div class="viz__shape"></div></div>
+          <div class="feature__visual" data-reveal="left">
+            <div class="viz viz--escrow">
+              <svg class="viz__art" viewBox="0 0 160 120" fill="none" aria-hidden="true">
+                <path data-draw style="--dl:420" d="M80 14L128 33V63C128 89 106 103 80 110C54 103 32 89 32 63V33Z"/>
+                <path class="vz-dim" data-draw style="--dl:80" d="M60 56H100"/>
+                <circle data-fill cx="80" cy="70" r="7" fill="currentColor"/>
+                <path data-fill d="M77 70H83V86H77Z" fill="currentColor"/>
+              </svg>
+            </div>
           </div>
         </article>
 
@@ -194,8 +214,15 @@
             </ul>
             <a href="how-it-works.html" class="text-link">Explore settlement <span class="arrow">→</span></a>
           </div>
-          <div class="feature__visual" data-reveal>
-            <div class="viz viz--settle"><div class="viz__shape"></div></div>
+          <div class="feature__visual" data-reveal="right">
+            <div class="viz viz--settle">
+              <svg class="viz__art" viewBox="0 0 160 120" fill="none" aria-hidden="true">
+                <path class="vz-dim" data-draw style="--dl:120" d="M24 96H136"/>
+                <path data-draw style="--dl:320" d="M28 84L60 52L82 70L120 28"/>
+                <path data-draw style="--dl:60" d="M104 28H120V44"/>
+                <circle class="viz__pulse" data-fill cx="120" cy="28" r="6" fill="currentColor"/>
+              </svg>
+            </div>
           </div>
         </article>
       </div>
@@ -243,7 +270,7 @@
         </div>
         <div class="grid grid--3">
           <a href="showcase.html" class="showcase-card" data-reveal>
-            <div class="showcase-card__preview" style="background:linear-gradient(135deg,#00bae2,#0e2f3a);"><span>1v1 FPS</span></div>
+            <div class="showcase-card__preview" style="--cover:#00bae2;"><svg class="cover-art" viewBox="0 0 320 200" fill="none" aria-hidden="true" preserveAspectRatio="xMidYMid slice"><path data-draw d="M0 150L70 84L120 120L200 44L260 92L320 40"/><path data-draw opacity="0.45" d="M0 182L90 124L150 160L230 96L320 128"/></svg><span>1v1 FPS</span></div>
             <div class="showcase-card__body">
               <div class="showcase-card__meta">
                 <span class="showcase-card__title">Duel Arena</span>
@@ -253,7 +280,7 @@
             </div>
           </a>
           <a href="showcase.html" class="showcase-card" data-reveal>
-            <div class="showcase-card__preview" style="background:linear-gradient(135deg,#ff8709,#3a2000);"><span>Racing</span></div>
+            <div class="showcase-card__preview" style="--cover:#ff8709;"><svg class="cover-art" viewBox="0 0 320 200" fill="none" aria-hidden="true" preserveAspectRatio="xMidYMid slice"><path data-draw d="M0 150L70 84L120 120L200 44L260 92L320 40"/><path data-draw opacity="0.45" d="M0 182L90 124L150 160L230 96L320 128"/></svg><span>Racing</span></div>
             <div class="showcase-card__body">
               <div class="showcase-card__meta">
                 <span class="showcase-card__title">Apex Circuit</span>
@@ -263,7 +290,7 @@
             </div>
           </a>
           <a href="showcase.html" class="showcase-card" data-reveal>
-            <div class="showcase-card__preview" style="background:linear-gradient(135deg,#fec5fb,#3a1f37);"><span>Strategy</span></div>
+            <div class="showcase-card__preview" style="--cover:#fec5fb;"><svg class="cover-art" viewBox="0 0 320 200" fill="none" aria-hidden="true" preserveAspectRatio="xMidYMid slice"><path data-draw d="M0 150L70 84L120 120L200 44L260 92L320 40"/><path data-draw opacity="0.45" d="M0 182L90 124L150 160L230 96L320 128"/></svg><span>Strategy</span></div>
             <div class="showcase-card__body">
               <div class="showcase-card__meta">
                 <span class="showcase-card__title">Grid Tactics</span>
@@ -298,12 +325,12 @@
     <div class="shell">
       <div class="footer__top">
         <div class="footer__brand">
-          <a href="index.html" class="brand"><span class="brand__mark" aria-hidden="true"></span> Runinback</a>
+          <a href="index.html" class="brand"><span class="brand__mark" aria-hidden="true"><svg viewBox="0 0 44 36"><path class="mark__peak" d="M3 29L15.5 9L23 19L35.5 3"/><path class="mark__spark" d="M38 22L41.5 8"/></svg></span> Runinback</a>
           <p class="footer__tagline">The trustless wagering layer for competitive gaming. Reset. Replay. Redeem.</p>
           <div class="footer__social">
-            <a href="#" aria-label="Runinback on X">𝕏</a>
-            <a href="#" aria-label="Runinback on Discord">◇</a>
-            <a href="#" aria-label="Runinback on GitHub">⌥</a>
+            <a href="#" aria-label="Runinback on X"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M18.9 1.6h3.4l-7.5 8.6L23.5 22h-6.8l-5.3-7-6.1 7H1.9l8-9.2L1 1.6h7l4.8 6.4ZM17.7 20h1.9L7.1 3.5H5.1Z"/></svg></a>
+            <a href="#" aria-label="Runinback on Discord"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M20.3 4.6A19 19 0 0 0 15.6 3l-.3.5c1.6.4 2.3.9 3.1 1.5a13 13 0 0 0-10.8 0C8.4 4.4 9.2 3.9 10.7 3.5L10.4 3A19 19 0 0 0 5.7 4.6C2.7 9 1.9 13.4 2.3 17.7a19 19 0 0 0 5.8 2.9l.7-1.1c-.7-.3-1.3-.6-1.9-1l.5-.3a13.6 13.6 0 0 0 11.6 0l.5.3c-.6.4-1.2.7-1.9 1l.7 1.1a19 19 0 0 0 5.8-2.9c.5-5-.8-9.4-3.4-13.1ZM9.2 15.1c-.9 0-1.7-.9-1.7-1.9s.8-1.9 1.7-1.9 1.7.9 1.7 1.9-.7 1.9-1.7 1.9Zm5.6 0c-.9 0-1.7-.9-1.7-1.9s.8-1.9 1.7-1.9 1.7.9 1.7 1.9-.7 1.9-1.7 1.9Z"/></svg></a>
+            <a href="#" aria-label="Runinback on GitHub"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 1.5A10.5 10.5 0 0 0 8.7 22c.5.1.7-.2.7-.5v-1.8c-2.9.6-3.5-1.4-3.5-1.4-.5-1.2-1.2-1.5-1.2-1.5-.9-.6.1-.6.1-.6 1 .1 1.6 1 1.6 1 .9 1.6 2.4 1.1 3 .9.1-.7.4-1.1.6-1.4-2.3-.3-4.7-1.1-4.7-5a4 4 0 0 1 1-2.7c-.1-.3-.5-1.4.1-2.8 0 0 .8-.3 2.7 1a9.3 9.3 0 0 1 4.9 0c1.9-1.3 2.7-1 2.7-1 .6 1.4.2 2.5.1 2.8a4 4 0 0 1 1 2.7c0 3.9-2.4 4.7-4.7 5 .4.3.7.9.7 1.9v2.7c0 .3.2.6.7.5A10.5 10.5 0 0 0 12 1.5Z"/></svg></a>
           </div>
         </div>
         <div class="footer__col">
