@@ -1,0 +1,16 @@
+{
+  "name": "Runinback",
+  "short_name": "Runinback",
+  "description": "The trustless, skill-based wagering layer for competitive gaming.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0e100f",
+  "theme_color": "#0e100f",
+  "icons": [
+    {
+      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><rect width='512' height='512' rx='128' fill='%230ae448'/></svg>",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ]
+}
