@@ -41,7 +41,7 @@ properties at the top of `styles.css` under `:root`.
 | Cream (text/surface) | `#fffce1` |
 | Muted text | `#7c7c6f` |
 | Hairline | `#42433d` |
-| Brand green | `#0ae448` → `#abff84` gradient |
+| Brand accent (secondary) | `#ffffff` → `#fffce1` gradient (was green `#0ae448`) |
 | Matchmaking | `#00bae2` |
 | Escrow | `#ff8709` |
 | Settlement | `#fec5fb` |
@@ -55,7 +55,7 @@ heading-sm 44 · heading 66 · heading-lg 101 · display 224 (all fluid via
 
 The identity is the ascending **peak / lightning mark** — a four-point angular
 peak with a detached spark stroke. It is drawn as **inline SVG** (never a raster
-file), always in brand green (`#0ae448`) on the dark canvas, with
+file), always in the brand accent — now white (`#ffffff`) on the dark canvas, with
 `stroke-linecap: square` and `stroke-linejoin: miter` so every corner stays hard
 and angular. The source artwork lives in the repo (`IMG_0133/0134/0135.PNG`) as
 reference; the shipped site re-draws the mark in code for crispness at any size,
