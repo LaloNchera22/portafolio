@@ -94,6 +94,50 @@
     }
   }
 
+  /* --- Section band reveal (landing) ------------------------------------ */
+  const bands = document.querySelectorAll("[data-band]");
+  if (bands.length) {
+    if (reduceMotion || !("IntersectionObserver" in window)) {
+      bands.forEach((b) => b.classList.add("is-in"));
+    } else {
+      const bio = new IntersectionObserver(
+        (entries, obs) => {
+          entries.forEach((entry) => {
+            if (entry.isIntersecting) {
+              entry.target.classList.add("is-in");
+              obs.unobserve(entry.target);
+            }
+          });
+        },
+        { threshold: 0.16, rootMargin: "0px 0px -8% 0px" }
+      );
+      bands.forEach((b) => bio.observe(b));
+    }
+  }
+
+  /* --- Hero background video: loop only 0–7s ---------------------------- */
+  const heroVideo = document.getElementById("hero-video");
+  if (heroVideo) {
+    const LOOP_END = 7;
+    heroVideo.loop = false;
+    const toStart = () => {
+      try { heroVideo.currentTime = 0; } catch (e) {}
+    };
+    heroVideo.addEventListener("timeupdate", () => {
+      if (heroVideo.currentTime >= LOOP_END) toStart();
+    });
+    heroVideo.addEventListener("ended", () => {
+      toStart();
+      if (!reduceMotion) heroVideo.play().catch(() => {});
+    });
+    if (reduceMotion) {
+      toStart();
+      heroVideo.pause();
+    } else {
+      heroVideo.play().catch(() => {});
+    }
+  }
+
   /* --- FAQ accordion ---------------------------------------------------- */
   document.querySelectorAll("[data-faq]").forEach((item) => {
     const btn = item.querySelector(".faq__q");
