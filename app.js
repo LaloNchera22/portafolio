@@ -58,6 +58,9 @@
     const toggle = nav.querySelector("[data-nav-toggle]");
     if (toggle) {
       const setMenu = (open) => {
+        // a hidden (transformed) nav is the containing block for the fixed menu
+        // panel, which breaks its sizing — make sure the nav is shown while open
+        if (open) nav.classList.remove("is-hidden");
         toggle.setAttribute("aria-expanded", String(open));
         document.body.style.overflow = open ? "hidden" : "";
         document.body.classList.toggle("menu-open", open);

@@ -1460,6 +1460,18 @@ ul {
 /* When the mobile menu is open, hide the video so it can't punch through the
    overlay (an iOS <video> stacking quirk). */
 body.menu-open .hero__video { visibility: hidden; }
+
+/* While the menu is open the nav must create NO containing block for its
+   position:fixed panel — otherwise the panel sizes/positions to the nav box
+   instead of the viewport and the menu breaks. Both a transform (is-hidden) and
+   a backdrop-filter (is-scrolled) establish one, so clear both. This is the
+   real cause of the menu breaking when opened after scrolling down. */
+.nav.is-open {
+  transform: none !important;
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+  transition: none;
+}
 .hero__scrim {
   position: absolute;
   inset: 0;
