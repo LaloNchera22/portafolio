@@ -69,7 +69,10 @@
         <a href="how-it-works.html" class="nav__link">How it works</a>
         <a href="developers.html" class="nav__link">Developers</a>
         <a href="contact.html" class="nav__link">Contact</a>
-        <a href="developers.html" class="btn btn--cta btn--sm">Get API access</a>
+        <span class="nav__account" id="nav-account">
+          <button type="button" class="nav__link nav__auth" data-auth-open="signin">Log in</button>
+          <button type="button" class="btn btn--cta btn--sm" data-auth-open="signup">Sign up</button>
+        </span>
       </nav>
       <button class="nav__toggle" data-nav-toggle aria-label="Toggle menu" aria-expanded="false">
         <span></span>
@@ -290,6 +293,45 @@
     </div>
   </footer>
 
+  <!-- Auth modal (sign in / sign up) -->
+  <div class="auth-modal" id="auth-modal" hidden>
+    <div class="auth-dialog" role="dialog" aria-modal="true" aria-labelledby="auth-title">
+      <button type="button" class="auth-x" data-auth-close aria-label="Close">×</button>
+      <p class="eyebrow">Runinback account</p>
+      <h2 class="auth-title" id="auth-title">Welcome back</h2>
+      <p class="auth-sub muted" id="auth-sub">Log in to your Runinback console.</p>
+
+      <form class="form auth-form" id="auth-form" novalidate>
+        <div class="field" id="auth-username-field" hidden>
+          <label for="auth-username">Username</label>
+          <input id="auth-username" name="username" type="text" autocomplete="username" inputmode="text" placeholder="runback_ace" />
+        </div>
+        <div class="field">
+          <label for="auth-email">Email</label>
+          <input id="auth-email" name="email" type="email" autocomplete="email" required placeholder="you@studio.gg" />
+        </div>
+        <div class="field">
+          <label for="auth-password">Password</label>
+          <input id="auth-password" name="password" type="password" autocomplete="current-password" required minlength="8" placeholder="At least 8 characters" />
+        </div>
+
+        <p class="auth-error" id="auth-error" role="alert" hidden></p>
+        <p class="auth-note" id="auth-note-msg" role="status" hidden></p>
+
+        <button type="submit" class="btn btn--cta auth-submit" id="auth-submit">Log in</button>
+      </form>
+
+      <p class="auth-switch">
+        <span id="auth-switch-text">New to Runinback?</span>
+        <button type="button" class="text-link" data-auth-switch id="auth-switch-btn">Create one</button>
+      </p>
+      <p class="auth-fineprint muted">Non-custodial by design — Runinback never holds your funds or your keys.</p>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="supabase-config.js"></script>
+  <script src="auth.js"></script>
   <script src="app.js"></script>
 </body>
 </html>

@@ -1137,6 +1137,84 @@ ul {
 }
 
 /* ==========================================================================
+   Auth — nav account controls + sign in / sign up modal
+   ========================================================================== */
+.nav__account {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-16);
+}
+.nav__auth {
+  font-family: inherit;
+  font-size: var(--text-body-sm);
+  font-weight: var(--fw-medium);
+  color: var(--color-surface-cream);
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+  transition: color 0.2s var(--ease-out);
+}
+.nav__auth:hover { color: var(--color-shockingly-green); }
+
+.auth-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--spacing-20);
+  background: rgba(6, 7, 6, 0.72);
+  backdrop-filter: blur(6px);
+}
+.auth-modal[hidden] { display: none; }
+.auth-dialog {
+  position: relative;
+  width: 100%;
+  max-width: 420px;
+  background: var(--surface-canvas);
+  border: 1px solid var(--color-surface-25);
+  border-radius: 18px;
+  padding: clamp(24px, 4vw, 34px);
+  max-height: 92vh;
+  overflow-y: auto;
+}
+.auth-x {
+  position: absolute;
+  top: 16px;
+  right: 18px;
+  background: none;
+  border: 0;
+  color: var(--color-surface-50);
+  font-size: 26px;
+  line-height: 1;
+  cursor: pointer;
+}
+.auth-x:hover { color: var(--color-surface-cream); }
+.auth-title {
+  font-size: var(--text-heading-sm);
+  font-weight: var(--fw-semibold);
+  letter-spacing: -0.02em;
+  margin-top: 10px;
+}
+.auth-sub { font-size: var(--text-body-sm); margin-top: 8px; }
+.auth-form { margin-top: var(--spacing-24); max-width: none; gap: var(--spacing-16); }
+.auth-submit { width: 100%; margin-top: 4px; }
+.auth-error { font-size: var(--text-body-sm); color: #ff5b5b; }
+.auth-note { font-size: var(--text-body-sm); color: var(--color-light-green); }
+.auth-switch {
+  margin-top: var(--spacing-20);
+  font-size: var(--text-body-sm);
+  color: var(--color-surface-50);
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.auth-fineprint { margin-top: var(--spacing-16); font-size: var(--text-caption); }
+
+/* ==========================================================================
    CTA band
    ========================================================================== */
 

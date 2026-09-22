@@ -1,0 +1,16 @@
+# Runinback — Supabase project config (for the Supabase CLI).
+# `project_id` is just the local ref; it is not a secret.
+project_id = "runinback"
+
+[auth]
+enable_signup = true
+# Require a confirmed email before the account is usable.
+enable_confirmations = true
+
+[auth.email]
+enable_signup = true
+
+# The API-key minter is called with a user JWT; the platform verifies it too
+# (defense in depth) before our own getUser() check runs.
+[functions.issue-api-key]
+verify_jwt = true
