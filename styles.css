@@ -1781,6 +1781,10 @@ ul {
 body.home #main { --color-surface-50: var(--color-surface-cream); }
 
 /* Story section — what / why / how */
+.section-story {
+  /* breathing room before the next band's divider line */
+  padding-bottom: clamp(56px, 8vw, 104px);
+}
 .section-story .story-triad {
   display: grid;
   grid-template-columns: repeat(3, 1fr);

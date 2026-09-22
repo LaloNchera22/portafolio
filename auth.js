@@ -178,8 +178,6 @@
       var password = $("signup-password").value || "";
       var confirm = $("signup-confirm").value || "";
       var terms = $("signup-terms");
-      var roleEl = document.querySelector('input[name="role"]:checked');
-      var role = roleEl ? roleEl.value : "player";
 
       if (!/^[a-zA-Z0-9_]{3,24}$/.test(username)) { err("signup", "Username: 3–24 characters, letters, numbers or underscore."); return; }
       if (password.length < 8) { err("signup", "Use a password of at least 8 characters."); return; }
@@ -191,7 +189,7 @@
       client.auth.signUp({
         email: email,
         password: password,
-        options: { data: { username: username, display_name: username, role: role }, emailRedirectTo: absUrl(CONSOLE_URL) },
+        options: { data: { username: username, display_name: username }, emailRedirectTo: absUrl(CONSOLE_URL) },
       })
         .then(function (res) {
           if (res.error) { err("signup", res.error.message || "Couldn't create the account."); return; }
