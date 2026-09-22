@@ -1,175 +1,213 @@
 /* ============================================================================
- * Runinback — authentication (sign up / sign in) for the static site.
- * Talks to Supabase Auth via supabase-js. No secrets live here: the anon key
- * comes from supabase-config.js and every data access is gated server-side by
- * Row Level Security. Degrades gracefully when the backend is not configured.
+ * Runinback — authentication for the static site.
+ * Powers login.html and signup.html, keeps the nav in sync on every page, and
+ * runs the social providers. No secrets here: the anon key comes from
+ * supabase-config.js and every data access is gated server-side by RLS.
+ * Degrades gracefully when the backend is not configured.
  * ========================================================================== */
 (function () {
   "use strict";
 
   var CFG = window.RUNINBACK_CONFIG || {};
   var configured = typeof CFG.isConfigured === "function" && CFG.isConfigured();
-  var client = null;
-  if (configured && window.supabase && window.supabase.createClient) {
-    client = window.supabase.createClient(CFG.SUPABASE_URL, CFG.SUPABASE_ANON_KEY, {
-      auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true },
-    });
-  }
-
   var CONSOLE_URL = CFG.CONSOLE_URL || "console.html";
-  var modal = document.getElementById("auth-modal");
-  var form = document.getElementById("auth-form");
-  var mode = "signin";
+  var SCOPE = document.body.getAttribute("data-auth-scope") || "login";
 
-  /* ---- small helpers ------------------------------------------------------ */
-  function $(id) { return document.getElementById(id); }
-  function showError(msg) { var e = $("auth-error"); if (e) { e.textContent = msg; e.hidden = false; } }
-  function clearError() { var e = $("auth-error"); if (e) { e.hidden = true; e.textContent = ""; } }
-  function showNote(msg) { var n = $("auth-note-msg"); if (n) { n.textContent = msg; n.hidden = false; } }
-  function clearNote() { var n = $("auth-note-msg"); if (n) { n.hidden = true; n.textContent = ""; } }
-  function setLoading(on) {
-    var b = $("auth-submit"); if (!b) return;
-    b.disabled = on; b.style.opacity = on ? ".6" : "";
-    b.textContent = on ? "One moment…" : (mode === "signup" ? "Create account" : "Log in");
-  }
+  function readRemember() { try { return localStorage.getItem("rib_remember") !== "0"; } catch (e) { return true; } }
+  function writeRemember(v) { try { localStorage.setItem("rib_remember", v ? "1" : "0"); } catch (e) {} }
 
-  function setMode(m) {
-    mode = m === "signup" ? "signup" : "signin";
-    var isUp = mode === "signup";
-    if ($("auth-title")) $("auth-title").textContent = isUp ? "Create your account" : "Welcome back";
-    if ($("auth-sub")) $("auth-sub").textContent = isUp
-      ? "Start staking skill-based matches in minutes."
-      : "Log in to your Runinback console.";
-    if ($("auth-username-field")) $("auth-username-field").hidden = !isUp;
-    if ($("auth-username")) $("auth-username").required = isUp;
-    if ($("auth-submit")) $("auth-submit").textContent = isUp ? "Create account" : "Log in";
-    if ($("auth-switch-text")) $("auth-switch-text").textContent = isUp ? "Already have an account?" : "New to Runinback?";
-    if ($("auth-switch-btn")) $("auth-switch-btn").textContent = isUp ? "Log in" : "Create one";
-    clearError(); clearNote();
-  }
-
-  function openAuth(m) {
-    if (!modal) return;
-    setMode(m || "signin");
-    modal.hidden = false;
-    document.body.style.overflow = "hidden";
-    var f = $("auth-email"); if (f) { try { f.focus(); } catch (e) {} }
-  }
-  function closeAuth() {
-    if (!modal) return;
-    modal.hidden = true;
-    document.body.style.overflow = "";
-  }
-
-  /* ---- open / close / switch (event delegation) --------------------------- */
-  document.addEventListener("click", function (e) {
-    var opener = e.target.closest("[data-auth-open]");
-    if (opener) { e.preventDefault(); openAuth(opener.getAttribute("data-auth-open")); return; }
-    if (e.target.closest("[data-auth-close]")) { closeAuth(); return; }
-    if (e.target.closest("[data-auth-switch]")) { e.preventDefault(); setMode(mode === "signin" ? "signup" : "signin"); return; }
-    if (e.target === modal) { closeAuth(); return; }
-    if (e.target.closest("[data-auth-signout]")) {
-      e.preventDefault();
-      if (client) { client.auth.signOut().finally(function () { window.location.href = "index.html"; }); }
-      else { window.location.href = "index.html"; }
-    }
-  });
-  document.addEventListener("keydown", function (e) {
-    if (e.key === "Escape" && modal && !modal.hidden) closeAuth();
-  });
-
-  /* ---- social sign-in (Google / GitHub / Apple native, Steam via bridge) --- */
-  document.addEventListener("click", function (e) {
-    var btn = e.target.closest("[data-oauth]");
-    if (!btn) return;
-    e.preventDefault();
-    var provider = btn.getAttribute("data-oauth");
-    clearError(); clearNote();
-    if (!configured || !client) {
-      showError("The backend isn't connected yet. Add your Supabase keys in supabase-config.js.");
-      return;
-    }
-    var redirectTo = new URL(CONSOLE_URL, window.location.href).href;
-
-    if (provider === "steam") {
-      // Steam speaks OpenID 2.0, not OAuth — handled by our steam-auth function.
-      var base = String(CFG.SUPABASE_URL).replace(/\/+$/, "");
-      window.location.href =
-        base + "/functions/v1/steam-auth/login?redirect_to=" + encodeURIComponent(redirectTo);
-      return;
-    }
-
-    // provider ids: google | github | apple
-    client.auth
-      .signInWithOAuth({ provider: provider, options: { redirectTo: redirectTo } })
-      .then(function (res) {
-        if (res.error) showError(res.error.message || "Couldn't start sign-in. Try again.");
-      })
-      .catch(function () { showError("Couldn't start sign-in. Try again."); });
-  });
-
-  /* ---- submit ------------------------------------------------------------- */
-  if (form) {
-    form.addEventListener("submit", function (e) {
-      e.preventDefault();
-      clearError(); clearNote();
-      if (!form.checkValidity()) { form.reportValidity(); return; }
-      if (!configured || !client) {
-        showError("The backend isn't connected yet. Add your Supabase keys in supabase-config.js.");
-        return;
-      }
-      var email = ($("auth-email").value || "").trim();
-      var password = $("auth-password").value || "";
-      var username = (($("auth-username") && $("auth-username").value) || "").trim();
-      if (password.length < 8) { showError("Use a password of at least 8 characters."); return; }
-      if (mode === "signup" && !/^[a-zA-Z0-9_]{3,24}$/.test(username)) {
-        showError("Username: 3–24 characters, letters, numbers or underscores.");
-        return;
-      }
-
-      setLoading(true);
-      var run = mode === "signup"
-        ? client.auth.signUp({ email: email, password: password, options: { data: { username: username, display_name: username } } })
-        : client.auth.signInWithPassword({ email: email, password: password });
-
-      run.then(function (res) {
-        if (res.error) { showError(res.error.message || "Something went wrong. Try again."); return; }
-        if (mode === "signup" && res.data && res.data.user && !res.data.session) {
-          showNote("Check your inbox to confirm your email, then log in.");
-          setMode("signin");
-          return;
-        }
-        window.location.href = CONSOLE_URL;
-      }).catch(function () {
-        showError("Network error. Please try again.");
-      }).finally(function () {
-        setLoading(false);
-      });
+  function makeClient(remember) {
+    if (!(configured && window.supabase && window.supabase.createClient)) return null;
+    var storage;
+    try { storage = remember ? window.localStorage : window.sessionStorage; } catch (e) { storage = undefined; }
+    return window.supabase.createClient(CFG.SUPABASE_URL, CFG.SUPABASE_ANON_KEY, {
+      auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true, storage: storage },
     });
   }
+  var client = makeClient(readRemember());
 
-  /* ---- reflect session state in the nav ----------------------------------- */
+  /* ---- helpers ------------------------------------------------------------ */
+  function $(id) { return document.getElementById(id); }
+  function absUrl(u) { return new URL(u, window.location.href).href; }
+  function err(scope, m) { var e = $(scope + "-error"); if (e) { e.textContent = m; e.hidden = false; } var n = $(scope + "-note"); if (n) n.hidden = true; }
+  function note(scope, m) { var n = $(scope + "-note"); if (n) { n.textContent = m; n.hidden = false; } var e = $(scope + "-error"); if (e) e.hidden = true; }
+  function clearMsg(scope) { var e = $(scope + "-error"); if (e) e.hidden = true; var n = $(scope + "-note"); if (n) n.hidden = true; }
+  function notConfigured(scope) { err(scope, "The backend isn't connected yet. Add your Supabase keys in supabase-config.js."); }
+  function isEmail(s) { return /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(s); }
+  function busy(btn, on, label) { if (!btn) return; btn.disabled = on; btn.style.opacity = on ? ".6" : ""; if (label != null) btn.textContent = on ? "One moment…" : label; }
+
+  /* ---- password show / hide ----------------------------------------------- */
+  document.addEventListener("click", function (e) {
+    var t = e.target.closest("[data-toggle-pw]"); if (!t) return;
+    e.preventDefault();
+    var inp = $(t.getAttribute("data-toggle-pw")); if (!inp) return;
+    var reveal = inp.type === "password";
+    inp.type = reveal ? "text" : "password";
+    t.setAttribute("aria-pressed", String(reveal));
+    t.textContent = reveal ? "Hide" : "Show";
+  });
+
+  /* ---- social sign-in (Google/GitHub/Apple native, Steam via bridge) ------- */
+  document.addEventListener("click", function (e) {
+    var b = e.target.closest("[data-oauth]"); if (!b) return;
+    e.preventDefault();
+    var provider = b.getAttribute("data-oauth");
+    clearMsg(SCOPE);
+    if (!client) { notConfigured(SCOPE); return; }
+    var redirectTo = absUrl(CONSOLE_URL);
+    if (provider === "steam") {
+      var base = String(CFG.SUPABASE_URL).replace(/\/+$/, "");
+      window.location.href = base + "/functions/v1/steam-auth/login?redirect_to=" + encodeURIComponent(redirectTo);
+      return;
+    }
+    client.auth.signInWithOAuth({ provider: provider, options: { redirectTo: redirectTo } })
+      .then(function (res) { if (res.error) err(SCOPE, res.error.message || "Couldn't start sign-in."); })
+      .catch(function () { err(SCOPE, "Couldn't start sign-in. Try again."); });
+  });
+
+  /* ---- nav account state (all pages) -------------------------------------- */
   function renderNav(session) {
-    var slot = $("nav-account");
-    if (!slot) return;
+    var slot = $("nav-account"); if (!slot) return;
     if (session) {
       slot.innerHTML =
         '<a class="btn btn--cta btn--sm" href="' + CONSOLE_URL + '">Console</a>' +
         '<button type="button" class="nav__link nav__auth" data-auth-signout>Log out</button>';
     } else {
       slot.innerHTML =
-        '<button type="button" class="nav__link nav__auth" data-auth-open="signin">Log in</button>' +
-        '<button type="button" class="btn btn--cta btn--sm" data-auth-open="signup">Sign up</button>';
+        '<a class="nav__link nav__auth" href="login.html">Log in</a>' +
+        '<a class="btn btn--cta btn--sm" href="signup.html">Sign up</a>';
     }
   }
+  document.addEventListener("click", function (e) {
+    if (!e.target.closest("[data-auth-signout]")) return;
+    e.preventDefault();
+    if (client) client.auth.signOut().finally(function () { window.location.href = "index.html"; });
+    else window.location.href = "index.html";
+  });
   if (client) {
     client.auth.getSession().then(function (r) { renderNav(r.data && r.data.session); });
     client.auth.onAuthStateChange(function (_evt, session) { renderNav(session); });
   }
 
+  /* ---- LOGIN page --------------------------------------------------------- */
+  var loginForm = $("login-form");
+  if (loginForm) {
+    var rememberBox = $("login-remember");
+    if (rememberBox) {
+      rememberBox.checked = readRemember();
+      rememberBox.addEventListener("change", function () { writeRemember(rememberBox.checked); });
+    }
+
+    loginForm.addEventListener("submit", function (e) {
+      e.preventDefault(); clearMsg("login");
+      if (!loginForm.checkValidity()) { loginForm.reportValidity(); return; }
+      if (!configured) { notConfigured("login"); return; }
+      var remember = rememberBox ? rememberBox.checked : true;
+      writeRemember(remember);
+      client = makeClient(remember); // persist the session in the chosen storage
+      var email = ($("login-email").value || "").trim();
+      var password = $("login-password").value || "";
+      var btn = $("login-submit"); busy(btn, true);
+      client.auth.signInWithPassword({ email: email, password: password })
+        .then(function (res) {
+          if (res.error) { err("login", res.error.message || "Couldn't sign in."); return; }
+          window.location.href = CONSOLE_URL;
+        })
+        .catch(function () { err("login", "Network error. Please try again."); })
+        .finally(function () { busy(btn, false, "Log in"); });
+    });
+
+    var ml = document.querySelector("[data-magiclink]");
+    if (ml) ml.addEventListener("click", function () {
+      clearMsg("login");
+      if (!configured) { notConfigured("login"); return; }
+      var email = ($("login-email").value || "").trim();
+      if (!isEmail(email)) { err("login", "Enter your email above first, then request the magic link."); return; }
+      busy(ml, true, "Email me a magic link");
+      client.auth.signInWithOtp({ email: email, options: { emailRedirectTo: absUrl(CONSOLE_URL) } })
+        .then(function (res) {
+          if (res.error) { err("login", res.error.message); return; }
+          note("login", "Magic link sent — check your inbox to finish signing in.");
+        })
+        .finally(function () { busy(ml, false, "Email me a magic link"); });
+    });
+
+    var fp = document.querySelector("[data-forgot]");
+    if (fp) fp.addEventListener("click", function () {
+      clearMsg("login");
+      if (!configured) { notConfigured("login"); return; }
+      var email = ($("login-email").value || "").trim();
+      if (!isEmail(email)) { err("login", "Enter your email above first, then tap reset."); return; }
+      client.auth.resetPasswordForEmail(email, { redirectTo: absUrl("login.html") })
+        .then(function (res) {
+          if (res.error) { err("login", res.error.message); return; }
+          note("login", "Password reset link sent — check your inbox.");
+        });
+    });
+  }
+
+  /* ---- SIGN UP page ------------------------------------------------------- */
+  function updateStrength(p) {
+    var bar = $("pw-strength"), label = $("pw-strength-label");
+    if (!bar) return;
+    var s = 0;
+    if (p.length >= 8) s++;
+    if (p.length >= 12) s++;
+    if (/[a-z]/.test(p) && /[A-Z]/.test(p)) s++;
+    if (/\d/.test(p)) s++;
+    if (/[^a-zA-Z0-9]/.test(p)) s++;
+    var idx = p.length ? Math.min(Math.max(s, 1), 4) : 0;
+    var widths = [0, 33, 55, 78, 100];
+    var names = ["—", "Weak", "Fair", "Good", "Strong"];
+    var colors = ["transparent", "#ff5b5b", "rgba(255,252,225,0.5)", "var(--color-surface-cream)", "#35d07f"];
+    bar.style.width = widths[idx] + "%";
+    bar.style.background = colors[idx];
+    if (label) label.textContent = names[idx];
+  }
+
+  var signupForm = $("signup-form");
+  if (signupForm) {
+    var pw = $("signup-password");
+    if (pw) pw.addEventListener("input", function () { updateStrength(pw.value); });
+
+    signupForm.addEventListener("submit", function (e) {
+      e.preventDefault(); clearMsg("signup");
+      if (!signupForm.checkValidity()) { signupForm.reportValidity(); return; }
+      var username = ($("signup-username").value || "").trim();
+      var email = ($("signup-email").value || "").trim();
+      var password = $("signup-password").value || "";
+      var confirm = $("signup-confirm").value || "";
+      var terms = $("signup-terms");
+      var roleEl = document.querySelector('input[name="role"]:checked');
+      var role = roleEl ? roleEl.value : "player";
+
+      if (!/^[a-zA-Z0-9_]{3,24}$/.test(username)) { err("signup", "Username: 3–24 characters, letters, numbers or underscore."); return; }
+      if (password.length < 8) { err("signup", "Use a password of at least 8 characters."); return; }
+      if (password !== confirm) { err("signup", "Passwords don't match."); return; }
+      if (terms && !terms.checked) { err("signup", "Please accept the terms to continue."); return; }
+      if (!configured) { notConfigured("signup"); return; }
+
+      var btn = $("signup-submit"); busy(btn, true);
+      client.auth.signUp({
+        email: email,
+        password: password,
+        options: { data: { username: username, display_name: username, role: role }, emailRedirectTo: absUrl(CONSOLE_URL) },
+      })
+        .then(function (res) {
+          if (res.error) { err("signup", res.error.message || "Couldn't create the account."); return; }
+          if (res.data && res.data.user && !res.data.session) {
+            note("signup", "Account created — check your inbox to confirm your email, then log in.");
+            return;
+          }
+          window.location.href = CONSOLE_URL;
+        })
+        .catch(function () { err("signup", "Network error. Please try again."); })
+        .finally(function () { busy(btn, false, "Create account"); });
+    });
+  }
+
   /* ---- exposed for the console page guard --------------------------------- */
   window.RuninbackAuth = {
-    client: client,
     configured: configured,
     getSession: function () {
       if (!client) return Promise.resolve(null);

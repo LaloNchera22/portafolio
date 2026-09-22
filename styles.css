@@ -1250,6 +1250,109 @@ ul {
 }
 .auth-fineprint { margin-top: var(--spacing-16); font-size: var(--text-caption); }
 
+/* --- Dedicated auth pages (login.html / signup.html) --- */
+.auth-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 128px var(--gutter) 72px;
+}
+.auth-card {
+  width: 100%;
+  max-width: 460px;
+  background: var(--surface-canvas);
+  border: 1px solid var(--color-surface-25);
+  border-radius: 18px;
+  padding: clamp(26px, 4vw, 40px);
+}
+.auth-card .auth-title { font-size: var(--text-heading-sm); margin-top: 10px; }
+.field__labelrow { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+.pw-toggle {
+  background: none;
+  border: 0;
+  padding: 0;
+  color: var(--color-surface-50);
+  font-family: inherit;
+  font-size: var(--text-caption);
+  cursor: pointer;
+}
+.pw-toggle:hover { color: var(--color-surface-cream); }
+.auth-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  font-size: var(--text-body-sm);
+}
+.checkbox {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  color: var(--color-surface-50);
+  font-size: var(--text-body-sm);
+  cursor: pointer;
+}
+.checkbox input {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 18px;
+  height: 18px;
+  flex: none;
+  border: 1px solid var(--color-surface-25);
+  border-radius: 5px;
+  background: var(--surface-panel);
+  cursor: pointer;
+  position: relative;
+  transition: border-color 0.2s, background 0.2s;
+}
+.checkbox input:checked { background: var(--color-shockingly-green); border-color: var(--color-shockingly-green); }
+.checkbox input:checked::after {
+  content: "";
+  position: absolute;
+  left: 5px;
+  top: 1px;
+  width: 5px;
+  height: 10px;
+  border: solid var(--color-just-black);
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+.checkbox a { color: var(--color-surface-cream); text-decoration: underline; text-underline-offset: 2px; }
+
+.segmented {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+  padding: 4px;
+  border: 1px solid var(--color-surface-25);
+  border-radius: var(--radius-full);
+}
+.seg { position: relative; }
+.seg input { position: absolute; opacity: 0; inset: 0; cursor: pointer; }
+.seg span {
+  display: block;
+  text-align: center;
+  padding: 9px 12px;
+  border-radius: var(--radius-full);
+  font-size: var(--text-body-sm);
+  font-weight: var(--fw-medium);
+  color: var(--color-surface-50);
+  transition: background 0.2s, color 0.2s;
+}
+.seg input:checked + span { background: var(--color-surface-cream); color: var(--color-just-black); }
+
+.pw-meter {
+  height: 4px;
+  border-radius: 4px;
+  background: var(--color-surface-25);
+  overflow: hidden;
+  margin-top: 10px;
+}
+.pw-meter > span { display: block; height: 100%; width: 0; border-radius: 4px; transition: width 0.25s var(--ease-out), background 0.25s; }
+.pw-hint { font-size: var(--text-caption); margin-top: 6px; }
+
 /* ==========================================================================
    CTA band
    ========================================================================== */
