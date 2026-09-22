@@ -1137,6 +1137,223 @@ ul {
 }
 
 /* ==========================================================================
+   Auth — nav account controls + sign in / sign up modal
+   ========================================================================== */
+.nav__account {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-16);
+}
+.nav__auth {
+  font-family: inherit;
+  font-size: var(--text-body-sm);
+  font-weight: var(--fw-medium);
+  color: var(--color-surface-cream);
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+  transition: color 0.2s var(--ease-out);
+}
+.nav__auth:hover { color: var(--color-shockingly-green); }
+
+.auth-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--spacing-20);
+  background: rgba(6, 7, 6, 0.72);
+  backdrop-filter: blur(6px);
+}
+.auth-modal[hidden] { display: none; }
+.auth-dialog {
+  position: relative;
+  width: 100%;
+  max-width: 420px;
+  background: var(--surface-canvas);
+  border: 1px solid var(--color-surface-25);
+  border-radius: 18px;
+  padding: clamp(24px, 4vw, 34px);
+  max-height: 92vh;
+  overflow-y: auto;
+}
+.auth-x {
+  position: absolute;
+  top: 16px;
+  right: 18px;
+  background: none;
+  border: 0;
+  color: var(--color-surface-50);
+  font-size: 26px;
+  line-height: 1;
+  cursor: pointer;
+}
+.auth-x:hover { color: var(--color-surface-cream); }
+.auth-title {
+  font-size: var(--text-heading-sm);
+  font-weight: var(--fw-semibold);
+  letter-spacing: -0.02em;
+  margin-top: 10px;
+}
+.auth-sub { font-size: var(--text-body-sm); margin-top: 8px; }
+
+.auth-social {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-top: var(--spacing-24);
+}
+.auth-oauth {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  padding: 11px 14px;
+  border: 1px solid var(--color-surface-25);
+  border-radius: var(--radius-full);
+  background: transparent;
+  color: var(--color-surface-cream);
+  font-family: inherit;
+  font-size: var(--text-body-sm);
+  font-weight: var(--fw-medium);
+  cursor: pointer;
+  transition: border-color 0.25s var(--ease-out), background 0.25s var(--ease-out);
+}
+.auth-oauth:hover { border-color: var(--color-surface-cream); background: rgba(255, 252, 225, 0.04); }
+.auth-oauth svg { width: 18px; height: 18px; flex: none; }
+.auth-divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: var(--spacing-24);
+  color: var(--color-surface-50);
+  font-size: var(--text-caption);
+}
+.auth-divider::before,
+.auth-divider::after { content: ""; height: 1px; background: var(--color-surface-25); flex: 1; }
+
+.auth-form { margin-top: var(--spacing-16); max-width: none; gap: var(--spacing-16); }
+.auth-submit { width: 100%; margin-top: 4px; }
+.auth-error { font-size: var(--text-body-sm); color: #ff5b5b; }
+.auth-note { font-size: var(--text-body-sm); color: var(--color-light-green); }
+.auth-switch {
+  margin-top: var(--spacing-20);
+  font-size: var(--text-body-sm);
+  color: var(--color-surface-50);
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.auth-fineprint { margin-top: var(--spacing-16); font-size: var(--text-caption); }
+
+/* --- Dedicated auth pages (login.html / signup.html) --- */
+.auth-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 128px var(--gutter) 72px;
+}
+.auth-card {
+  width: 100%;
+  max-width: 460px;
+  background: var(--surface-canvas);
+  border: 1px solid var(--color-surface-25);
+  border-radius: 18px;
+  padding: clamp(26px, 4vw, 40px);
+}
+.auth-card .auth-title { font-size: var(--text-heading-sm); margin-top: 10px; }
+.field__labelrow { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+.pw-toggle {
+  background: none;
+  border: 0;
+  padding: 0;
+  color: var(--color-surface-50);
+  font-family: inherit;
+  font-size: var(--text-caption);
+  cursor: pointer;
+}
+.pw-toggle:hover { color: var(--color-surface-cream); }
+.auth-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  font-size: var(--text-body-sm);
+}
+.checkbox {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  color: var(--color-surface-50);
+  font-size: var(--text-body-sm);
+  cursor: pointer;
+}
+.checkbox input {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 18px;
+  height: 18px;
+  flex: none;
+  border: 1px solid var(--color-surface-25);
+  border-radius: 5px;
+  background: var(--surface-panel);
+  cursor: pointer;
+  position: relative;
+  transition: border-color 0.2s, background 0.2s;
+}
+.checkbox input:checked { background: var(--color-shockingly-green); border-color: var(--color-shockingly-green); }
+.checkbox input:checked::after {
+  content: "";
+  position: absolute;
+  left: 5px;
+  top: 1px;
+  width: 5px;
+  height: 10px;
+  border: solid var(--color-just-black);
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+.checkbox a { color: var(--color-surface-cream); text-decoration: underline; text-underline-offset: 2px; }
+
+.segmented {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+  padding: 4px;
+  border: 1px solid var(--color-surface-25);
+  border-radius: var(--radius-full);
+}
+.seg { position: relative; }
+.seg input { position: absolute; opacity: 0; inset: 0; cursor: pointer; }
+.seg span {
+  display: block;
+  text-align: center;
+  padding: 9px 12px;
+  border-radius: var(--radius-full);
+  font-size: var(--text-body-sm);
+  font-weight: var(--fw-medium);
+  color: var(--color-surface-50);
+  transition: background 0.2s, color 0.2s;
+}
+.seg input:checked + span { background: var(--color-surface-cream); color: var(--color-just-black); }
+
+.pw-meter {
+  height: 4px;
+  border-radius: 4px;
+  background: var(--color-surface-25);
+  overflow: hidden;
+  margin-top: 10px;
+}
+.pw-meter > span { display: block; height: 100%; width: 0; border-radius: 4px; transition: width 0.25s var(--ease-out), background 0.25s; }
+.pw-hint { font-size: var(--text-caption); margin-top: 6px; }
+
+/* ==========================================================================
    CTA band
    ========================================================================== */
 
