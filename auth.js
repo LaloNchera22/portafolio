@@ -78,6 +78,36 @@
     if (e.key === "Escape" && modal && !modal.hidden) closeAuth();
   });
 
+  /* ---- social sign-in (Google / GitHub / Apple native, Steam via bridge) --- */
+  document.addEventListener("click", function (e) {
+    var btn = e.target.closest("[data-oauth]");
+    if (!btn) return;
+    e.preventDefault();
+    var provider = btn.getAttribute("data-oauth");
+    clearError(); clearNote();
+    if (!configured || !client) {
+      showError("The backend isn't connected yet. Add your Supabase keys in supabase-config.js.");
+      return;
+    }
+    var redirectTo = new URL(CONSOLE_URL, window.location.href).href;
+
+    if (provider === "steam") {
+      // Steam speaks OpenID 2.0, not OAuth — handled by our steam-auth function.
+      var base = String(CFG.SUPABASE_URL).replace(/\/+$/, "");
+      window.location.href =
+        base + "/functions/v1/steam-auth/login?redirect_to=" + encodeURIComponent(redirectTo);
+      return;
+    }
+
+    // provider ids: google | github | apple
+    client.auth
+      .signInWithOAuth({ provider: provider, options: { redirectTo: redirectTo } })
+      .then(function (res) {
+        if (res.error) showError(res.error.message || "Couldn't start sign-in. Try again.");
+      })
+      .catch(function () { showError("Couldn't start sign-in. Try again."); });
+  });
+
   /* ---- submit ------------------------------------------------------------- */
   if (form) {
     form.addEventListener("submit", function (e) {

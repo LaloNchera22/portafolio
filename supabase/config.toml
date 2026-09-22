@@ -14,3 +14,24 @@ enable_signup = true
 # (defense in depth) before our own getUser() check runs.
 [functions.issue-api-key]
 verify_jwt = true
+
+# steam-auth is the Steam login ENTRY point — it runs before any session exists,
+# so it must be public. It does its own verification against Steam.
+[functions.steam-auth]
+verify_jwt = false
+
+# OAuth providers (Google, GitHub, Apple) are enabled + given their client
+# id/secret in the Supabase dashboard (Authentication → Providers). These blocks
+# are only for local `supabase start`; hosted uses the dashboard settings.
+# [auth.external.google]
+#   enabled = true
+#   client_id = "env(GOOGLE_CLIENT_ID)"
+#   secret = "env(GOOGLE_SECRET)"
+# [auth.external.github]
+#   enabled = true
+#   client_id = "env(GITHUB_CLIENT_ID)"
+#   secret = "env(GITHUB_SECRET)"
+# [auth.external.apple]
+#   enabled = true
+#   client_id = "env(APPLE_CLIENT_ID)"
+#   secret = "env(APPLE_SECRET)"

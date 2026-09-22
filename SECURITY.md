@@ -62,6 +62,26 @@ Edge Functions (Deno)  ← mint API keys, hash secrets, verify JWTs
 - Input is **allowlisted**: `environment` is coerced to `live`/`test`, names are
   length-capped, usernames are constrained by a `CHECK` regex in the schema.
 
+## Social sign-in (Google, GitHub, Apple, Steam)
+
+- **Google, GitHub, Apple** use Supabase's native OAuth (`signInWithOAuth`).
+  Enable each in the dashboard (Authentication → Providers) and paste that
+  provider's client id + secret there — nothing lands in the repo. The callback
+  redirects to `console.html`, where supabase-js completes the session.
+  - Apple ("iOS") requires an Apple Developer account: a Services ID, a Sign in
+    with Apple key, and `https://<ref>.supabase.co/auth/v1/callback` as the
+    return URL.
+- **Steam** has no OAuth — it speaks OpenID 2.0 — so it goes through the
+  `steam-auth` Edge Function (`supabase/functions/steam-auth/`). The function
+  redirects to Steam, then **verifies Steam's signed assertion straight back
+  against Steam** before trusting the steamid, and only then mints a Supabase
+  session via a magic link. Deploy it with `verify_jwt = false` (it is the login
+  entry, before any session exists) and set `ALLOWED_ORIGIN` (and optionally
+  `STEAM_WEB_API_KEY` for the player's name). Trade-offs to know: Steam returns
+  no email, so the account uses a stable synthetic identity
+  (`steam_<id>@steam.local`); this flow needs one end-to-end test once the
+  project is live.
+
 ## The client guard is not the security boundary
 
 `console.js` hides the console and redirects signed-out visitors. That is UX
@@ -74,12 +94,17 @@ bypasses the redirect and calls the API directly sees nothing that isn't theirs.
 2. **Apply the schema:** with the [Supabase CLI](https://supabase.com/docs/guides/cli),
    run `supabase link --project-ref <ref>` then `supabase db push`
    (or paste `supabase/migrations/0001_init.sql` into the SQL editor).
-3. **Deploy the function:** `supabase functions deploy issue-api-key`, then set
-   its secrets:
+3. **Deploy the functions:**
+   `supabase functions deploy issue-api-key` and
+   `supabase functions deploy steam-auth --no-verify-jwt`, then set secrets:
    `supabase secrets set SUPABASE_SERVICE_ROLE_KEY=<key> ALLOWED_ORIGIN=https://runinback.com`
-   (`SUPABASE_URL` and `SUPABASE_ANON_KEY` are injected automatically).
-4. **Wire the site:** put your project URL and anon key into `supabase-config.js`
+   (add `STEAM_WEB_API_KEY=<key>` for Steam names; `SUPABASE_URL` and
+   `SUPABASE_ANON_KEY` are injected automatically).
+4. **Enable social providers** in Authentication → Providers (Google, GitHub,
+   Apple) with each provider's client id + secret. Steam needs nothing here.
+5. **Wire the site:** put your project URL and anon key into `supabase-config.js`
    (both are public/safe). Redeploy on Vercel.
-5. In Supabase Auth settings, add your domain to the allowed redirect URLs.
+6. In Supabase Auth settings, add your domain + `console.html` to the allowed
+   redirect URLs.
 
 Never commit `.env` (it is git-ignored); `.env.example` shows the shape.
