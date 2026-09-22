@@ -1265,6 +1265,12 @@ ul {
   justify-content: center;
   padding: 128px var(--gutter) 72px;
 }
+.auth-panel {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
 .auth-card {
   width: 100%;
   max-width: 460px;
@@ -1272,6 +1278,85 @@ ul {
   border: 1px solid var(--color-surface-25);
   border-radius: 18px;
   padding: clamp(26px, 4vw, 40px);
+}
+/* The video half is decorative and only shows on wide screens. */
+.auth-aside { display: none; }
+
+/* Wide screens: a split with no page scroll — form on one half, the looping
+   hero clip behind a 50% glass panel with the logo centered on the other. */
+@media (min-width: 1024px) {
+  .auth-page {
+    padding: 0;
+    display: grid;
+    grid-template-columns: 1.05fr 1fr;
+    align-items: stretch;
+  }
+  .auth-panel {
+    height: 100vh;
+    overflow-y: auto;
+    /* `safe center` keeps the top reachable if the form is taller than the viewport */
+    align-items: safe center;
+    padding: clamp(76px, 8vh, 100px) clamp(32px, 5vw, 72px) clamp(28px, 4vh, 56px);
+  }
+  /* Compact the taller sign-up form so a spacious screen needs no scroll. */
+  .auth-panel .auth-title { font-size: var(--text-subheading); }
+  .auth-panel .auth-sub { margin-top: 6px; }
+  .auth-panel .auth-social {
+    margin-top: var(--spacing-16);
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+  }
+  .auth-panel .auth-oauth { padding: 9px 6px; gap: 6px; font-size: var(--text-caption); }
+  .auth-panel .auth-divider { margin-top: var(--spacing-16); }
+  .auth-panel .auth-form { gap: var(--spacing-12); margin-top: var(--spacing-12); }
+  .auth-panel .pw-hint { margin-top: 3px; }
+  .auth-panel .auth-switch { margin-top: var(--spacing-16); }
+  .auth-panel .auth-fineprint { margin-top: 10px; }
+  .auth-panel .field { gap: 6px; }
+  .auth-panel .field input { padding: 11px 14px; }
+  .auth-panel .seg span { padding: 9px 12px; }
+  .auth-card {
+    max-width: 440px;
+    background: transparent;
+    border: 0;
+    border-radius: 0;
+    padding: 0;
+  }
+  .auth-aside {
+    display: block;
+    position: relative;
+    height: 100vh;
+    overflow: hidden;
+    background: var(--surface-canvas);
+  }
+  .auth-aside__video {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  .auth-aside__glass {
+    position: absolute;
+    inset: 0;
+    background: rgba(14, 16, 15, 0.5);
+    -webkit-backdrop-filter: blur(16px) saturate(112%);
+    backdrop-filter: blur(16px) saturate(112%);
+    border-left: 1px solid var(--color-surface-25);
+  }
+  .auth-aside__logo {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: clamp(200px, 22vw, 320px);
+    height: auto;
+    z-index: 1;
+    filter: drop-shadow(0 0 40px rgba(0, 0, 0, 0.35));
+  }
+}
+@media (min-width: 1024px) and (prefers-reduced-motion: reduce) {
+  .auth-aside__video { display: none; }
 }
 .auth-card .auth-title { font-size: var(--text-heading-sm); margin-top: 10px; }
 .field__labelrow { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
@@ -1757,7 +1842,10 @@ body.home #main { --color-surface-50: var(--color-surface-cream); }
   transition: clip-path 1.05s var(--ease-in-out);
   transition-delay: var(--d, 0s);
 }
-.is-in [data-clip] { clip-path: inset(0 0 0 0); }
+/* Reveal wipes bottom-up. The final state keeps a negative bottom inset so the
+   clip box never crops the descenders (g, y, p) of the last line — display type
+   runs at line-height:1, so those glyphs paint below the border box. */
+.is-in [data-clip] { clip-path: inset(0 0 -0.3em 0); }
 
 /* Bullet cascade (landing only, so developers.html lists are untouched). */
 body.home .feature__list li {
