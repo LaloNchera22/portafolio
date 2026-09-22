@@ -115,28 +115,30 @@
     }
   }
 
-  /* --- Hero background video: loop only 0–7s ---------------------------- */
-  const heroVideo = document.getElementById("hero-video");
-  if (heroVideo) {
-    const LOOP_END = 7;
-    heroVideo.loop = false;
+  /* --- Background videos: loop only 0–7s (hero + auth split panel) ------- */
+  const LOOP_END = 7;
+  const loopVideos = [document.getElementById("hero-video")]
+    .concat(Array.prototype.slice.call(document.querySelectorAll(".auth-aside__video")))
+    .filter(Boolean);
+  loopVideos.forEach((vid) => {
+    vid.loop = false;
     const toStart = () => {
-      try { heroVideo.currentTime = 0; } catch (e) {}
+      try { vid.currentTime = 0; } catch (e) {}
     };
-    heroVideo.addEventListener("timeupdate", () => {
-      if (heroVideo.currentTime >= LOOP_END) toStart();
+    vid.addEventListener("timeupdate", () => {
+      if (vid.currentTime >= LOOP_END) toStart();
     });
-    heroVideo.addEventListener("ended", () => {
+    vid.addEventListener("ended", () => {
       toStart();
-      if (!reduceMotion) heroVideo.play().catch(() => {});
+      if (!reduceMotion) vid.play().catch(() => {});
     });
     if (reduceMotion) {
       toStart();
-      heroVideo.pause();
+      vid.pause();
     } else {
-      heroVideo.play().catch(() => {});
+      vid.play().catch(() => {});
     }
-  }
+  });
 
   /* --- FAQ accordion ---------------------------------------------------- */
   document.querySelectorAll("[data-faq]").forEach((item) => {

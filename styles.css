@@ -1296,25 +1296,31 @@ ul {
     overflow-y: auto;
     /* `safe center` keeps the top reachable if the form is taller than the viewport */
     align-items: safe center;
-    padding: clamp(76px, 8vh, 100px) clamp(32px, 5vw, 72px) clamp(28px, 4vh, 56px);
+    padding: clamp(64px, 7vh, 88px) clamp(32px, 5vw, 72px) clamp(20px, 3vh, 44px);
   }
-  /* Compact the taller sign-up form so a spacious screen needs no scroll. */
-  .auth-panel .auth-title { font-size: var(--text-subheading); }
-  .auth-panel .auth-sub { margin-top: 6px; }
+  /* Compact the forms so a spacious screen needs no scroll. */
+  .auth-panel .eyebrow { font-size: var(--text-caption); }
+  .auth-panel .auth-title { font-size: var(--text-subheading); white-space: nowrap; }
+  .auth-panel .auth-sub { margin-top: 4px; font-size: var(--text-body-sm); }
   .auth-panel .auth-social {
-    margin-top: var(--spacing-16);
+    margin-top: 10px;
     grid-template-columns: repeat(4, 1fr);
     gap: 8px;
   }
-  .auth-panel .auth-oauth { padding: 9px 6px; gap: 6px; font-size: var(--text-caption); }
-  .auth-panel .auth-divider { margin-top: var(--spacing-16); }
-  .auth-panel .auth-form { gap: var(--spacing-12); margin-top: var(--spacing-12); }
-  .auth-panel .pw-hint { margin-top: 3px; }
-  .auth-panel .auth-switch { margin-top: var(--spacing-16); }
-  .auth-panel .auth-fineprint { margin-top: 10px; }
-  .auth-panel .field { gap: 6px; }
-  .auth-panel .field input { padding: 11px 14px; }
-  .auth-panel .seg span { padding: 9px 12px; }
+  .auth-panel .auth-oauth { padding: 8px 6px; gap: 6px; font-size: var(--text-caption); }
+  .auth-panel .auth-divider { margin-top: var(--spacing-12); }
+  .auth-panel .auth-form { gap: 10px; margin-top: 10px; }
+  .auth-panel .field { gap: 5px; }
+  .auth-panel .field label { font-size: var(--text-caption); }
+  .auth-panel .field input { padding: 9px 13px; }
+  .auth-panel .seg span { padding: 8px 12px; font-size: var(--text-body-sm); }
+  .auth-panel .pw-meter { margin-top: 2px; }
+  .auth-panel .pw-hint { margin-top: 2px; }
+  .auth-panel .auth-submit { padding: 11px 24px; }
+  .auth-panel .auth-row { font-size: var(--text-caption); }
+  .auth-panel .checkbox { font-size: var(--text-caption); }
+  .auth-panel .auth-switch { margin-top: 12px; }
+  .auth-panel .auth-fineprint { margin-top: 8px; }
   .auth-card {
     max-width: 440px;
     background: transparent;
@@ -1339,7 +1345,7 @@ ul {
   .auth-aside__glass {
     position: absolute;
     inset: 0;
-    background: rgba(14, 16, 15, 0.5);
+    background: rgba(14, 16, 15, 0.4);
     -webkit-backdrop-filter: blur(16px) saturate(112%);
     backdrop-filter: blur(16px) saturate(112%);
     border-left: 1px solid var(--color-surface-25);
