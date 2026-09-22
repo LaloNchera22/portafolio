@@ -373,4 +373,42 @@
     gResize();
     gStart();
   }
+
+  /* --- Cookie consent banner ------------------------------------------- */
+  (function cookieConsent() {
+    const KEY = "rib-cookie-consent";
+    let stored = null;
+    try { stored = localStorage.getItem(KEY); } catch (e) {}
+    if (stored === "accepted" || stored === "declined") return;
+
+    const save = (value) => {
+      try { localStorage.setItem(KEY, value); } catch (e) {}
+    };
+
+    const banner = document.createElement("aside");
+    banner.className = "cookie-consent";
+    banner.setAttribute("role", "region");
+    banner.setAttribute("aria-label", "Cookie notice");
+    banner.innerHTML =
+      '<p class="cookie-consent__text">We use essential cookies to keep you signed in and run the site. ' +
+      "With your consent we may also use optional cookies to understand how it's used. Read our " +
+      '<a href="cookies.html">Cookie Policy</a>.</p>' +
+      '<div class="cookie-consent__actions">' +
+      '<button type="button" class="btn btn--ghost btn--sm" data-cookie="declined">Decline</button>' +
+      '<button type="button" class="btn btn--cta btn--sm" data-cookie="accepted">Accept</button>' +
+      "</div>";
+    document.body.appendChild(banner);
+
+    requestAnimationFrame(() => {
+      setTimeout(() => banner.classList.add("is-in"), 60);
+    });
+
+    banner.addEventListener("click", (e) => {
+      const btn = e.target.closest("[data-cookie]");
+      if (!btn) return;
+      save(btn.getAttribute("data-cookie"));
+      banner.classList.remove("is-in");
+      setTimeout(() => banner.remove(), 650);
+    });
+  })();
 })();
