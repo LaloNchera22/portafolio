@@ -1899,8 +1899,17 @@ body.home .is-in .feature__list li:nth-child(3) { transition-delay: 0.46s; }
 .cookie-consent__actions { display: flex; gap: var(--spacing-12); flex: 0 0 auto; }
 
 @media (max-width: 520px) {
-  .cookie-consent { flex-direction: column; align-items: stretch; }
-  .cookie-consent__actions { justify-content: stretch; }
+  .cookie-consent {
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--spacing-12);
+    padding: var(--spacing-16);
+    bottom: 12px;
+    width: calc(100vw - 24px);
+    border-radius: var(--radius-lg);
+  }
+  .cookie-consent__text { flex: 0 0 auto; font-size: var(--text-caption); line-height: 1.5; }
+  .cookie-consent__actions { flex: 0 0 auto; gap: var(--spacing-8); }
   .cookie-consent__actions .btn { flex: 1; justify-content: center; }
 }
 @media (prefers-reduced-motion: reduce) {
