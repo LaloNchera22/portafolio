@@ -37,6 +37,34 @@
   function isEmail(s) { return /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(s); }
   function busy(btn, on, label) { if (!btn) return; btn.disabled = on; btn.style.opacity = on ? ".6" : ""; if (label != null) btn.textContent = on ? "One moment…" : label; }
 
+  // Turn Supabase/GoTrue error codes into clear, actionable messages.
+  function friendly(e, fallback) {
+    var code = (e && (e.code || e.error_code || e.name)) || "";
+    switch (code) {
+      case "over_email_send_rate_limit":
+      case "email_rate_limit_exceeded":
+        return "Too many email requests right now. Please wait a few minutes and try again.";
+      case "user_already_exists":
+      case "email_exists":
+        return "That email already has an account — try logging in instead.";
+      case "invalid_credentials":
+      case "invalid_login_credentials":
+        return "Wrong email or password.";
+      case "email_not_confirmed":
+        return "Please confirm your email first — check your inbox for the link.";
+      case "weak_password":
+        return "That password is too weak. Use at least 8 characters.";
+      case "email_address_invalid":
+        return "That email address looks invalid. Please use another.";
+      case "signup_disabled":
+        return "Sign-ups are turned off right now.";
+      case "provider_disabled":
+        return "That sign-in option isn't enabled yet.";
+      default:
+        return (e && e.message) || fallback || "Something went wrong. Please try again.";
+    }
+  }
+
   /* ---- password show / hide ----------------------------------------------- */
   document.addEventListener("click", function (e) {
     var t = e.target.closest("[data-toggle-pw]"); if (!t) return;
@@ -62,7 +90,7 @@
       return;
     }
     client.auth.signInWithOAuth({ provider: provider, options: { redirectTo: redirectTo } })
-      .then(function (res) { if (res.error) err(SCOPE, res.error.message || "Couldn't start sign-in."); })
+      .then(function (res) { if (res.error) err(SCOPE, friendly(res.error, "Couldn't start sign-in.")); })
       .catch(function () { err(SCOPE, "Couldn't start sign-in. Try again."); });
   });
 
@@ -111,7 +139,7 @@
       var btn = $("login-submit"); busy(btn, true);
       client.auth.signInWithPassword({ email: email, password: password })
         .then(function (res) {
-          if (res.error) { err("login", res.error.message || "Couldn't sign in."); return; }
+          if (res.error) { err("login", friendly(res.error, "Couldn't sign in.")); return; }
           window.location.href = CONSOLE_URL;
         })
         .catch(function () { err("login", "Network error. Please try again."); })
@@ -127,7 +155,7 @@
       busy(ml, true, "Email me a magic link");
       client.auth.signInWithOtp({ email: email, options: { emailRedirectTo: absUrl(CONSOLE_URL) } })
         .then(function (res) {
-          if (res.error) { err("login", res.error.message); return; }
+          if (res.error) { err("login", friendly(res.error)); return; }
           note("login", "Magic link sent — check your inbox to finish signing in.");
         })
         .finally(function () { busy(ml, false, "Email me a magic link"); });
@@ -141,7 +169,7 @@
       if (!isEmail(email)) { err("login", "Enter your email above first, then tap reset."); return; }
       client.auth.resetPasswordForEmail(email, { redirectTo: absUrl("login.html") })
         .then(function (res) {
-          if (res.error) { err("login", res.error.message); return; }
+          if (res.error) { err("login", friendly(res.error)); return; }
           note("login", "Password reset link sent — check your inbox.");
         });
     });
@@ -195,7 +223,7 @@
         options: { data: { username: username, display_name: username, role: role }, emailRedirectTo: absUrl(CONSOLE_URL) },
       })
         .then(function (res) {
-          if (res.error) { err("signup", res.error.message || "Couldn't create the account."); return; }
+          if (res.error) { err("signup", friendly(res.error, "Couldn't create the account.")); return; }
           if (res.data && res.data.user && !res.data.session) {
             note("signup", "Account created — check your inbox to confirm your email, then log in.");
             return;
