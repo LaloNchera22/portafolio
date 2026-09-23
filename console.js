@@ -18,7 +18,7 @@
   if (!A.configured) {
     if (loading) {
       loading.innerHTML =
-        '<p class="muted">The backend isn\'t connected yet. Add your Supabase keys in <code>supabase-config.js</code> to enable accounts.</p>';
+        '<p class="muted">The backend isn\'t connected yet. Set <code>SUPABASE_URL</code> and <code>SUPABASE_ANON_KEY</code> in your Vercel environment variables to enable accounts.</p>';
     }
     return;
   }

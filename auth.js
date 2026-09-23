@@ -1,8 +1,9 @@
 /* ============================================================================
  * Runinback — authentication for the static site.
  * Powers login.html and signup.html, keeps the nav in sync on every page, and
- * runs the social providers. No secrets here: the anon key comes from
- * supabase-config.js and every data access is gated server-side by RLS.
+ * runs the social providers. No secrets here: the anon key comes from the
+ * /api/config endpoint (Vercel env vars) and every data access is gated
+ * server-side by RLS.
  * Degrades gracefully when the backend is not configured.
  * ========================================================================== */
 (function () {
@@ -32,7 +33,7 @@
   function err(scope, m) { var e = $(scope + "-error"); if (e) { e.textContent = m; e.hidden = false; } var n = $(scope + "-note"); if (n) n.hidden = true; }
   function note(scope, m) { var n = $(scope + "-note"); if (n) { n.textContent = m; n.hidden = false; } var e = $(scope + "-error"); if (e) e.hidden = true; }
   function clearMsg(scope) { var e = $(scope + "-error"); if (e) e.hidden = true; var n = $(scope + "-note"); if (n) n.hidden = true; }
-  function notConfigured(scope) { err(scope, "The backend isn't connected yet. Add your Supabase keys in supabase-config.js."); }
+  function notConfigured(scope) { err(scope, "The backend isn't connected yet. Set SUPABASE_URL and SUPABASE_ANON_KEY in your Vercel environment variables."); }
   function isEmail(s) { return /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(s); }
   function busy(btn, on, label) { if (!btn) return; btn.disabled = on; btn.style.opacity = on ? ".6" : ""; if (label != null) btn.textContent = on ? "One moment…" : label; }
 

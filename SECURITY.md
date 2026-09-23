@@ -34,8 +34,9 @@ Edge Functions (Deno)  ← mint API keys, hash secrets, verify JWTs
    (`auth.uid() = owner_id`). There is no "public read" anywhere.
 3. **Least privilege for keys.**
    - `anon` key: public, in the browser. Can do only what RLS allows.
-   - `service_role` key: server-only, bypasses RLS. Lives exclusively in Edge
-     Function secrets — never in the repo, never in `supabase-config.js`.
+   - `service_role` key: server-only, bypasses RLS. It is injected into Edge
+     Functions automatically by Supabase — never in the repo, never in the
+     browser, never in a client config.
    - API keys for developers are **hashed** (SHA-256) before storage; the
      plaintext is shown once and never persisted. Direct client inserts into
      `api_keys` are refused by RLS; keys can only be minted server-side.
@@ -96,14 +97,18 @@ bypasses the redirect and calls the API directly sees nothing that isn't theirs.
    (or paste `supabase/migrations/0001_init.sql` into the SQL editor).
 3. **Deploy the functions:**
    `supabase functions deploy issue-api-key` and
-   `supabase functions deploy steam-auth --no-verify-jwt`, then set secrets:
-   `supabase secrets set SUPABASE_SERVICE_ROLE_KEY=<key> ALLOWED_ORIGIN=https://runinback.com`
-   (add `STEAM_WEB_API_KEY=<key>` for Steam names; `SUPABASE_URL` and
-   `SUPABASE_ANON_KEY` are injected automatically).
+   `supabase functions deploy steam-auth --no-verify-jwt`, then set only the
+   custom secrets:
+   `supabase secrets set ALLOWED_ORIGIN=https://runinback.com`
+   (add `STEAM_WEB_API_KEY=<key>` for Steam names). Do **not** set
+   `SUPABASE_URL`, `SUPABASE_ANON_KEY` or `SUPABASE_SERVICE_ROLE_KEY` — those
+   are reserved and injected into every function automatically.
 4. **Enable social providers** in Authentication → Providers (Google, GitHub,
    Apple) with each provider's client id + secret. Steam needs nothing here.
-5. **Wire the site:** put your project URL and anon key into `supabase-config.js`
-   (both are public/safe). Redeploy on Vercel.
+5. **Wire the site:** in Vercel → Settings → Environment Variables (Production
+   and Preview), set `SUPABASE_URL` and `SUPABASE_ANON_KEY` (both public/safe).
+   The site reads them at runtime from the `/api/config` endpoint — nothing is
+   hardcoded in the repo. Redeploy on Vercel.
 6. In Supabase Auth settings, add your domain + `console.html` to the allowed
    redirect URLs.
 
