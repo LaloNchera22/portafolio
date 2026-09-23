@@ -57,11 +57,43 @@ Edge Functions (Deno)  ← mint API keys, hash secrets, verify JWTs
   occur on the client path.
 - Server-side inserts in the Edge Function also go through `supabase-js`
   (parameterized), not raw SQL.
-- The two database functions are `SECURITY DEFINER`/`INVOKER` with a pinned
+- Every database function — the two in `0001` and all the arena RPCs in
+  `0002_arena.sql` — is `SECURITY DEFINER`/`INVOKER` with a pinned
   `search_path = ''`, so they cannot be hijacked by shadowing objects in another
   schema — the other common injection vector against Postgres functions.
 - Input is **allowlisted**: `environment` is coerced to `live`/`test`, names are
-  length-capped, usernames are constrained by a `CHECK` regex in the schema.
+  length-capped, usernames are constrained by a `CHECK` regex, and stakes, fees
+  and player counts are range-checked both in the RPC and by table `CHECK`s.
+
+## The arena: money moves only through server-side RPCs (test-mode)
+
+`supabase/migrations/0002_arena.sql` adds the cartera (wallet), retos PvP and
+torneos. It runs in **modo de prueba**: balances are an off-chain test ledger so
+the whole flow works end to end. The **real** money layer of Runinback is
+**non-custodial and on-chain over Base** (escrow smart contracts + audit,
+Fase 3+); no real funds move here.
+
+The zero-trust rules still hold, and the escrow is built so the client can never
+forge a balance:
+
+- **No client writes to money tables.** `wallets`, `wallet_ledger`, `challenges`,
+  `tournaments` and `tournament_entries` have RLS with **read-only** policies for
+  `authenticated` (own rows; open challenges and the tournament catalog are
+  visible for the lobby). There is **no** INSERT/UPDATE/DELETE policy, so a
+  direct client write is refused.
+- **All mutations go through `SECURITY DEFINER` RPCs** (`rib_deposit_test`,
+  `rib_withdraw_test`, `rib_challenge_create/accept/report/cancel`,
+  `rib_tournament_create/join/finish`). Each derives identity from
+  `auth.uid()` — never from a value in the request — checks the balance and
+  state, and moves funds **atomically** in one transaction, so the wallet and
+  the ledger can never drift. The internal helper `rib_apply` has its `EXECUTE`
+  revoked, so only the definer RPCs can touch balances.
+- **Escrow is conserved.** Creating or accepting a reto locks the stake
+  (moves it from `test_balance` to `test_locked`); settlement pays the full pot
+  to the reported winner only when **both** players agree, refunds on cancel, and
+  parks the funds on a dispute. The books stay zero-sum.
+- These RPCs are the natural place to swap the test ledger for on-chain calls to
+  the Base escrow contract in Fase 3 — the front end and RLS stay the same.
 
 ## Social sign-in (Google, GitHub, Apple, Steam)
 
@@ -93,8 +125,9 @@ bypasses the redirect and calls the API directly sees nothing that isn't theirs.
 
 1. Create a project at [supabase.com](https://supabase.com).
 2. **Apply the schema:** with the [Supabase CLI](https://supabase.com/docs/guides/cli),
-   run `supabase link --project-ref <ref>` then `supabase db push`
-   (or paste `supabase/migrations/0001_init.sql` into the SQL editor).
+   run `supabase link --project-ref <ref>` then `supabase db push` (applies both
+   `0001_init.sql` and `0002_arena.sql`). Or paste both migrations into the SQL
+   editor, in order — they are idempotent and safe to re-run.
 3. **Deploy the functions:**
    `supabase functions deploy issue-api-key` and
    `supabase functions deploy steam-auth --no-verify-jwt`, then set only the

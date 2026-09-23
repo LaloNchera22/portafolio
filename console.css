@@ -102,8 +102,77 @@
 .capp .keybox .val { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
 .capp .keybox code { flex: 1 1 240px; }
 
+/* wallet chip in the top bar */
+.capp .wallet-chip { font-family: var(--c-mono); font-size: 13px; color: var(--c-cream); border: 1px solid var(--c-hairline); border-radius: 100px; padding: 5px 12px; white-space: nowrap; }
+
+/* hero balance (resumen) + wallet cards */
+.capp .hero-bal { display: flex; align-items: flex-end; justify-content: space-between; gap: 28px; flex-wrap: wrap; padding-bottom: 30px; border-bottom: 1px solid var(--c-hairline); }
+.capp .hero-bal__main { display: flex; flex-direction: column; gap: 4px; }
+.capp .hero-bal__main .lbl { font-size: 13px; color: var(--c-dim); }
+.capp .hero-bal__main .num { font-size: clamp(44px, 9vw, 68px); font-weight: 600; letter-spacing: -0.04em; line-height: 1; font-variant-numeric: tabular-nums; }
+.capp .hero-bal__main .sub { font-size: 13px; color: var(--c-dim); font-variant-numeric: tabular-nums; }
+.capp .hero-bal__stats { display: flex; gap: 28px; }
+.capp .hero-bal__stats > div { display: flex; flex-direction: column; }
+.capp .hero-bal__stats .n { font-size: 26px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.capp .hero-bal__stats .k { font-size: 12px; color: var(--c-dim); }
+
+.capp .quick { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 26px; }
+
+.capp .testnote { margin-top: 40px; font-size: 12.5px; color: var(--c-dim); line-height: 1.6; max-width: 68ch; border-top: 1px solid var(--c-hairline); padding-top: 18px; }
+.capp .testnote strong { color: var(--c-cream); font-weight: 500; }
+
+/* amount chips */
+.capp .chips { display: flex; gap: 8px; flex-wrap: wrap; }
+.capp .chips button { font-family: var(--c-font); font-size: 14px; font-weight: 500; color: var(--c-cream); background: var(--c-canvas); border: 1px solid var(--c-hairline); border-radius: 100px; padding: 9px 16px; cursor: pointer; transition: border-color .2s, color .2s; }
+.capp .chips button:hover { border-color: var(--c-cream); }
+.capp .chips button.on { color: var(--c-canvas); background: var(--c-cream); border-color: var(--c-cream); }
+
+/* wallet layout */
+.capp .wallet-top { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; align-items: stretch; }
+.capp .wallet-card { background: var(--c-panel); border-radius: 14px; padding: 24px; display: flex; flex-direction: column; gap: 6px; justify-content: center; }
+.capp .wallet-card .lbl { font-size: 13px; color: var(--c-dim); }
+.capp .wallet-card .num { font-size: clamp(36px, 7vw, 52px); font-weight: 600; letter-spacing: -0.03em; line-height: 1; font-variant-numeric: tabular-nums; }
+.capp .wallet-card .sub { font-size: 13px; color: var(--c-dim); font-variant-numeric: tabular-nums; }
+.capp .wallet-deposit { display: flex; flex-direction: column; gap: 14px; }
+.capp .field-lbl { font-size: 13px; color: var(--c-dim); display: flex; align-items: center; gap: 8px; }
+.capp .pill { font-family: var(--c-mono); font-size: 10px; letter-spacing: .08em; text-transform: uppercase; color: var(--c-dim); border: 1px solid var(--c-hairline); border-radius: 100px; padding: 2px 8px; }
+.capp .btn--wide { width: 100%; justify-content: center; }
+.capp .withdraw-row { display: flex; gap: 10px; }
+.capp .withdraw-row input { flex: 1; font-family: var(--c-font); font-size: 15px; color: var(--c-cream); background: var(--c-canvas); border: 1px solid var(--c-hairline); border-radius: 10px; padding: 11px 13px; }
+.capp .withdraw-row input:focus { outline: none; border-color: var(--c-cream); }
+
+/* ledger + reto rows */
+.capp .row--led { grid-template-columns: 1fr auto; }
+.capp .row--reto { grid-template-columns: 1fr auto; }
+.capp .row__act { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; justify-content: flex-end; }
+.capp .amt { font-family: var(--c-mono); font-size: 14px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.capp .amt.pos { color: var(--c-good); }
+.capp .amt.neg { color: var(--c-bad); }
+.capp .mini-sel { font-family: var(--c-font); font-size: 13px; color: var(--c-cream); background: var(--c-canvas); border: 1px solid var(--c-hairline); border-radius: 100px; padding: 6px 10px; }
+
+/* tournament cards */
+.capp #tor-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 14px; }
+.capp .tcard { background: var(--c-panel); border-radius: 14px; padding: 18px; display: flex; flex-direction: column; gap: 14px; }
+.capp .tcard__top { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
+.capp .tcard__name { font-size: 16px; font-weight: 600; }
+.capp .tcard__pool { text-align: right; display: flex; flex-direction: column; }
+.capp .tcard__pool .k { font-size: 11px; color: var(--c-dim); }
+.capp .tcard__pool .v { font-size: 20px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.capp .tcard__mid { display: flex; justify-content: space-between; font-size: 13px; color: var(--c-dim); font-variant-numeric: tabular-nums; }
+.capp .tcard__act { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; min-height: 32px; }
+
+/* dev metrics */
+.capp .metrics { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+.capp .metric { background: var(--c-panel); border-radius: 14px; padding: 24px; display: flex; flex-direction: column; gap: 4px; }
+.capp .metric .n { font-size: 40px; font-weight: 600; letter-spacing: -0.03em; font-variant-numeric: tabular-nums; }
+.capp .metric .k { font-size: 13px; color: var(--c-dim); }
+
 @media (max-width: 560px) {
   .capp .field--row { grid-template-columns: 1fr; }
   .capp .row--keys { grid-template-columns: 1fr auto; }
   .capp .row--keys .tag { display: none; }
+  .capp .wallet-top { grid-template-columns: 1fr; }
+  .capp .metrics { grid-template-columns: 1fr; }
+  .capp .hero-bal__stats { gap: 20px; }
+  .capp .wallet-chip { display: none; }
 }
