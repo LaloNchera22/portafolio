@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="es">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -13,50 +13,190 @@
   <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png" />
   <link rel="icon" type="image/png" sizes="16x16" href="favicon-16.png" />
   <link rel="apple-touch-icon" href="apple-touch-icon.png" />
-  <link rel="manifest" href="site.webmanifest" />
   <link rel="stylesheet" href="styles.css" />
+  <link rel="stylesheet" href="console.css" />
 </head>
 <body>
-  <a class="skip-link" href="#main">Skip to content</a>
-
-  <header class="nav is-scrolled" data-nav>
-    <div class="shell nav__inner">
-      <a href="index.html" class="brand" aria-label="Runinback home">
-        <img class="brand__icon" src="logo-icon.png" width="34" height="24" alt="" />
-        <img class="brand__word" src="logo-word.png" width="64" height="14" alt="" />
-      </a>
-      <nav class="nav__links" aria-label="Primary">
-        <a href="index.html" class="nav__link">Home</a>
-        <a href="developers.html" class="nav__link">Developers</a>
-        <span class="nav__account">
-          <button type="button" class="nav__link nav__auth" data-auth-signout>Log out</button>
-        </span>
-      </nav>
-    </div>
-  </header>
-
-  <main id="main">
-    <section class="section">
-      <div class="shell" style="min-height: 60vh; display: grid; align-content: center;">
-        <div id="console-loading" class="muted" role="status">Loading your console…</div>
-
-        <div id="console-main" hidden>
-          <p class="eyebrow">Signed in</p>
-          <h1 class="h1" style="margin-top: 10px;">Welcome, <span id="console-user">player</span>.</h1>
-          <p class="lead muted mt-24" style="max-width: 60ch;">
-            Your account is live. The full player and developer console — wallet, PvP
-            challenges, tournaments, API keys and payouts — is being wired to this
-            page next. Everything you do here is protected server-side: you can only
-            ever read or change data that belongs to you.
-          </p>
-          <div class="mt-32" style="display:flex; gap:var(--spacing-16); flex-wrap:wrap;">
-            <a href="developers.html" class="btn btn--cta">Read the docs <span class="arrow">→</span></a>
-            <button type="button" class="btn btn--ghost" data-auth-signout>Log out</button>
+  <div class="capp" id="capp" hidden>
+    <!-- top bar -->
+    <header class="capp__bar">
+      <div class="capp__barrow">
+        <a href="index.html" class="brand" aria-label="Runinback home">
+          <img class="brand__icon" src="logo-icon.png" width="28" height="20" alt="" />
+          <img class="brand__word" src="logo-word.png" width="56" height="13" alt="" />
+        </a>
+        <div class="persona" role="tablist" aria-label="Vista">
+          <button type="button" role="tab" id="tab-player" aria-selected="true" data-persona="player">Jugador</button>
+          <button type="button" role="tab" id="tab-dev" aria-selected="false" data-persona="dev">Dev</button>
+        </div>
+        <div class="capp__end">
+          <div class="acct">
+            <div id="acct-name">@player</div>
+            <div class="n" id="acct-email">—</div>
           </div>
+          <button type="button" class="btn btn--sm" data-auth-signout>Log out</button>
         </div>
       </div>
-    </section>
-  </main>
+      <div class="capp__menu">
+        <nav id="nav-player" aria-label="Menú de jugador">
+          <a data-page="j-resumen" aria-current="page">Resumen</a>
+          <a data-page="j-retos">Retos PvP</a>
+          <a data-page="j-torneos">Torneos</a>
+          <a data-page="j-cartera">Cartera</a>
+          <a data-page="j-perfil">Perfil</a>
+        </nav>
+        <nav id="nav-dev" aria-label="Menú de dev" hidden>
+          <a data-page="d-proyectos" aria-current="page">Proyectos</a>
+          <a data-page="d-keys">API keys</a>
+          <a data-page="d-metricas">Métricas</a>
+          <a data-page="d-logs">Logs</a>
+          <a data-page="d-retiros">Retiros</a>
+        </nav>
+      </div>
+    </header>
+
+    <main class="capp__wrap">
+      <!-- ============================ PLAYER ============================ -->
+      <section class="page" id="j-resumen">
+        <div class="head"><div><p class="eyebrow">Reset · Replay · Redeem</p><h1 id="j-hello">Buen juego.</h1></div></div>
+        <div class="empty">
+          <span class="soon">Próximamente</span>
+          <h3>Tus partidas y ganancias aparecerán aquí</h3>
+          <p>Los retos PvP, torneos y cartera se activan en cuanto conectemos el backend de juego y los pagos on-chain sobre Base. Tu cuenta ya está lista; nada aquí es simulado.</p>
+        </div>
+      </section>
+
+      <section class="page" id="j-retos" hidden>
+        <div class="head"><div><p class="eyebrow">Matchmaking</p><h1>Retos PvP.</h1></div></div>
+        <div class="empty">
+          <span class="soon">Próximamente</span>
+          <h3>Aún no hay retos</h3>
+          <p>Cuando el motor de apuestas 1v1 esté conectado, aquí crearás y aceptarás retos con escrow no custodial. Sin datos inventados hasta entonces.</p>
+        </div>
+      </section>
+
+      <section class="page" id="j-torneos" hidden>
+        <div class="head"><div><p class="eyebrow">Escrow</p><h1>Torneos.</h1></div></div>
+        <div class="empty">
+          <span class="soon">Próximamente</span>
+          <h3>Aún no hay torneos</h3>
+          <p>Brackets, inscripciones y premios en escrow vivirán aquí una vez conectado el backend de torneos.</p>
+        </div>
+      </section>
+
+      <section class="page" id="j-cartera" hidden>
+        <div class="head"><div><p class="eyebrow">Cartera</p><h1>Tu cartera.</h1></div></div>
+        <div class="empty">
+          <span class="soon">Próximamente</span>
+          <h3>Sin movimientos todavía</h3>
+          <p>Runinback es no custodial: conectarás tu propia wallet sobre Base y tus saldos y movimientos reales se mostrarán aquí. No guardamos tus fondos ni tus llaves.</p>
+        </div>
+      </section>
+
+      <section class="page" id="j-perfil" hidden>
+        <div class="head"><div><p class="eyebrow">Cuenta</p><h1>Perfil.</h1></div></div>
+        <div class="card-box">
+          <form id="profile-form" novalidate>
+            <div class="field">
+              <label for="pf-username">Usuario</label>
+              <input id="pf-username" type="text" minlength="3" maxlength="24" pattern="[a-zA-Z0-9_]+" autocomplete="off" />
+            </div>
+            <div class="field">
+              <label for="pf-display">Nombre para mostrar</label>
+              <input id="pf-display" type="text" maxlength="60" autocomplete="off" />
+            </div>
+            <div class="field--row">
+              <div class="field"><label>Email</label><input id="pf-email" type="text" disabled /></div>
+              <div class="field"><label>Miembro desde</label><input id="pf-since" type="text" disabled /></div>
+            </div>
+            <button type="submit" class="btn btn--cta" id="pf-save">Guardar cambios</button>
+            <p class="msg" id="pf-msg" hidden></p>
+          </form>
+        </div>
+      </section>
+
+      <!-- ============================= DEV ============================= -->
+      <section class="page" id="d-proyectos" hidden>
+        <div class="head">
+          <div><p class="eyebrow">Arena SDK</p><h1>Proyectos.</h1></div>
+          <div class="head__r"><button type="button" class="btn btn--cta" id="proj-new">Nuevo proyecto</button></div>
+        </div>
+        <form id="proj-form" class="card-box" hidden>
+          <div class="field"><label for="proj-name">Nombre del proyecto</label><input id="proj-name" type="text" maxlength="80" placeholder="Mi juego" /></div>
+          <div class="field"><label for="proj-env">Entorno</label>
+            <select id="proj-env"><option value="test">Test</option><option value="live">Live</option></select>
+          </div>
+          <div class="head__r">
+            <button type="submit" class="btn btn--cta" id="proj-save">Crear</button>
+            <button type="button" class="btn" id="proj-cancel">Cancelar</button>
+          </div>
+          <p class="msg" id="proj-msg" hidden></p>
+        </form>
+        <div class="sec">
+          <div id="proj-list"><p class="muted">Cargando…</p></div>
+        </div>
+      </section>
+
+      <section class="page" id="d-keys" hidden>
+        <div class="head">
+          <div><p class="eyebrow">Arena SDK</p><h1>API keys.</h1></div>
+          <div class="head__r"><button type="button" class="btn btn--cta" id="key-new">Emitir key</button></div>
+        </div>
+        <form id="key-form" class="card-box" hidden>
+          <div class="field"><label for="key-name">Nombre</label><input id="key-name" type="text" maxlength="60" placeholder="default" /></div>
+          <div class="field--row">
+            <div class="field"><label for="key-env">Entorno</label>
+              <select id="key-env"><option value="test">Test</option><option value="live">Live</option></select>
+            </div>
+            <div class="field"><label for="key-project">Proyecto</label>
+              <select id="key-project"><option value="">Sin proyecto</option></select>
+            </div>
+          </div>
+          <div class="head__r">
+            <button type="submit" class="btn btn--cta" id="key-save">Emitir</button>
+            <button type="button" class="btn" id="key-cancel">Cancelar</button>
+          </div>
+          <div class="keybox" id="key-reveal" hidden>
+            <div class="lbl">Copia tu key ahora — no se vuelve a mostrar.</div>
+            <div class="val"><code id="key-plaintext"></code><button type="button" class="btn btn--sm" id="key-copy">Copiar</button></div>
+          </div>
+          <p class="msg" id="key-msg" hidden></p>
+        </form>
+        <div class="sec">
+          <div id="key-list"><p class="muted">Cargando…</p></div>
+        </div>
+      </section>
+
+      <section class="page" id="d-metricas" hidden>
+        <div class="head"><div><p class="eyebrow">SDK</p><h1>Métricas.</h1></div></div>
+        <div class="empty">
+          <span class="soon">Próximamente</span>
+          <h3>Sin tráfico todavía</h3>
+          <p>El uso de tus endpoints del SDK aparecerá aquí cuando tus keys empiecen a recibir llamadas.</p>
+        </div>
+      </section>
+
+      <section class="page" id="d-logs" hidden>
+        <div class="head"><div><p class="eyebrow">SDK</p><h1>Logs.</h1></div></div>
+        <div class="empty">
+          <span class="soon">Próximamente</span>
+          <h3>Sin eventos todavía</h3>
+          <p>Los registros de peticiones y errores de tus proyectos se mostrarán aquí.</p>
+        </div>
+      </section>
+
+      <section class="page" id="d-retiros" hidden>
+        <div class="head"><div><p class="eyebrow">Pagos</p><h1>Retiros.</h1></div></div>
+        <div class="empty">
+          <span class="soon">Próximamente</span>
+          <h3>Sin fondos para retirar</h3>
+          <p>Los pagos a developers, no custodiales sobre Base, se habilitarán aquí junto con el backend on-chain.</p>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <div id="console-loading" class="muted" role="status" style="min-height:60vh;display:grid;place-content:center;text-align:center;padding:24px;">Cargando tu consola…</div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="/api/config"></script>

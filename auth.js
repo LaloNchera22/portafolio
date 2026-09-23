@@ -235,13 +235,16 @@
     });
   }
 
-  /* ---- exposed for the console page guard --------------------------------- */
+  /* ---- exposed for the console page (guard + real data access) ------------- */
   window.RuninbackAuth = {
     configured: configured,
     getSession: function () {
       if (!client) return Promise.resolve(null);
       return client.auth.getSession().then(function (r) { return r.data ? r.data.session : null; });
     },
+    // The live supabase-js client: every query it runs is gated by RLS, so the
+    // console can only ever read or write rows the signed-in user owns.
+    getClient: function () { return client; },
     signOut: function () { return client ? client.auth.signOut() : Promise.resolve(); },
   };
 })();
