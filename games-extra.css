@@ -21,9 +21,17 @@
 .capp .ge-cell.ok { cursor: pointer; border-color: var(--c-good); }
 .capp .ge-cell.ok:hover { background: rgba(53,208,127,.12); }
 .capp .ge-cell.just { box-shadow: inset 0 0 0 2px var(--c-cream); }
-.capp .ge-disc { width: 72%; height: 72%; border-radius: 50%; display: block; }
-.capp .ge-disc.p0 { background: var(--c-cream); }
-.capp .ge-disc.p1 { background: var(--card-r); }
+.capp .ge-disc { width: 72%; height: 72%; border-radius: 50%; display: block; box-shadow: inset 0 2px 3px rgba(255,255,255,.25), inset 0 -3px 5px rgba(0,0,0,.35), 0 1px 3px rgba(0,0,0,.4); }
+.capp .ge-disc.p0 { background: radial-gradient(circle at 34% 30%, #fffef4, var(--c-cream)); }
+.capp .ge-disc.p1 { background: radial-gradient(circle at 34% 30%, #f0787c, var(--card-r)); }
+
+/* stronger, clearer interaction states shared across the extra games */
+.capp .ge-cell.movable { box-shadow: inset 0 0 0 2px var(--c-good); }
+.capp .ge-cell.target { box-shadow: inset 0 0 0 2px rgba(255,252,225,.65); }
+.capp .ge-cell.target::after { content: ""; position: absolute; width: 30%; height: 30%; border-radius: 50%; background: rgba(255,252,225,.7); }
+.capp .ge-cell.target { position: relative; }
+.capp .ge-cell.ok:hover { background: rgba(53,208,127,.16); }
+.capp .ge-cell.just { box-shadow: inset 0 0 0 2px var(--c-cream); }
 
 /* Gomoku */
 .capp .ge-gomoku { gap: 2px; min-width: 360px; }

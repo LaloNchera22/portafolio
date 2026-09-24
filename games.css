@@ -25,6 +25,35 @@
 
 .capp .games-open { margin-top: 40px; }
 
+/* card foot: play + a quiet help "?" together on the left */
+.capp .gcard__left { display: flex; align-items: center; gap: 8px; }
+.capp .gcard .soon { background: transparent; cursor: pointer; }
+.capp .gcard .soon:hover { color: var(--c-cream); border-color: var(--c-cream); }
+
+/* round "?" how-to-play button */
+.capp .ghelp-btn { width: 28px; height: 28px; flex: 0 0 auto; border-radius: 50%; border: 1px solid var(--c-hairline); background: transparent; color: var(--c-dim); font-size: 14px; font-weight: 600; line-height: 1; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; transition: color .15s, border-color .15s; }
+.capp .ghelp-btn:hover { color: var(--c-cream); border-color: var(--c-cream); }
+.capp .gscreen__how { margin-left: auto; }
+.capp .gyou { text-align: center; font-size: 13px; color: var(--c-cream); margin: 0 0 12px; line-height: 1.5; }
+
+/* how-to-play overlay */
+.capp .ghelp-back { position: fixed; inset: 0; background: rgba(6, 7, 6, .72); backdrop-filter: blur(3px); display: flex; align-items: center; justify-content: center; padding: 20px; z-index: 200; }
+.capp .ghelp { background: var(--c-panel); border: 1px solid var(--c-hairline); border-radius: 18px; width: 100%; max-width: 440px; max-height: 88vh; overflow-y: auto; display: flex; flex-direction: column; }
+.capp .ghelp__head { display: flex; align-items: center; gap: 12px; padding: 20px 22px 14px; border-bottom: 1px solid var(--c-hairline); }
+.capp .ghelp__ic { font-size: 24px; line-height: 1; }
+.capp .ghelp__title { font-size: 19px; font-weight: 600; letter-spacing: -.01em; flex: 1; }
+.capp .ghelp__x { width: 30px; height: 30px; border-radius: 50%; border: 1px solid var(--c-hairline); background: transparent; color: var(--c-dim); font-size: 13px; cursor: pointer; flex: 0 0 auto; }
+.capp .ghelp__x:hover { color: var(--c-cream); border-color: var(--c-cream); }
+.capp .ghelp__body { padding: 18px 22px 6px; }
+.capp .ghelp__you { font-size: 14px; color: var(--c-cream); margin: 0 0 16px; line-height: 1.55; padding: 12px 14px; background: var(--c-canvas); border-radius: 12px; }
+.capp .ghelp__h { font-size: 11px; letter-spacing: .09em; text-transform: uppercase; color: var(--c-dim); margin: 16px 0 8px; font-weight: 600; }
+.capp .ghelp__steps { margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 7px; }
+.capp .ghelp__steps li { font-size: 14px; color: var(--c-cream); line-height: 1.55; }
+.capp .ghelp__win { font-size: 14px; color: var(--c-cream); line-height: 1.55; margin: 0; }
+.capp .ghelp__tip { font-size: 13px; color: var(--c-dim); line-height: 1.55; margin: 16px 0 4px; padding-top: 14px; border-top: 1px solid var(--c-hairline); }
+.capp .ghelp__tip b { color: var(--c-cream); font-weight: 600; }
+.capp .ghelp__foot { padding: 14px 22px 20px; display: flex; justify-content: flex-end; }
+
 /* game screen chrome */
 .capp .gscreen__top { display: flex; align-items: center; gap: 14px; margin-bottom: 22px; }
 .capp .gscreen__name { font-size: 22px; font-weight: 600; letter-spacing: -.02em; margin: 0; }
@@ -61,8 +90,8 @@
 /* ---- Connect Four ------------------------------------------------------- */
 .capp .gg-c4 { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; background: var(--c-panel); padding: 10px; border-radius: 14px; width: 100%; max-width: 420px; }
 .capp .gg-c4__cell { aspect-ratio: 1; border-radius: 50%; background: var(--c-canvas); border: 1px solid var(--c-hairline); }
-.capp .gg-c4__cell.p0 { background: var(--c-good); border-color: var(--c-good); }
-.capp .gg-c4__cell.p1 { background: var(--card-y); border-color: var(--card-y); }
+.capp .gg-c4__cell.p0 { background: radial-gradient(circle at 34% 30%, #6fe3a6, var(--c-good)); border-color: var(--c-good); box-shadow: inset 0 -3px 6px rgba(0,0,0,.28); }
+.capp .gg-c4__cell.p1 { background: radial-gradient(circle at 34% 30%, #efd873, var(--card-y)); border-color: var(--card-y); box-shadow: inset 0 -3px 6px rgba(0,0,0,.28); }
 .capp .gg-c4__cell.just { box-shadow: 0 0 0 2px var(--c-cream); }
 .capp .gg-c4__drop { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; width: 100%; max-width: 420px; padding: 0 10px; }
 .capp .gg-c4__col { font-size: 15px; color: var(--c-dim); background: transparent; border: 1px solid var(--c-hairline); border-radius: 8px; padding: 5px 0; cursor: pointer; transition: color .15s, border-color .15s; }
@@ -75,9 +104,9 @@
 .capp .gg-rev__cell.ok { cursor: pointer; box-shadow: inset 0 0 0 2px rgba(255,252,225,.25); }
 .capp .gg-rev__cell.ok:hover { box-shadow: inset 0 0 0 2px var(--c-cream); }
 .capp .gg-rev__cell.just .gg-rev__disc { box-shadow: 0 0 0 2px var(--c-cream); }
-.capp .gg-rev__disc { width: 74%; height: 74%; border-radius: 50%; }
-.capp .gg-rev__disc.p0 { background: var(--c-cream); }
-.capp .gg-rev__disc.p1 { background: #0e100f; box-shadow: inset 0 0 0 1px var(--c-hairline); }
+.capp .gg-rev__disc { width: 74%; height: 74%; border-radius: 50%; box-shadow: inset 0 2px 3px rgba(255,255,255,.2), inset 0 -3px 5px rgba(0,0,0,.4), 0 1px 3px rgba(0,0,0,.45); }
+.capp .gg-rev__disc.p0 { background: radial-gradient(circle at 34% 30%, #fffef4, var(--c-cream)); }
+.capp .gg-rev__disc.p1 { background: radial-gradient(circle at 34% 30%, #2b2d29, #0a0b0a); box-shadow: inset 0 0 0 1px rgba(255,252,225,.18), inset 0 -3px 5px rgba(0,0,0,.5); }
 .capp .gg-rev__score { display: flex; gap: 22px; justify-content: center; margin-top: 12px; font-variant-numeric: tabular-nums; font-size: 14px; font-weight: 600; }
 .capp .gg-rev__score .p0 { color: var(--c-cream); } .capp .gg-rev__score .p1 { color: var(--c-dim); }
 
@@ -101,8 +130,9 @@
 .capp .gg-chk__sq.target { cursor: pointer; }
 .capp .gg-chk__sq.target::after { content: ""; width: 26%; height: 26%; border-radius: 50%; background: rgba(255,252,225,.55); }
 .capp .gg-chk__pc { width: 72%; height: 72%; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 15px; }
-.capp .gg-chk__pc.p0 { background: var(--c-cream); color: var(--c-canvas); }
-.capp .gg-chk__pc.p1 { background: var(--card-r); color: #fff; }
+.capp .gg-chk__pc { box-shadow: inset 0 2px 3px rgba(255,255,255,.25), inset 0 -3px 5px rgba(0,0,0,.35), 0 1px 3px rgba(0,0,0,.45); }
+.capp .gg-chk__pc.p0 { background: radial-gradient(circle at 34% 30%, #fffef4, var(--c-cream)); color: var(--c-canvas); }
+.capp .gg-chk__pc.p1 { background: radial-gradient(circle at 34% 30%, #f0787c, var(--card-r)); color: #fff; }
 .capp .gg-chk__pc.king { box-shadow: 0 0 0 2px var(--c-good); }
 
 /* ---- Crazy Eights ------------------------------------------------------- */
