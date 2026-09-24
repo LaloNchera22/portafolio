@@ -519,6 +519,75 @@ window.RIBGames = (function () {
 
   function h(id) { return document.getElementById(id); }
 
+  /* ---- how-to-play overlay ------------------------------------------------ */
+  var HELP = {};   // filled by games-help.js (RIBGames.HELP)
+  function getHelp(id) { return (window.RIBGames && window.RIBGames.HELP && window.RIBGames.HELP[id]) || HELP[id] || null; }
+
+  function seenKey(id) { return "rib_game_seen_" + id; }
+  function firstTime(id) { try { if (localStorage.getItem(seenKey(id))) return false; localStorage.setItem(seenKey(id), "1"); return true; } catch (e) { return false; } }
+
+  // small round "?" button that opens the how-to-play overlay for a game
+  function helpButton(gameId) {
+    var b = el("button", "ghelp-btn", "?");
+    b.type = "button";
+    b.title = "How to play";
+    b.setAttribute("aria-label", "How to play");
+    b.addEventListener("click", function () { showHelp(gameId); });
+    return b;
+  }
+
+  function showHelp(gameId) {
+    var mod = MODULES[gameId] || null;
+    var meta = mod || CATALOG.filter(function (g) { return g.id === gameId; })[0] || { name: gameId, icon: "?" };
+    var help = getHelp(gameId);
+
+    var back = el("div", "ghelp-back");
+    var panel = el("div", "ghelp");
+    panel.setAttribute("role", "dialog");
+    panel.setAttribute("aria-modal", "true");
+
+    var head = el("div", "ghelp__head");
+    head.innerHTML = '<span class="ghelp__ic">' + esc(meta.icon || "?") + '</span>' +
+      '<span class="ghelp__title">' + esc(meta.name) + '</span>';
+    var x = el("button", "ghelp__x", "✕"); x.setAttribute("aria-label", "Close");
+    head.appendChild(x);
+    panel.appendChild(head);
+
+    var body = el("div", "ghelp__body");
+    if (help) {
+      if (help.you) { var yo = el("p", "ghelp__you"); yo.textContent = help.you; body.appendChild(yo); }
+      if (help.how && help.how.length) {
+        body.appendChild(el("h4", "ghelp__h", "How to play"));
+        var ol = el("ol", "ghelp__steps");
+        help.how.forEach(function (step) { ol.appendChild(el("li", null, step)); });
+        body.appendChild(ol);
+      }
+      if (help.win) {
+        body.appendChild(el("h4", "ghelp__h", help.soon ? "Objective" : "How to win"));
+        body.appendChild(el("p", "ghelp__win", help.win));
+      }
+      if (help.tip) {
+        var tip = el("p", "ghelp__tip"); tip.innerHTML = '<b>Tip.</b> ' + esc(help.tip); body.appendChild(tip);
+      }
+    } else {
+      body.appendChild(el("p", "ghelp__win", meta.blurb || "Tap the highlighted squares to play."));
+    }
+    panel.appendChild(body);
+
+    var foot = el("div", "ghelp__foot");
+    var ok = el("button", "btn btn--cta", help && help.soon ? "Close" : "Got it");
+    foot.appendChild(ok); panel.appendChild(foot);
+
+    back.appendChild(panel);
+    function close() { if (back.parentNode) back.parentNode.removeChild(back); document.removeEventListener("keydown", onKey); }
+    function onKey(e) { if (e.key === "Escape") close(); }
+    x.addEventListener("click", close);
+    ok.addEventListener("click", close);
+    back.addEventListener("click", function (e) { if (e.target === back) close(); });
+    document.addEventListener("keydown", onKey);
+    document.body.appendChild(back);
+  }
+
   function init(ctx) {
     CTX = ctx || {};
     host = h("games-root");
@@ -542,11 +611,19 @@ window.RIBGames = (function () {
         '<div class="gcard__n">' + esc(g.name) + '</div>' +
         '<p class="gcard__d">' + esc(g.blurb) + '</p>';
       var foot = el("div", "gcard__foot");
-      if (g.soon) { foot.appendChild(el("span", "soon", "Coming soon")); }
+      if (g.soon) {
+        var soon = el("button", "soon", "Coming soon");
+        soon.title = "Preview";
+        soon.addEventListener("click", function () { showHelp(g.id); });
+        foot.appendChild(soon);
+      }
       else {
+        var left = el("div", "gcard__left");
         var play = el("button", "btn btn--sm gcard__play", "Play");
         play.addEventListener("click", function () { openGame(g.id); });
-        foot.appendChild(play);
+        left.appendChild(play);
+        left.appendChild(helpButton(g.id));
+        foot.appendChild(left);
         foot.appendChild(el("span", "gcard__tag", g.tag));
       }
       card.appendChild(foot);
@@ -571,6 +648,9 @@ window.RIBGames = (function () {
     back.addEventListener("click", renderLobby);
     top.appendChild(back);
     top.appendChild(el("h2", "gscreen__name", mod.name));
+    var how = el("button", "btn btn--sm gscreen__how", "How to play");
+    how.addEventListener("click", function () { showHelp(gameId); });
+    top.appendChild(how);
     host.appendChild(top);
 
     var choose = el("div", "gchoose");
@@ -604,6 +684,9 @@ window.RIBGames = (function () {
     choose.appendChild(forCoin);
 
     host.appendChild(choose);
+
+    // show the rules automatically the first time you open this game
+    if (firstTime(gameId)) showHelp(gameId);
   }
 
   /* ---- practice loop (seat 0 = you, seat 1 = bot) ------------------------- */
@@ -617,8 +700,11 @@ window.RIBGames = (function () {
     back.addEventListener("click", function () { openGame(gameId); });
     top.appendChild(back);
     top.appendChild(el("h2", "gscreen__name", mod.name + " · practice"));
+    top.appendChild(helpButton(gameId));
     host.appendChild(top);
     var stageWrap = el("div", "gstage");
+    var legend = getHelp(gameId);
+    if (legend && legend.you) stageWrap.appendChild(el("p", "gyou", legend.you));
     var turnbar = el("div", "gturn"); turnbar.id = "g-turn";
     var board = el("div", "gboard"); board.id = "g-board";
     var over = el("div", "gover"); over.id = "g-over"; over.hidden = true;
@@ -745,8 +831,12 @@ window.RIBGames = (function () {
     back.addEventListener("click", function () { stopOnline(); renderLobby(); });
     top.appendChild(back);
     top.appendChild(el("h2", "gscreen__name", mod.name + " · " + rcoin(match.stake_cents * 2) + " rcoin pot"));
+    top.appendChild(helpButton(mod.id));
     host.appendChild(top);
     var stageWrap = el("div", "gstage");
+    var oLegend = getHelp(mod.id);
+    // piece colors follow seat 0/1, so the "you play …" legend only holds for the host
+    if (seat === 0 && oLegend && oLegend.you) stageWrap.appendChild(el("p", "gyou", oLegend.you));
     var turnbar = el("div", "gturn"); turnbar.id = "g-turn";
     var board = el("div", "gboard"); board.id = "g-board";
     var over = el("div", "gover"); over.id = "g-over"; over.hidden = true;
