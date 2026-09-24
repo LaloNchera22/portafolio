@@ -495,14 +495,21 @@ window.RIBGames = (function () {
 
   // Catalog order + "coming soon" entries (from Plato's real line-up).
   var CATALOG = [
-    TicTacToe, Connect4, Reversi, Mancala, Checkers, CrazyEights,
-    { id: "dominoes", name: "Dominoes", tag: "soon", icon: "🁣", blurb: "Classic 1v1. Match the ends and be the first to run out.", soon: true },
-    { id: "dots", name: "Dots & Boxes", tag: "soon", icon: "□", blurb: "Draw lines, close boxes, own the grid.", soon: true },
-    { id: "battleship", name: "Sea Battle", tag: "soon", icon: "⚓", blurb: "Hunt and sink your rival's hidden fleet.", soon: true },
+    TicTacToe, Connect4, Reversi, Mancala, Checkers, CrazyEights
+  ];
+  var COMING_SOON = [
     { id: "chess", name: "Chess", tag: "soon", icon: "♞", blurb: "The classic. Ranked matches and stakes.", soon: true },
     { id: "ludo", name: "Ludo", tag: "soon", icon: "⚁", blurb: "Race all four tokens home. 2 to 4 players.", soon: true },
-    { id: "gofish", name: "Go Fish", tag: "soon", icon: "🐟", blurb: "Collect sets by asking for cards. Quick and light.", soon: true }
+    { id: "backgammon", name: "Backgammon", tag: "soon", icon: "⛃", blurb: "Roll, race and bear off before your rival.", soon: true },
+    { id: "spades", name: "Spades", tag: "soon", icon: "♠", blurb: "Bid your tricks and hit your target as a team.", soon: true },
+    { id: "hearts", name: "Hearts", tag: "soon", icon: "♥", blurb: "Dodge the hearts and the queen of spades.", soon: true },
+    { id: "poker", name: "Poker", tag: "soon", icon: "♣", blurb: "Heads-up hold'em tables.", soon: true }
   ];
+
+  // Extra games register themselves (see games-extra.js), inserted before the
+  // coming-soon block. Call once all modules are defined.
+  function register(mod) { MODULES[mod.id] = mod; CATALOG.push(mod); }
+  function finishCatalog() { for (var i = 0; i < COMING_SOON.length; i++) CATALOG.push(COMING_SOON[i]); }
 
   /* =========================================================================
    * DRIVER — runs a single game (practice vs bot, or online for rcoin).
@@ -829,5 +836,5 @@ window.RIBGames = (function () {
     if (CTX.refreshWallet) CTX.refreshWallet();
   }
 
-  return { init: init, CATALOG: CATALOG, MODULES: MODULES };
+  return { init: init, CATALOG: CATALOG, MODULES: MODULES, register: register, finishCatalog: finishCatalog };
 })();

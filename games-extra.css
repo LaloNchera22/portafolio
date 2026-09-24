@@ -1,0 +1,147 @@
+/* ============================================================================
+ * Runinback — Games extra pack styles. Generic board/piece primitives shared
+ * by the 21 extra games, plus a few per-game bits. Lives inside .capp and uses
+ * its tokens; card-suit colors (--card-*) come from games.css.
+ * ========================================================================== */
+.capp .ge-scroll { width: 100%; overflow-x: auto; display: flex; justify-content: center; }
+.capp .ge-info { font-size: 12.5px; color: var(--c-dim); text-align: center; line-height: 1.5; margin: 8px 0 0; }
+.capp .ge-score { display: flex; gap: 22px; justify-content: center; margin-top: 12px; font-size: 14px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.capp .ge-score .p0 { color: var(--c-cream); } .capp .ge-score .p1 { color: var(--c-dim); }
+.capp .ge-pick { display: flex; gap: 10px; align-items: center; justify-content: center; margin-top: 12px; }
+
+/* generic grid + cell */
+.capp .ge-grid { display: grid; gap: 5px; width: 100%; margin: 0 auto; }
+.capp .ge-cell { aspect-ratio: 1; background: var(--c-panel); border: 1px solid var(--c-hairline); border-radius: 9px; display: flex; align-items: center; justify-content: center; padding: 0; cursor: default; color: var(--c-cream); font-weight: 600; font-variant-numeric: tabular-nums; transition: border-color .12s, background .12s; }
+.capp .ge-cell.ge-big { font-size: 30px; }
+.capp .ge-cell.p0 { color: var(--c-good); } .capp .ge-cell.p1 { color: var(--card-b); }
+.capp .ge-cell.d { background: #0e100f; } .capp .ge-cell.l { background: #1c1d1a; }
+.capp .ge-cell.movable { cursor: pointer; box-shadow: inset 0 0 0 2px rgba(53,208,127,.5); }
+.capp .ge-cell.target { cursor: pointer; box-shadow: inset 0 0 0 2px rgba(255,252,225,.4); }
+.capp .ge-cell.sel { box-shadow: inset 0 0 0 2px var(--c-cream); }
+.capp .ge-cell.ok { cursor: pointer; border-color: var(--c-good); }
+.capp .ge-cell.ok:hover { background: rgba(53,208,127,.12); }
+.capp .ge-cell.just { box-shadow: inset 0 0 0 2px var(--c-cream); }
+.capp .ge-disc { width: 72%; height: 72%; border-radius: 50%; display: block; }
+.capp .ge-disc.p0 { background: var(--c-cream); }
+.capp .ge-disc.p1 { background: var(--card-r); }
+
+/* Gomoku */
+.capp .ge-gomoku { gap: 2px; min-width: 360px; }
+.capp .ge-gomoku .ge-cell { border-radius: 3px; }
+
+/* Misère / Achi / Hexapawn / Fifteen reuse ge-grid + ge-big */
+.capp .ge-ttt3 { display: grid; grid-template-columns: repeat(3, 78px); grid-template-rows: repeat(3, 78px); gap: 6px; }
+.capp .ge-ttt3 .ge-cell { font-size: 36px; }
+
+/* Chomp */
+.capp .ge-cell.ge-chomp.gone { opacity: 0; pointer-events: none; }
+.capp .ge-cell.ge-chomp.poison { color: var(--c-bad); }
+
+/* Domineering */
+.capp .ge-cell.ge-dm { border-radius: 4px; }
+.capp .ge-cell.ge-dm.on { background: var(--card-b); border-color: var(--card-b); }
+
+/* Dots & Boxes */
+.capp .ge-dots { display: inline-flex; flex-direction: column; align-items: center; margin: 0 auto; }
+.capp .ge-dots__rh { display: flex; align-items: center; }
+.capp .ge-dots__rv { display: flex; align-items: center; }
+.capp .ge-dots__dot { width: 9px; height: 9px; border-radius: 50%; background: var(--c-dim); flex: 0 0 auto; }
+.capp .ge-dots__h { width: 46px; height: 9px; margin: 0 1px; border: 0; background: var(--c-hairline); opacity: .35; border-radius: 4px; cursor: pointer; padding: 0; }
+.capp .ge-dots__v { width: 9px; height: 46px; margin: 1px 0; border: 0; background: var(--c-hairline); opacity: .35; border-radius: 4px; cursor: pointer; padding: 0; }
+.capp .ge-dots__h.on, .capp .ge-dots__v.on { opacity: 1; background: var(--c-cream); }
+.capp .ge-dots__h:not(:disabled):hover, .capp .ge-dots__v:not(:disabled):hover { opacity: .8; background: var(--c-good); }
+.capp .ge-dots__box { width: 46px; height: 46px; }
+.capp .ge-dots__box.p0 { background: rgba(53,208,127,.22); } .capp .ge-dots__box.p1 { background: rgba(229,89,94,.22); }
+
+/* Nim */
+.capp .ge-nim { display: flex; flex-direction: column; gap: 14px; align-items: center; padding: 10px 0; }
+.capp .ge-nim__row { display: flex; gap: 8px; }
+.capp .ge-nim__o { width: 22px; height: 40px; border-radius: 11px; background: var(--c-cream); border: 0; cursor: pointer; padding: 0; transition: transform .1s, background .1s; }
+.capp .ge-nim__o:not(:disabled):hover { background: var(--c-bad); transform: translateY(-3px); }
+
+/* Nine Men's Morris */
+.capp .ge-morris { display: grid; grid-template-columns: repeat(7, 1fr); grid-template-rows: repeat(7, 1fr); gap: 0; width: 100%; max-width: 320px; aspect-ratio: 1; margin: 0 auto; background:
+  linear-gradient(var(--c-hairline), var(--c-hairline)) center/100% 1px no-repeat; }
+.capp .ge-morris__p { background: transparent; border: 0; display: flex; align-items: center; justify-content: center; cursor: default; padding: 0; position: relative; z-index: 1; }
+.capp .ge-morris__p::before { content: ""; width: 9px; height: 9px; border-radius: 50%; background: var(--c-hairline); position: absolute; }
+.capp .ge-morris__p .ge-disc { width: 74%; height: 74%; position: relative; }
+.capp .ge-morris__p.ok { cursor: pointer; } .capp .ge-morris__p.ok::before { background: var(--c-good); width: 13px; height: 13px; }
+.capp .ge-morris__p.movable { cursor: pointer; } .capp .ge-morris__p.movable .ge-disc { box-shadow: 0 0 0 2px var(--c-good); }
+.capp .ge-morris__p.sel .ge-disc { box-shadow: 0 0 0 2px var(--c-cream); }
+.capp .ge-morris__p.rm { cursor: pointer; } .capp .ge-morris__p.rm .ge-disc { box-shadow: 0 0 0 2px var(--c-bad); }
+
+/* Ultimate TTT */
+.capp .ge-uttt { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; width: 100%; max-width: 400px; margin: 0 auto; }
+.capp .ge-uttt__sb { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2px; background: var(--c-panel); border: 1px solid var(--c-hairline); border-radius: 8px; padding: 4px; position: relative; aspect-ratio: 1; }
+.capp .ge-uttt__sb.active { border-color: var(--c-good); box-shadow: 0 0 0 1px var(--c-good); }
+.capp .ge-uttt__sb.done { align-items: center; justify-content: center; }
+.capp .ge-uttt__sb.w0 { background: rgba(53,208,127,.14); } .capp .ge-uttt__sb.w1 { background: rgba(91,147,242,.14); }
+.capp .ge-uttt__c { aspect-ratio: 1; background: var(--c-canvas); border: 0; border-radius: 3px; font-size: 13px; font-weight: 600; color: var(--c-cream); cursor: pointer; padding: 0; }
+.capp .ge-uttt__c.p0 { color: var(--c-good); } .capp .ge-uttt__c.p1 { color: var(--card-b); }
+.capp .ge-uttt__c:disabled { cursor: default; }
+.capp .ge-uttt__big { grid-column: 1 / -1; grid-row: 1 / -1; display: flex; align-items: center; justify-content: center; font-size: 44px; font-weight: 600; }
+.capp .ge-uttt__sb.w0 .ge-uttt__big { color: var(--c-good); } .capp .ge-uttt__sb.w1 .ge-uttt__big { color: var(--card-b); }
+
+/* Pong Hau */
+.capp .ge-ph { display: grid; grid-template-columns: repeat(3, 60px); grid-template-rows: repeat(3, 60px); margin: 20px auto; position: relative; }
+.capp .ge-ph__n { background: transparent; border: 0; display: flex; align-items: center; justify-content: center; cursor: default; position: relative; }
+.capp .ge-ph__n::before { content: ""; width: 11px; height: 11px; border-radius: 50%; background: var(--c-hairline); position: absolute; }
+.capp .ge-ph__n .ge-disc { width: 70%; height: 70%; position: relative; }
+.capp .ge-ph__n.ok { cursor: pointer; } .capp .ge-ph__n.ok::before { background: var(--c-good); width: 15px; height: 15px; }
+.capp .ge-ph__n.movable .ge-disc { box-shadow: 0 0 0 2px var(--c-good); cursor: pointer; }
+.capp .ge-ph__n.sel .ge-disc { box-shadow: 0 0 0 2px var(--c-cream); }
+
+/* Sea Battle */
+.capp .ge-sb { display: flex; flex-direction: column; align-items: center; gap: 6px; width: 100%; }
+.capp .ge-sb__g { max-width: 300px; gap: 3px; }
+.capp .ge-sb__c { border-radius: 4px; font-size: 13px; background: rgba(91,147,242,.1); }
+.capp .ge-sb__c.ship { background: var(--c-elevated); }
+.capp .ge-sb__c.hit { background: var(--c-bad); color: #fff; }
+.capp .ge-sb__c.miss { background: var(--c-panel); color: var(--c-dim); }
+.capp button.ge-sb__c:not(:disabled) { cursor: pointer; }
+.capp button.ge-sb__c:not(:disabled):hover { border-color: var(--c-cream); }
+
+/* Memory */
+.capp .ge-mem { display: flex; flex-direction: column; align-items: center; }
+.capp .ge-mem__c { font-size: 22px; background: var(--c-elevated); color: transparent; cursor: pointer; }
+.capp .ge-mem__c.up { color: var(--c-cream); background: var(--c-panel); }
+.capp .ge-mem__c.taken { opacity: .35; }
+
+/* Go Fish */
+.capp .ge-gofish { display: flex; flex-direction: column; gap: 6px; align-items: center; width: 100%; }
+.capp .ge-gofish__you { color: var(--c-cream); margin-top: 6px; }
+.capp .ge-gofish__hand { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-top: 4px; }
+.capp .ge-gofish__card { font-family: var(--c-font); font-size: 15px; font-weight: 600; color: var(--c-cream); background: var(--c-elevated); border: 1px solid var(--c-hairline); border-radius: 10px; padding: 12px 14px; cursor: pointer; min-width: 44px; }
+.capp .ge-gofish__card:not(:disabled):hover { border-color: var(--c-cream); }
+.capp .ge-gofish__card:disabled { opacity: .6; cursor: default; }
+
+/* Pig */
+.capp .ge-pig { display: flex; flex-direction: column; align-items: center; gap: 14px; }
+.capp .ge-pig__die { font-size: 72px; line-height: 1; }
+.capp .ge-pig__acts { display: flex; gap: 12px; }
+
+/* Dominoes */
+.capp .ge-dom { display: flex; flex-direction: column; gap: 8px; align-items: center; width: 100%; }
+.capp .ge-dom__chain { display: flex; flex-wrap: wrap; gap: 4px; justify-content: center; padding: 12px; background: var(--c-panel); border-radius: 12px; min-height: 44px; width: 100%; }
+.capp .ge-dom__hand { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; }
+.capp .ge-dom__tile { font-family: var(--c-mono); font-size: 14px; color: var(--c-cream); background: var(--c-elevated); border: 1px solid var(--c-hairline); border-radius: 8px; padding: 8px 10px; }
+.capp button.ge-dom__tile { cursor: default; }
+.capp button.ge-dom__tile.ok { cursor: pointer; border-color: var(--c-good); color: var(--c-good); }
+.capp button.ge-dom__tile:disabled { opacity: .55; }
+
+/* Fifteen */
+.capp .ge-fifteen { display: flex; flex-direction: column; align-items: center; }
+
+/* Kayles */
+.capp .ge-kayles { display: flex; flex-direction: column; align-items: center; gap: 10px; }
+.capp .ge-kayles__row { display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; }
+.capp .ge-kayles__pin { width: 40px; height: 52px; font-size: 24px; background: transparent; border: 0; cursor: pointer; padding: 0; transition: transform .1s; }
+.capp .ge-kayles__pin:not(:disabled):hover { transform: translateY(-4px); }
+.capp .ge-kayles__pin.down { opacity: .15; pointer-events: none; }
+.capp .ge-kayles__pin.sel { transform: translateY(-6px); filter: drop-shadow(0 0 4px var(--c-cream)); }
+
+@media (max-width: 560px) {
+  .capp .ge-gomoku { min-width: 300px; }
+  .capp .ge-ttt3 { grid-template-columns: repeat(3, 64px); grid-template-rows: repeat(3, 64px); }
+  .capp .ge-dots__h { width: 34px; } .capp .ge-dots__v { height: 34px; } .capp .ge-dots__box { width: 34px; height: 34px; }
+}
