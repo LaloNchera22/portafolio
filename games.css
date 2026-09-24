@@ -1,0 +1,144 @@
+/* ============================================================================
+ * Runinback — Games styles. Lives inside .capp, reuses its design tokens
+ * (dark canvas, cream ink, hairlines, ghost pills). Card-game colors are
+ * functional (the four suits), kept muted to match the console.
+ * ========================================================================== */
+.capp {
+  --card-r: #e5595e;
+  --card-y: #e2c246;
+  --card-g: #35d07f;
+  --card-b: #5b93f2;
+}
+
+.capp .games-intro { font-size: 14px; color: var(--c-dim); max-width: 64ch; line-height: 1.6; margin: 0 0 26px; }
+
+/* catalog grid */
+.capp .games-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 14px; }
+.capp .gcard { background: var(--c-panel); border-radius: 14px; padding: 20px; display: flex; flex-direction: column; gap: 9px; min-height: 150px; }
+.capp .gcard--soon { opacity: .62; }
+.capp .gcard__ic { font-size: 26px; line-height: 1; }
+.capp .gcard__n { font-size: 17px; font-weight: 600; letter-spacing: -.01em; }
+.capp .gcard__d { font-size: 13px; color: var(--c-dim); line-height: 1.5; flex: 1; }
+.capp .gcard__foot { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 4px; }
+.capp .gcard__tag { font-family: var(--c-mono); font-size: 11px; color: var(--c-dim); }
+.capp .gcard .soon { font-family: var(--c-mono); font-size: 10px; letter-spacing: .08em; text-transform: uppercase; color: var(--c-dim); border: 1px solid var(--c-hairline); border-radius: 100px; padding: 4px 11px; }
+
+.capp .games-open { margin-top: 40px; }
+
+/* game screen chrome */
+.capp .gscreen__top { display: flex; align-items: center; gap: 14px; margin-bottom: 22px; }
+.capp .gscreen__name { font-size: 22px; font-weight: 600; letter-spacing: -.02em; margin: 0; }
+.capp .gchoose { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; max-width: 640px; }
+.capp .gchoose__card { background: var(--c-panel); border-radius: 16px; padding: 22px; display: flex; flex-direction: column; gap: 12px; }
+.capp .gchoose__card h3 { margin: 0; font-size: 17px; font-weight: 600; }
+.capp .gchoose__card p { margin: 0; font-size: 13.5px; color: var(--c-dim); line-height: 1.5; flex: 1; }
+.capp .gchoose__lbl { font-size: 13px; color: var(--c-dim); }
+.capp .gchoose__chips { margin-bottom: 2px; }
+.capp .gchoose__note { font-size: 12.5px; color: var(--c-dim); min-height: 1em; margin: 0; }
+
+/* stage */
+.capp .gstage { max-width: 560px; margin: 0 auto; }
+.capp .gturn { text-align: center; font-size: 14px; font-weight: 500; min-height: 22px; margin-bottom: 16px; }
+.capp .gturn.you { color: var(--c-good); }
+.capp .gturn.opp { color: var(--c-dim); }
+.capp .gboard { display: flex; flex-direction: column; align-items: center; gap: 14px; }
+.capp .ghint, .capp .gg-hint { font-size: 12.5px; color: var(--c-dim); text-align: center; line-height: 1.5; margin: 6px 0 0; }
+
+/* result */
+.capp .gover { margin-top: 20px; text-align: center; padding: 22px; background: var(--c-panel); border-radius: 16px; }
+.capp .gover h3 { margin: 0 0 4px; font-size: 24px; font-weight: 600; letter-spacing: -.02em; }
+.capp .gover h3.win { color: var(--c-good); } .capp .gover h3.lose { color: var(--c-bad); }
+.capp .gover p { margin: 0; font-size: 14px; color: var(--c-dim); font-variant-numeric: tabular-nums; }
+.capp .gover__acts { display: flex; gap: 10px; justify-content: center; margin-top: 16px; flex-wrap: wrap; }
+
+/* ---- Tic-Tac-Toe -------------------------------------------------------- */
+.capp .gg-ttt { display: grid; grid-template-columns: repeat(3, 92px); grid-template-rows: repeat(3, 92px); gap: 8px; }
+.capp .gg-ttt__cell { font-size: 46px; font-weight: 500; color: var(--c-cream); background: var(--c-panel); border: 1px solid var(--c-hairline); border-radius: 14px; cursor: pointer; transition: border-color .15s, background .15s; display: flex; align-items: center; justify-content: center; }
+.capp .gg-ttt__cell:not(:disabled):hover { border-color: var(--c-cream); }
+.capp .gg-ttt__cell:disabled { cursor: default; }
+.capp .gg-ttt__cell.p0 { color: var(--c-good); } .capp .gg-ttt__cell.p1 { color: var(--card-b); }
+
+/* ---- Connect Four ------------------------------------------------------- */
+.capp .gg-c4 { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; background: var(--c-panel); padding: 10px; border-radius: 14px; width: 100%; max-width: 420px; }
+.capp .gg-c4__cell { aspect-ratio: 1; border-radius: 50%; background: var(--c-canvas); border: 1px solid var(--c-hairline); }
+.capp .gg-c4__cell.p0 { background: var(--c-good); border-color: var(--c-good); }
+.capp .gg-c4__cell.p1 { background: var(--card-y); border-color: var(--card-y); }
+.capp .gg-c4__cell.just { box-shadow: 0 0 0 2px var(--c-cream); }
+.capp .gg-c4__drop { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; width: 100%; max-width: 420px; padding: 0 10px; }
+.capp .gg-c4__col { font-size: 15px; color: var(--c-dim); background: transparent; border: 1px solid var(--c-hairline); border-radius: 8px; padding: 5px 0; cursor: pointer; transition: color .15s, border-color .15s; }
+.capp .gg-c4__col:not(:disabled):hover { color: var(--c-cream); border-color: var(--c-cream); }
+.capp .gg-c4__col:disabled { opacity: .3; cursor: default; }
+
+/* ---- Reversi ------------------------------------------------------------ */
+.capp .gg-rev { display: grid; grid-template-columns: repeat(8, 1fr); gap: 3px; background: #14201a; padding: 8px; border-radius: 12px; width: 100%; max-width: 400px; }
+.capp .gg-rev__cell { aspect-ratio: 1; background: rgba(53,208,127,.08); border: 0; border-radius: 5px; display: flex; align-items: center; justify-content: center; padding: 0; cursor: default; }
+.capp .gg-rev__cell.ok { cursor: pointer; box-shadow: inset 0 0 0 2px rgba(255,252,225,.25); }
+.capp .gg-rev__cell.ok:hover { box-shadow: inset 0 0 0 2px var(--c-cream); }
+.capp .gg-rev__cell.just .gg-rev__disc { box-shadow: 0 0 0 2px var(--c-cream); }
+.capp .gg-rev__disc { width: 74%; height: 74%; border-radius: 50%; }
+.capp .gg-rev__disc.p0 { background: var(--c-cream); }
+.capp .gg-rev__disc.p1 { background: #0e100f; box-shadow: inset 0 0 0 1px var(--c-hairline); }
+.capp .gg-rev__score { display: flex; gap: 22px; justify-content: center; margin-top: 12px; font-variant-numeric: tabular-nums; font-size: 14px; font-weight: 600; }
+.capp .gg-rev__score .p0 { color: var(--c-cream); } .capp .gg-rev__score .p1 { color: var(--c-dim); }
+
+/* ---- Mancala ------------------------------------------------------------ */
+.capp .gg-man { display: flex; align-items: stretch; gap: 10px; background: var(--c-panel); padding: 14px; border-radius: 16px; width: 100%; max-width: 480px; }
+.capp .gg-man__mid { flex: 1; display: flex; flex-direction: column; gap: 10px; justify-content: center; }
+.capp .gg-man__row { display: grid; grid-template-columns: repeat(6, 1fr); gap: 8px; }
+.capp .gg-man__pit { aspect-ratio: 1; border-radius: 50%; background: var(--c-canvas); border: 1px solid var(--c-hairline); color: var(--c-cream); font-size: 17px; font-weight: 600; font-variant-numeric: tabular-nums; cursor: default; display: flex; align-items: center; justify-content: center; }
+.capp .gg-man__pit.ok { cursor: pointer; border-color: var(--c-good); color: var(--c-good); }
+.capp .gg-man__pit.ok:hover { background: rgba(53,208,127,.12); }
+.capp .gg-man__store { display: flex; align-items: center; }
+.capp .gg-man__pit.store { width: 52px; aspect-ratio: auto; height: 100%; border-radius: 26px; font-size: 20px; }
+.capp .gg-man__pit.p1 { }
+
+/* ---- Checkers ----------------------------------------------------------- */
+.capp .gg-chk { display: grid; grid-template-columns: repeat(8, 1fr); gap: 0; width: 100%; max-width: 400px; border: 1px solid var(--c-hairline); border-radius: 10px; overflow: hidden; }
+.capp .gg-chk__sq { aspect-ratio: 1; border: 0; padding: 0; display: flex; align-items: center; justify-content: center; cursor: default; position: relative; }
+.capp .gg-chk__sq.l { background: #1c1d1a; } .capp .gg-chk__sq.d { background: #0e100f; }
+.capp .gg-chk__sq.movable { cursor: pointer; box-shadow: inset 0 0 0 2px rgba(53,208,127,.5); }
+.capp .gg-chk__sq.sel { box-shadow: inset 0 0 0 2px var(--c-cream); }
+.capp .gg-chk__sq.target { cursor: pointer; }
+.capp .gg-chk__sq.target::after { content: ""; width: 26%; height: 26%; border-radius: 50%; background: rgba(255,252,225,.55); }
+.capp .gg-chk__pc { width: 72%; height: 72%; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 15px; }
+.capp .gg-chk__pc.p0 { background: var(--c-cream); color: var(--c-canvas); }
+.capp .gg-chk__pc.p1 { background: var(--card-r); color: #fff; }
+.capp .gg-chk__pc.king { box-shadow: 0 0 0 2px var(--c-good); }
+
+/* ---- Crazy Eights ------------------------------------------------------- */
+.capp .gg-ce { width: 100%; max-width: 460px; display: flex; flex-direction: column; gap: 12px; align-items: center; }
+.capp .gg-ce__opp, .capp .gg-ce__who { width: 100%; }
+.capp .gg-ce__who { font-size: 13px; color: var(--c-dim); }
+.capp .gg-ce__who b { color: var(--c-cream); }
+.capp .gg-ce__fan { display: flex; flex-wrap: wrap; gap: 7px; }
+.capp .gg-ce__mine { min-height: 92px; }
+.capp .gg-ce__center { display: flex; align-items: center; justify-content: center; gap: 20px; padding: 14px 0; border-top: 1px solid var(--c-hairline); border-bottom: 1px solid var(--c-hairline); width: 100%; flex-wrap: wrap; }
+.capp .gg-ce__flag { font-size: 13px; color: var(--c-dim); }
+.capp .gg-ce__card { width: 56px; height: 82px; border-radius: 10px; background: var(--c-elevated); border: 1px solid var(--c-hairline); display: flex; align-items: center; justify-content: center; position: relative; overflow: hidden; flex: 0 0 auto; font-weight: 600; }
+.capp .gg-ce__card .v { font-size: 24px; color: var(--c-cream); z-index: 1; }
+.capp .gg-ce__card::before { content: ""; position: absolute; inset: 0; opacity: .17; background: currentColor; }
+.capp .gg-ce__card::after { content: ""; position: absolute; left: 8px; right: 8px; top: 8px; height: 3px; border-radius: 3px; background: currentColor; opacity: .85; }
+.capp .gg-ce__card.c-r { color: var(--card-r); } .capp .gg-ce__card.c-y { color: var(--card-y); }
+.capp .gg-ce__card.c-g { color: var(--card-g); } .capp .gg-ce__card.c-b { color: var(--card-b); }
+.capp .gg-ce__card.playable { cursor: pointer; border-color: currentColor; }
+.capp .gg-ce__card.playable:hover { transform: translateY(-7px); box-shadow: 0 10px 24px rgba(0,0,0,.5); }
+.capp .gg-ce__card.back { width: 30px; height: 44px; background: var(--c-elevated); color: var(--c-hairline); margin-left: -14px; box-shadow: 0 0 0 1px var(--c-canvas); }
+.capp .gg-ce__card.back:first-child { margin-left: 0; }
+.capp .gg-ce__card.back::before, .capp .gg-ce__card.back::after { display: none; }
+.capp .gg-ce__card.draw { cursor: pointer; color: var(--c-dim); }
+.capp .gg-ce__card.draw::before, .capp .gg-ce__card.draw::after { display: none; }
+.capp .gg-ce__card.draw:not(:disabled):hover { border-color: var(--c-cream); color: var(--c-cream); }
+.capp .gg-ce__card.draw:disabled { opacity: .4; cursor: default; }
+.capp .gg-ce__fan.gg-ce__mine .gg-ce__card { margin-left: 0; }
+.capp .gg-ce__picker { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; padding: 12px; border: 1px dashed var(--c-hairline); border-radius: 12px; width: 100%; justify-content: center; }
+.capp .gg-ce__swatch { width: 34px; height: 34px; border-radius: 9px; border: 1px solid var(--c-hairline); cursor: pointer; }
+.capp .gg-ce__swatch.s-r { background: var(--card-r); } .capp .gg-ce__swatch.s-y { background: var(--card-y); }
+.capp .gg-ce__swatch.s-g { background: var(--card-g); } .capp .gg-ce__swatch.s-b { background: var(--card-b); }
+.capp .gg-ce__log { width: 100%; }
+
+@media (max-width: 560px) {
+  .capp .gchoose { grid-template-columns: 1fr; }
+  .capp .gg-ttt { grid-template-columns: repeat(3, 78px); grid-template-rows: repeat(3, 78px); }
+  .capp .gg-ttt__cell { font-size: 38px; }
+  .capp .gg-man__pit.store { width: 40px; }
+}
