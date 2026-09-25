@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <title>Console — Runinback</title>
   <meta name="robots" content="noindex, nofollow" />
   <meta name="theme-color" content="#0e100f" />
@@ -27,152 +27,129 @@
           <img class="brand__icon" src="logo-icon.png" width="28" height="20" alt="" />
           <img class="brand__word" src="logo-word.png" width="56" height="13" alt="" />
         </a>
-        <div class="persona" role="tablist" aria-label="View">
-          <button type="button" role="tab" id="tab-player" aria-selected="true" data-persona="player">Player</button>
-          <button type="button" role="tab" id="tab-dev" aria-selected="false" data-persona="dev">Dev</button>
-        </div>
-        <div class="capp__end">
-          <span class="wallet-chip" id="wallet-chip" title="Available balance (test mode)">0 rcoin</span>
-          <div class="acct">
-            <div id="acct-name">@player</div>
-            <div class="n" id="acct-email">—</div>
-          </div>
-          <button type="button" class="btn btn--sm" data-auth-signout>Log out</button>
-        </div>
-      </div>
-      <div class="capp__menu">
-        <nav id="nav-player" aria-label="Player menu">
-          <a data-page="j-games" aria-current="page">Games</a>
-          <a data-page="j-resumen">Overview</a>
-          <a data-page="j-retos">Challenges</a>
-          <a data-page="j-torneos">Tournaments</a>
+        <nav class="capp__tabs only-desktop" aria-label="Main">
+          <a data-page="j-games" aria-current="page">Play</a>
+          <a data-page="j-compete">Compete</a>
           <a data-page="j-cartera">Wallet</a>
-          <a data-page="j-perfil">Profile</a>
         </nav>
-        <nav id="nav-dev" aria-label="Dev menu" hidden>
-          <a data-page="d-proyectos" aria-current="page">Projects</a>
-          <a data-page="d-keys">API keys</a>
-          <a data-page="d-metricas">Metrics</a>
-          <a data-page="d-retiros">Payouts</a>
-        </nav>
+        <div class="capp__end">
+          <button type="button" class="wallet-chip" id="wallet-chip" data-page="j-cartera" title="Available balance (test mode)">0 rcoin</button>
+          <button type="button" class="acct-avatar" id="acct-avatar" aria-haspopup="true" aria-expanded="false" title="Account">P</button>
+        </div>
       </div>
     </header>
 
+    <!-- account menu -->
+    <div class="acct-menu" id="acct-menu" hidden role="menu">
+      <div class="acct-menu__id">
+        <div class="nm" id="acct-name">@player</div>
+        <div class="n" id="acct-email">—</div>
+      </div>
+      <a role="menuitem" data-page="j-perfil">Profile <span class="chev">›</span></a>
+      <a role="menuitem" id="to-dev">Switch to developer <span class="chev">Dev ›</span></a>
+      <button type="button" role="menuitem" class="acct-menu__out" data-auth-signout>Log out</button>
+    </div>
+
     <main class="capp__wrap">
-      <!-- ============================ PLAYER ============================ -->
+      <!-- ============================ PLAY ============================ -->
       <section class="page" id="j-games">
         <div class="head">
           <div><p class="eyebrow">Play · Win · Cash out</p><h1>Games.</h1></div>
           <div class="head__r">
             <span class="head__bal"><span class="k">Balance</span><span class="v" id="games-bal">0 <small>rcoin</small></span></span>
+            <button type="button" class="btn btn--sm" data-page="j-cartera">Buy rcoin</button>
           </div>
         </div>
+        <p class="games-lead">Every game, two ways: <strong>practice free</strong> against the house bot, or
+          <strong>play for rcoin</strong> — both players stake the same and the winner takes the whole pot.
+          No rake on the table; the 5% is charged once when you buy rcoin.</p>
         <div id="games-root"><p class="muted">Loading games…</p></div>
       </section>
 
-      <section class="page" id="j-resumen" hidden>
-        <div class="head"><div><p class="eyebrow">Reset · Replay · Redeem</p><h1 id="j-hello">Good game.</h1></div></div>
+      <!-- ========================== COMPETE ========================== -->
+      <section class="page" id="j-compete" hidden>
+        <div class="head"><div><p class="eyebrow">Stake · Escrow · Winner takes all</p><h1>Compete.</h1></div></div>
+        <div class="seg" id="compete-seg" role="tablist" aria-label="Compete">
+          <button type="button" role="tab" data-seg="challenges" aria-selected="true">1v1 Challenges</button>
+          <button type="button" role="tab" data-seg="tourneys" aria-selected="false">Tournaments</button>
+        </div>
 
-        <div class="hero-bal">
-          <div class="hero-bal__main">
-            <span class="lbl">Available balance</span>
-            <span class="num" id="sum-balance">0 rcoin</span>
-            <span class="sub" id="sum-locked">Nothing at stake</span>
+        <!-- challenges -->
+        <div id="c-challenges">
+          <div class="head head--tight">
+            <p class="muted lead-inline">Challenge anyone at your own game — set the stake, report the result,
+              escrow pays the winner.</p>
+            <button type="button" class="btn btn--cta btn--sm" id="reto-new">New challenge</button>
           </div>
-          <div class="hero-bal__stats">
-            <div><span class="n" id="sum-played">0</span><span class="k">matches played</span></div>
-            <div><span class="n" id="sum-won">0</span><span class="k">won</span></div>
-            <div><span class="n" id="sum-tourneys">0</span><span class="k">tournaments</span></div>
-          </div>
-        </div>
-
-        <div class="quick" id="sum-quick">
-          <button type="button" class="btn btn--cta" data-goto="j-games">Play a game</button>
-          <button type="button" class="btn" data-goto="j-cartera">Buy rcoin</button>
-          <button type="button" class="btn" data-goto="j-retos">Create a challenge</button>
-        </div>
-
-        <div class="sec">
-          <div class="sec__head"><h2>Your activity</h2></div>
-          <div id="sum-activity"><p class="muted">Loading…</p></div>
-        </div>
-
-        <p class="testnote">Test mode: the balance is simulated so you can try the whole flow. Real money will be <strong>non-custodial, on-chain on Base</strong>, with audited escrow contracts. We never hold your funds or your keys.</p>
-      </section>
-
-      <section class="page" id="j-retos" hidden>
-        <div class="head">
-          <div><p class="eyebrow">Matchmaking</p><h1>Challenges.</h1></div>
-          <div class="head__r"><button type="button" class="btn btn--cta" id="reto-new">New challenge</button></div>
-        </div>
-
-        <form id="reto-form" class="card-box" hidden>
-          <div class="field--row">
-            <div class="field"><label for="reto-game">Game</label><input id="reto-game" type="text" maxlength="40" placeholder="Valorant, CS2, FIFA…" /></div>
-            <div class="field"><label for="reto-mode">Mode</label><input id="reto-mode" type="text" maxlength="40" placeholder="1v1" value="1v1" /></div>
-          </div>
-          <div class="field">
-            <label>Stake</label>
-            <div class="chips" data-chips="reto-stake">
-              <button type="button" data-amt="500">5</button>
-              <button type="button" data-amt="1000" class="on">10</button>
-              <button type="button" data-amt="2500">25</button>
-              <button type="button" data-amt="5000">50</button>
+          <form id="reto-form" class="card-box" hidden>
+            <div class="field--row">
+              <div class="field"><label for="reto-game">Game</label><input id="reto-game" type="text" maxlength="40" placeholder="Valorant, CS2, FIFA…" /></div>
+              <div class="field"><label for="reto-mode">Mode</label><input id="reto-mode" type="text" maxlength="40" placeholder="1v1" value="1v1" /></div>
             </div>
-          </div>
-          <div class="field"><label for="reto-target">Opponent (optional)</label><input id="reto-target" type="text" maxlength="24" placeholder="username — leave empty for an open challenge" /></div>
-          <div class="head__r">
-            <button type="submit" class="btn btn--cta" id="reto-save">Create challenge</button>
-            <button type="button" class="btn" id="reto-cancel">Cancel</button>
-          </div>
-          <p class="msg" id="reto-msg" hidden></p>
-        </form>
-
-        <div class="sec">
-          <div class="sec__head"><h2>My challenges</h2></div>
-          <div id="reto-mine"><p class="muted">Loading…</p></div>
-        </div>
-        <div class="sec">
-          <div class="sec__head"><h2>Open challenges</h2><span class="sec__note">from other players</span></div>
-          <div id="reto-open"><p class="muted">Loading…</p></div>
-        </div>
-      </section>
-
-      <section class="page" id="j-torneos" hidden>
-        <div class="head">
-          <div><p class="eyebrow">Escrow</p><h1>Tournaments.</h1></div>
-          <div class="head__r"><button type="button" class="btn btn--cta" id="tor-new">New tournament</button></div>
-        </div>
-
-        <form id="tor-form" class="card-box" hidden>
-          <div class="field--row">
-            <div class="field"><label for="tor-name">Name</label><input id="tor-name" type="text" maxlength="80" placeholder="House Cup" /></div>
-            <div class="field"><label for="tor-game">Game</label><input id="tor-game" type="text" maxlength="40" placeholder="Valorant" /></div>
-          </div>
-          <div class="field--row">
             <div class="field">
-              <label>Entry fee</label>
-              <div class="chips" data-chips="tor-fee">
-                <button type="button" data-amt="0">Free</button>
+              <label>Stake</label>
+              <div class="chips" data-chips="reto-stake">
+                <button type="button" data-amt="500">5</button>
                 <button type="button" data-amt="1000" class="on">10</button>
                 <button type="button" data-amt="2500">25</button>
                 <button type="button" data-amt="5000">50</button>
               </div>
             </div>
-            <div class="field"><label for="tor-max">Slots</label>
-              <select id="tor-max"><option>4</option><option>8</option><option>16</option><option>32</option></select>
+            <div class="field"><label for="reto-target">Opponent (optional)</label><input id="reto-target" type="text" maxlength="24" placeholder="username — leave empty for an open challenge" /></div>
+            <div class="head__r">
+              <button type="submit" class="btn btn--cta" id="reto-save">Create challenge</button>
+              <button type="button" class="btn" id="reto-cancel">Cancel</button>
             </div>
-          </div>
-          <div class="head__r">
-            <button type="submit" class="btn btn--cta" id="tor-save">Create</button>
-            <button type="button" class="btn" id="tor-cancel">Cancel</button>
-          </div>
-          <p class="msg" id="tor-msg" hidden></p>
-        </form>
+            <p class="msg" id="reto-msg" hidden></p>
+          </form>
 
-        <div class="sec"><div id="tor-list"><p class="muted">Loading…</p></div></div>
+          <div class="sec">
+            <div class="sec__head"><h2>My challenges</h2></div>
+            <div id="reto-mine"><p class="muted">Loading…</p></div>
+          </div>
+          <div class="sec">
+            <div class="sec__head"><h2>Open challenges</h2><span class="sec__note">from other players</span></div>
+            <div id="reto-open"><p class="muted">Loading…</p></div>
+          </div>
+        </div>
+
+        <!-- tournaments -->
+        <div id="c-tourneys" hidden>
+          <div class="head head--tight">
+            <p class="muted lead-inline">Bracket tournaments with a shared pool built from entry fees.
+              The whole pot goes to the champion.</p>
+            <button type="button" class="btn btn--cta btn--sm" id="tor-new">New tournament</button>
+          </div>
+          <form id="tor-form" class="card-box" hidden>
+            <div class="field--row">
+              <div class="field"><label for="tor-name">Name</label><input id="tor-name" type="text" maxlength="80" placeholder="House Cup" /></div>
+              <div class="field"><label for="tor-game">Game</label><input id="tor-game" type="text" maxlength="40" placeholder="Valorant" /></div>
+            </div>
+            <div class="field--row">
+              <div class="field">
+                <label>Entry fee</label>
+                <div class="chips" data-chips="tor-fee">
+                  <button type="button" data-amt="0">Free</button>
+                  <button type="button" data-amt="1000" class="on">10</button>
+                  <button type="button" data-amt="2500">25</button>
+                  <button type="button" data-amt="5000">50</button>
+                </div>
+              </div>
+              <div class="field"><label for="tor-max">Slots</label>
+                <select id="tor-max"><option>4</option><option>8</option><option>16</option><option>32</option></select>
+              </div>
+            </div>
+            <div class="head__r">
+              <button type="submit" class="btn btn--cta" id="tor-save">Create</button>
+              <button type="button" class="btn" id="tor-cancel">Cancel</button>
+            </div>
+            <p class="msg" id="tor-msg" hidden></p>
+          </form>
+          <div class="sec"><div id="tor-list"><p class="muted">Loading…</p></div></div>
+        </div>
       </section>
 
+      <!-- =========================== WALLET =========================== -->
       <section class="page" id="j-cartera" hidden>
         <div class="head"><div><p class="eyebrow">Wallet</p><h1>rcoin.</h1></div></div>
 
@@ -228,6 +205,7 @@
         <p class="testnote">You're in test mode: buying and withdrawing move a simulated balance so you can try the full flow. In production this will be non-custodial, on-chain on Base. rcoin stays in test mode, with no real money, until legal review.</p>
       </section>
 
+      <!-- =========================== PROFILE ========================== -->
       <section class="page" id="j-perfil" hidden>
         <div class="head"><div><p class="eyebrow">Account</p><h1>Profile.</h1></div></div>
         <div class="card-box">
@@ -251,87 +229,113 @@
       </section>
 
       <!-- ============================= DEV ============================= -->
-      <section class="page" id="d-proyectos" hidden>
+      <section class="page" id="d-portal" hidden>
         <div class="head">
-          <div><p class="eyebrow">Arena SDK</p><h1>Projects.</h1></div>
-          <div class="head__r"><button type="button" class="btn btn--cta" id="proj-new">New project</button></div>
+          <div><p class="eyebrow">Arena SDK</p><h1>Developer portal.</h1></div>
+          <div class="head__r"><button type="button" class="btn btn--sm" id="to-player">‹ Back to playing</button></div>
         </div>
-        <form id="proj-form" class="card-box" hidden>
-          <div class="field"><label for="proj-name">Project name</label><input id="proj-name" type="text" maxlength="80" placeholder="My game" /></div>
-          <div class="field"><label for="proj-env">Environment</label>
-            <select id="proj-env"><option value="test">Test</option><option value="live">Live</option></select>
-          </div>
-          <div class="head__r">
-            <button type="submit" class="btn btn--cta" id="proj-save">Create</button>
-            <button type="button" class="btn" id="proj-cancel">Cancel</button>
-          </div>
-          <p class="msg" id="proj-msg" hidden></p>
-        </form>
-        <div class="sec">
-          <div id="proj-list"><p class="muted">Loading…</p></div>
-        </div>
-      </section>
 
-      <section class="page" id="d-keys" hidden>
-        <div class="head">
-          <div><p class="eyebrow">Arena SDK</p><h1>API keys.</h1></div>
-          <div class="head__r"><button type="button" class="btn btn--cta" id="key-new">Issue key</button></div>
+        <div class="devwelcome">
+          <h2>Welcome to the dev portal</h2>
+          <p>Ship the Runinback arena into your own game: wallets, staked matches and escrow through one
+            SDK. Create a project, issue a key, and call the API. Payouts are non-custodial on Base.</p>
         </div>
-        <form id="key-form" class="card-box" hidden>
-          <div class="field"><label for="key-name">Name</label><input id="key-name" type="text" maxlength="60" placeholder="default" /></div>
-          <div class="field--row">
-            <div class="field"><label for="key-env">Environment</label>
-              <select id="key-env"><option value="test">Test</option><option value="live">Live</option></select>
-            </div>
-            <div class="field"><label for="key-project">Project</label>
-              <select id="key-project"><option value="">No project</option></select>
-            </div>
-          </div>
-          <div class="head__r">
-            <button type="submit" class="btn btn--cta" id="key-save">Issue</button>
-            <button type="button" class="btn" id="key-cancel">Cancel</button>
-          </div>
-          <div class="keybox" id="key-reveal" hidden>
-            <div class="lbl">Copy your key now — it won't be shown again.</div>
-            <div class="val"><code id="key-plaintext"></code><button type="button" class="btn btn--sm" id="key-copy">Copy</button></div>
-          </div>
-          <p class="msg" id="key-msg" hidden></p>
-        </form>
-        <div class="sec">
-          <div id="key-list"><p class="muted">Loading…</p></div>
-        </div>
-      </section>
 
-      <section class="page" id="d-metricas" hidden>
-        <div class="head"><div><p class="eyebrow">SDK</p><h1>Metrics.</h1></div></div>
-        <div class="metrics" id="dev-metrics">
-          <div class="metric"><span class="n" id="m-projects">0</span><span class="k">projects</span></div>
-          <div class="metric"><span class="n" id="m-keys">0</span><span class="k">active keys</span></div>
-          <div class="metric"><span class="n" id="m-keys-total">0</span><span class="k">keys issued</span></div>
+        <div class="statline" id="dev-metrics">
+          <div><span class="n" id="m-projects">0</span><span class="k">projects</span></div>
+          <div><span class="n" id="m-keys">0</span><span class="k">active keys</span></div>
+          <div><span class="n" id="m-keys-total">0</span><span class="k">keys issued</span></div>
         </div>
-        <p class="testnote">Per-endpoint traffic (calls, latency, errors) will show up here as soon as your keys start receiving SDK requests. These numbers are real for your account, not simulated.</p>
-      </section>
 
-      <section class="page" id="d-retiros" hidden>
-        <div class="head"><div><p class="eyebrow">Payouts</p><h1>Payouts.</h1></div></div>
-        <div class="wallet-top">
-          <div class="wallet-card">
-            <span class="lbl">Available to withdraw</span>
-            <span class="num" id="dev-balance">0 rcoin</span>
-            <span class="sub">test mode</span>
-          </div>
-          <div class="card-box">
-            <label class="field-lbl">Withdraw to your wallet</label>
-            <div class="withdraw-row">
-              <input id="dev-wd-amt" type="number" min="1" step="1" placeholder="rcoin" inputmode="decimal" />
-              <button type="button" class="btn btn--cta" id="dev-wd-go">Withdraw</button>
-            </div>
-            <p class="msg" id="dev-wd-msg" hidden></p>
-          </div>
+        <div class="devnav" id="dev-nav" role="tablist" aria-label="Developer">
+          <a role="tab" data-dev="projects" aria-current="page">Projects</a>
+          <a role="tab" data-dev="keys">API keys</a>
+          <a role="tab" data-dev="payouts">Payouts</a>
         </div>
-        <p class="testnote">Developer payouts will be non-custodial, on-chain on Base. For now they share your test balance so you can see the payout flow.</p>
+
+        <!-- projects -->
+        <div id="d-projects">
+          <div class="head head--tight">
+            <p class="muted lead-inline">Group your API keys by game or environment.</p>
+            <button type="button" class="btn btn--cta btn--sm" id="proj-new">New project</button>
+          </div>
+          <form id="proj-form" class="card-box" hidden>
+            <div class="field"><label for="proj-name">Project name</label><input id="proj-name" type="text" maxlength="80" placeholder="My game" /></div>
+            <div class="field"><label for="proj-env">Environment</label>
+              <select id="proj-env"><option value="test">Test</option><option value="live">Live</option></select>
+            </div>
+            <div class="head__r">
+              <button type="submit" class="btn btn--cta" id="proj-save">Create</button>
+              <button type="button" class="btn" id="proj-cancel">Cancel</button>
+            </div>
+            <p class="msg" id="proj-msg" hidden></p>
+          </form>
+          <div class="sec"><div id="proj-list"><p class="muted">Loading…</p></div></div>
+        </div>
+
+        <!-- api keys -->
+        <div id="d-keys" hidden>
+          <div class="head head--tight">
+            <p class="muted lead-inline">Authenticate your SDK integration. You'll see each key in full once.</p>
+            <button type="button" class="btn btn--cta btn--sm" id="key-new">Issue key</button>
+          </div>
+          <form id="key-form" class="card-box" hidden>
+            <div class="field"><label for="key-name">Name</label><input id="key-name" type="text" maxlength="60" placeholder="default" /></div>
+            <div class="field--row">
+              <div class="field"><label for="key-env">Environment</label>
+                <select id="key-env"><option value="test">Test</option><option value="live">Live</option></select>
+              </div>
+              <div class="field"><label for="key-project">Project</label>
+                <select id="key-project"><option value="">No project</option></select>
+              </div>
+            </div>
+            <div class="head__r">
+              <button type="submit" class="btn btn--cta" id="key-save">Issue</button>
+              <button type="button" class="btn" id="key-cancel">Cancel</button>
+            </div>
+            <div class="keybox" id="key-reveal" hidden>
+              <div class="lbl">Copy your key now — it won't be shown again.</div>
+              <div class="val"><code id="key-plaintext"></code><button type="button" class="btn btn--sm" id="key-copy">Copy</button></div>
+            </div>
+            <p class="msg" id="key-msg" hidden></p>
+          </form>
+          <div class="sec"><div id="key-list"><p class="muted">Loading…</p></div></div>
+        </div>
+
+        <!-- payouts -->
+        <div id="d-payouts" hidden>
+          <div class="wallet-top">
+            <div class="wallet-card">
+              <span class="lbl">Available to withdraw</span>
+              <span class="num" id="dev-balance">0 rcoin</span>
+              <span class="sub">test mode</span>
+            </div>
+            <div class="card-box">
+              <label class="field-lbl">Withdraw to your wallet</label>
+              <div class="withdraw-row">
+                <input id="dev-wd-amt" type="number" min="1" step="1" placeholder="rcoin" inputmode="decimal" />
+                <button type="button" class="btn btn--cta" id="dev-wd-go">Withdraw</button>
+              </div>
+              <p class="msg" id="dev-wd-msg" hidden></p>
+            </div>
+          </div>
+          <p class="testnote">Per-endpoint traffic and developer payouts will be non-custodial, on-chain on Base.
+            For now payouts share your test balance so you can see the flow. Metrics above are real for your account.</p>
+        </div>
       </section>
     </main>
+
+    <!-- bottom nav (mobile) -->
+    <nav class="capp__bnav only-mobile" aria-label="Main">
+      <a data-page="j-games" aria-current="page">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="M8 12h4M10 10v4"/><circle cx="16" cy="11" r="1"/><circle cx="17.5" cy="13.5" r="1"/></svg><span>Play</span></a>
+      <a data-page="j-compete">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 21h8M12 17v4M6 4h12v5a6 6 0 0 1-12 0zM6 6H3v2a3 3 0 0 0 3 3M18 6h3v2a3 3 0 0 1-3 3"/></svg><span>Compete</span></a>
+      <a data-page="j-cartera">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="6" width="18" height="13" rx="2.5"/><path d="M3 10h18"/><circle cx="16.5" cy="14" r="1.2"/></svg><span>Wallet</span></a>
+      <a data-page="d-portal">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 8l-4 4 4 4M15 8l4 4-4 4"/></svg><span>Dev</span></a>
+    </nav>
   </div>
 
   <div id="console-loading" class="muted" role="status" style="min-height:60vh;display:grid;place-content:center;text-align:center;padding:24px;">Loading your console…</div>

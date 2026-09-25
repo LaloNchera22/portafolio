@@ -64,7 +64,7 @@
     $("acct-name").textContent = meta.username ? "@" + meta.username : (u.email || "");
     $("acct-email").textContent = u.email || "";
 
-    wireNav(); wirePersona(); wireQuick(); wireChips();
+    wireNav(); wireChrome(); wireChips();
     wireProfile(); wireProjects(); wireKeys();
     wireRetos(); wireTorneos(); wireWallet(); wireDevRetiros();
 
@@ -76,55 +76,71 @@
   /* ---- navigation --------------------------------------------------------- */
   var loaders = {
     "j-games": loadGames,
-    "j-resumen": loadResumen,
-    "j-retos": loadRetos,
-    "j-torneos": loadTorneos,
+    "j-compete": function () { loadRetos(); loadTorneos(); },
     "j-cartera": function () { refreshWallet(); loadLedger(); },
     "j-perfil": loadProfile,
-    "d-proyectos": loadProjects,
-    "d-keys": loadKeys,
-    "d-metricas": loadDevMetrics,
-    "d-retiros": refreshWallet
+    "d-portal": function () { loadProjects(); loadKeys(); loadDevMetrics(); refreshWallet(); }
   };
   function wireNav() {
-    document.querySelectorAll(".capp__menu a[data-page]").forEach(function (a) {
-      a.addEventListener("click", function (e) { e.preventDefault(); gotoPage(a.getAttribute("data-page"), a); });
+    document.querySelectorAll("[data-page]").forEach(function (a) {
+      a.addEventListener("click", function (e) { e.preventDefault(); gotoPage(a.getAttribute("data-page")); });
     });
   }
-  function gotoPage(id, link) {
+  function gotoPage(id) {
+    if (!id) return;
     document.querySelectorAll(".capp .page").forEach(function (p) { p.hidden = p.id !== id; });
-    var current = link || document.querySelector('.capp__menu a[data-page="' + id + '"]');
-    if (current && current.parentNode) {
-      current.parentNode.querySelectorAll("a").forEach(function (a) {
-        if (a.getAttribute("data-page") === id) a.setAttribute("aria-current", "page");
-        else a.removeAttribute("aria-current");
-      });
-    }
+    // reflect the active destination on every nav surface (top tabs + bottom nav)
+    document.querySelectorAll(".capp__tabs a[data-page], .capp__bnav a[data-page]").forEach(function (a) {
+      if (a.getAttribute("data-page") === id) a.setAttribute("aria-current", "page");
+      else a.removeAttribute("aria-current");
+    });
+    closeAcctMenu();
     if (loaders[id]) loaders[id]();
+    window.scrollTo(0, 0);
   }
-  function wireQuick() {
-    document.querySelectorAll("[data-goto]").forEach(function (b) {
+
+  /* ---- chrome: account menu, dev switch, compete + dev sub-nav ------------ */
+  function closeAcctMenu() {
+    var m = $("acct-menu"), a = $("acct-avatar");
+    if (m) m.hidden = true;
+    if (a) a.setAttribute("aria-expanded", "false");
+  }
+  function wireChrome() {
+    var avatar = $("acct-avatar"), menu = $("acct-menu");
+    if (avatar && menu) {
+      avatar.addEventListener("click", function (e) {
+        e.stopPropagation();
+        menu.hidden = !menu.hidden;
+        avatar.setAttribute("aria-expanded", String(!menu.hidden));
+      });
+      menu.addEventListener("click", function (e) { e.stopPropagation(); });
+      document.addEventListener("click", closeAcctMenu);
+    }
+    if ($("to-dev")) $("to-dev").addEventListener("click", function () { gotoPage("d-portal"); });
+    if ($("to-player")) $("to-player").addEventListener("click", function () { gotoPage("j-games"); });
+
+    // Compete: challenges / tournaments segment
+    document.querySelectorAll("#compete-seg button[data-seg]").forEach(function (b) {
       b.addEventListener("click", function () {
-        var id = b.getAttribute("data-goto");
-        var dev = id.charAt(0) === "d";
-        setPersona(dev);
-        gotoPage(id);
+        var which = b.getAttribute("data-seg");
+        document.querySelectorAll("#compete-seg button").forEach(function (x) {
+          x.setAttribute("aria-selected", String(x === b));
+        });
+        show($("c-challenges"), which === "challenges");
+        show($("c-tourneys"), which === "tourneys");
       });
     });
-  }
-  function setPersona(dev) {
-    $("tab-player").setAttribute("aria-selected", String(!dev));
-    $("tab-dev").setAttribute("aria-selected", String(dev));
-    show($("nav-player"), !dev);
-    show($("nav-dev"), dev);
-  }
-  function wirePersona() {
-    document.querySelectorAll(".persona button").forEach(function (b) {
-      b.addEventListener("click", function () {
-        var dev = b.getAttribute("data-persona") === "dev";
-        setPersona(dev);
-        var first = (dev ? $("nav-dev") : $("nav-player")).querySelector("a[data-page]");
-        if (first) gotoPage(first.getAttribute("data-page"), first);
+
+    // Dev sub-nav: projects / keys / payouts
+    document.querySelectorAll("#dev-nav a[data-dev]").forEach(function (a) {
+      a.addEventListener("click", function () {
+        var which = a.getAttribute("data-dev");
+        document.querySelectorAll("#dev-nav a").forEach(function (x) {
+          if (x === a) x.setAttribute("aria-current", "page"); else x.removeAttribute("aria-current");
+        });
+        show($("d-projects"), which === "projects");
+        show($("d-keys"), which === "keys");
+        show($("d-payouts"), which === "payouts");
       });
     });
   }
@@ -269,43 +285,7 @@
     });
   }
 
-  /* ---- overview (real aggregates) ----------------------------------------- */
-  function loadResumen() {
-    refreshWallet();
-    Promise.all([
-      client.from("challenges").select("id, status, winner_id, creator_id, opponent_id, game, stake_cents, created_at")
-        .or("creator_id.eq." + UID + ",opponent_id.eq." + UID).order("created_at", { ascending: false }),
-      client.from("tournament_entries").select("id").eq("user_id", UID)
-    ]).then(function (res) {
-      var ch = (res[0].data) || [];
-      var settled = ch.filter(function (c) { return c.status === "settled"; });
-      var won = settled.filter(function (c) { return c.winner_id === UID; });
-      $("sum-played").textContent = String(settled.length);
-      $("sum-won").textContent = String(won.length);
-      $("sum-tourneys").textContent = String(((res[1].data) || []).length);
-
-      var box = $("sum-activity");
-      var recent = ch.slice(0, 5);
-      if (!recent.length) {
-        box.innerHTML = '<div class="empty"><h3>You haven\'t played yet</h3><p>Buy rcoin and play a game or create your first challenge to see it here.</p></div>';
-        return;
-      }
-      box.innerHTML = '<div class="panel">' + recent.map(function (c) {
-        return '<div class="row row--led"><div><div class="row__name">' + esc(c.game) +
-          ' · ' + rc(c.stake_cents) + '</div><div class="row__meta">' + statusLabel(c) + ' · ' + fmtDate(c.created_at) +
-          '</div></div>' + resultBadge(c) + '</div>';
-      }).join("") + '</div>';
-    });
-  }
-  function resultBadge(c) {
-    if (c.status === "settled") return c.winner_id === UID
-      ? '<span class="amt pos">+' + rc(c.stake_cents) + '</span>'
-      : '<span class="amt neg">-' + rc(c.stake_cents) + '</span>';
-    if (c.status === "active") return '<span class="tag">in play</span>';
-    if (c.status === "disputed") return '<span class="tag revoked">dispute</span>';
-    if (c.status === "cancelled") return '<span class="tag">cancelled</span>';
-    return '<span class="tag">open</span>';
-  }
+  /* ---- challenge status label --------------------------------------------- */
   function statusLabel(c) {
     return { open: "Open", pending: "Invite", active: "In play", settled: "Finished", disputed: "In dispute", cancelled: "Cancelled" }[c.status] || c.status;
   }

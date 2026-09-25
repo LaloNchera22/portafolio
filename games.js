@@ -596,28 +596,62 @@ window.RIBGames = (function () {
   }
 
   /* ---- lobby -------------------------------------------------------------- */
+  // Card games (the rest are boards). Fast = a match that wraps up in ~3 min.
+  var CARD_IDS = { eights: 1, gofish: 1, memory: 1 };
+  var FAST_IDS = { tictactoe: 1, connect4: 1, nim: 1, chomp: 1, misere: 1, hexapawn: 1, ponghau: 1, fifteen: 1, kayles: 1 };
+  function matchesFilter(g, f) {
+    if (f === "all") return true;
+    if (f === "fast") return !!FAST_IDS[g.id];
+    if (f === "cards") return !!CARD_IDS[g.id];
+    if (f === "board") return !CARD_IDS[g.id];
+    return true;
+  }
+  var lobbyFilter = "all";
+
   function renderLobby() {
     stopOnline();
     host.innerHTML = "";
     var intro = el("p", "games-intro");
-    intro.innerHTML = "Play a quick match. Practice free against the house bot, or play for rcoin: both players stake the same, the winner takes the whole pot. No rake on the table — the 5% is charged once when you buy rcoin.";
+    intro.innerHTML = "Every game, two ways: <strong>practice free</strong> against the house bot, or <strong>play for rcoin</strong> — both players stake the same and the winner takes the whole pot. No rake on the table; the 5% is charged once when you buy rcoin.";
     host.appendChild(intro);
 
+    // category filters
+    var filters = [
+      { f: "all", label: "All" },
+      { f: "fast", label: "Fast · 3 min or less" },
+      { f: "cards", label: "Cards" },
+      { f: "board", label: "Boards" }
+    ];
+    var bar = el("div", "games-filters");
+    filters.forEach(function (it) {
+      var b = el("button", "gfilter" + (it.f === lobbyFilter ? " on" : ""), it.label);
+      b.type = "button";
+      b.addEventListener("click", function () {
+        lobbyFilter = it.f;
+        bar.querySelectorAll(".gfilter").forEach(function (x) { x.classList.remove("on"); });
+        b.classList.add("on");
+        drawGrid();
+      });
+      bar.appendChild(b);
+    });
+    host.appendChild(bar);
+
     var grid = el("div", "games-grid");
-    CATALOG.forEach(function (g) {
-      var card = el("div", "gcard" + (g.soon ? " gcard--soon" : ""));
-      card.innerHTML =
-        '<div class="gcard__ic">' + esc(g.icon) + '</div>' +
-        '<div class="gcard__n">' + esc(g.name) + '</div>' +
-        '<p class="gcard__d">' + esc(g.blurb) + '</p>';
-      var foot = el("div", "gcard__foot");
-      if (g.soon) {
-        var soon = el("button", "soon", "Coming soon");
-        soon.title = "Preview";
-        soon.addEventListener("click", function () { showHelp(g.id); });
-        foot.appendChild(soon);
-      }
-      else {
+    host.appendChild(grid);
+
+    function drawGrid() {
+      grid.innerHTML = "";
+      var shown = 0;
+      CATALOG.forEach(function (g) {
+        if (g.soon) return;                       // coming-soon games are hidden from the lobby
+        if (!matchesFilter(g, lobbyFilter)) return;
+        shown++;
+        var card = el("div", "gcard");
+        card.innerHTML =
+          '<div class="gcard__ic">' + esc(g.icon) + '</div>' +
+          '<div class="gcard__n">' + esc(g.name) + '</div>' +
+          '<p class="gcard__d">' + esc(g.blurb) + '</p>';
+        var foot = el("div", "gcard__foot");
         var left = el("div", "gcard__left");
         var play = el("button", "btn btn--sm gcard__play", "Play");
         play.addEventListener("click", function () { openGame(g.id); });
@@ -625,13 +659,14 @@ window.RIBGames = (function () {
         left.appendChild(helpButton(g.id));
         foot.appendChild(left);
         foot.appendChild(el("span", "gcard__tag", g.tag));
-      }
-      card.appendChild(foot);
-      grid.appendChild(card);
-    });
-    host.appendChild(grid);
+        card.appendChild(foot);
+        grid.appendChild(card);
+      });
+      if (!shown) grid.innerHTML = '<p class="games-intro" style="margin:0">No games in this filter.</p>';
+    }
+    drawGrid();
 
-    // open online tables (if backend live)
+    // open online tables to join (staked, if backend live) — plain list, no decoration
     var openWrap = el("div", "games-open");
     openWrap.id = "games-open";
     host.appendChild(openWrap);
