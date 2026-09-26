@@ -27,7 +27,14 @@
     el.hidden = false;
   }
   function money(cents) { return "$" + ((Number(cents) || 0) / 100).toFixed(2); }
-  function rcoin(cents) { return Math.round((Number(cents) || 0) / 100); }
+  // rcoin is worth 1 USD but a balance can hold fractions of an rcoin (e.g. a
+  // $10 top-up credits 9.5 rcoin after the 5% fee). Show the exact amount with
+  // up to two decimals, trimming trailing zeros, so we never over- or
+  // under-state what the wallet holds.
+  function rcoin(cents) {
+    var n = (Number(cents) || 0) / 100;
+    return parseFloat(n.toFixed(2));
+  }
   function rc(cents) { return rcoin(cents) + " rcoin"; }
   function centsFromDollars(v) { var n = parseFloat(String(v).replace(",", ".")); return isFinite(n) ? Math.round(n * 100) : NaN; }
   function centsFromRcoin(v) { var n = parseFloat(String(v).replace(",", ".")); return isFinite(n) ? Math.round(n) * 100 : NaN; }
@@ -51,6 +58,7 @@
   var UID = null;
   var handleCache = {}; // uuid -> username
   var gamesReady = false;
+  var STRIPE = !!(window.RUNINBACK_CONFIG && window.RUNINBACK_CONFIG.STRIPE_ENABLED);
 
   A.getSession().then(function (session) {
     if (!session) { toLanding(); return; }
@@ -71,7 +79,34 @@
     refreshWallet();
     loadProfile();
     loadGames();
+    handleCheckoutReturn();
   }).catch(function () { toLanding(); });
+
+  /* ---- return from Stripe Checkout --------------------------------------- */
+  // Stripe sends the buyer back to console.html?checkout=success|cancel. The
+  // balance is credited asynchronously by the webhook, so on success we open
+  // the wallet and refresh a few times to catch the credit as it lands.
+  function handleCheckoutReturn() {
+    var params;
+    try { params = new URLSearchParams(window.location.search); } catch (e) { return; }
+    var r = params.get("checkout");
+    if (!r) return;
+    // Clean the query string so a refresh doesn't re-trigger the banner.
+    try { window.history.replaceState({}, "", window.location.pathname); } catch (e) {}
+    if (r === "success") {
+      gotoPage("j-cartera");
+      msg($("wal-msg"), "Payment received. Your rcoin will appear here in a few seconds.", true);
+      var tries = 0;
+      var poll = setInterval(function () {
+        tries++;
+        refreshWallet(); loadLedger();
+        if (tries >= 5) clearInterval(poll);
+      }, 2000);
+    } else if (r === "cancel") {
+      gotoPage("j-cartera");
+      msg($("wal-msg"), "Checkout cancelled. No charge was made.", false);
+    }
+  }
 
   /* ---- navigation --------------------------------------------------------- */
   var loaders = {
@@ -223,12 +258,14 @@
   function calcBuy() {
     var pay = centsFromDollars($("buy-usd").value);
     if (!isFinite(pay) || pay < 0) pay = 0;
-    var getC = Math.round(pay * 0.95), feeC = pay - getC, getR = Math.round(getC / 100);
+    // Exact integer math on cents, identical to the backend (95/100 of the paid
+    // amount), so the preview always matches what actually gets credited.
+    var getC = Math.floor(pay * 95 / 100), feeC = pay - getC, getR = rcoin(getC);
     $("buy-pay").textContent = money(pay);
     $("buy-fee").textContent = money(feeC);
     $("buy-get").textContent = getR + " rcoin";
     $("buy-go").textContent = "Buy " + getR + " rcoin";
-    $("buy-go").disabled = getR <= 0;
+    $("buy-go").disabled = getC <= 0;
     return pay;
   }
   function calcWd() {
@@ -248,7 +285,27 @@
     $("buy-go").addEventListener("click", function () {
       var pay = centsFromDollars($("buy-usd").value);
       if (!isFinite(pay) || pay < 100) { msg($("wal-msg"), "Minimum $1.", false); return; }
+      if (pay > 200000) { msg($("wal-msg"), "Maximum $2000 per purchase.", false); return; }
       var b = $("buy-go"); b.disabled = true;
+
+      if (STRIPE) {
+        // Real payment path: create a Stripe Checkout session server-side and
+        // send the buyer to Stripe's hosted page. The balance is credited only
+        // by the verified webhook, never here.
+        msg($("wal-msg"), "Redirecting to secure checkout…", true);
+        client.functions.invoke("stripe-checkout", { body: { pay_cents: pay } })
+          .then(function (r) {
+            if (r.error || !r.data || !r.data.url) {
+              msg($("wal-msg"), "Couldn't start checkout. Try again in a moment.", false);
+              b.disabled = false; return;
+            }
+            window.location.href = r.data.url;
+          })
+          .catch(function () { msg($("wal-msg"), "Network error.", false); b.disabled = false; });
+        return;
+      }
+
+      // Test path (no Stripe keys yet): instant credit via the test RPC.
       client.rpc("rib_buy_rcoin_test", { p_pay_cents: pay })
         .then(function (r) {
           if (r.error) { msg($("wal-msg"), r.error.message || "Couldn't complete the purchase.", false); return; }

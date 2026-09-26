@@ -20,11 +20,16 @@
 module.exports = function handler(req, res) {
   var url = process.env.SUPABASE_URL || "";
   var anon = process.env.SUPABASE_ANON_KEY || "";
+  // Public flag: when Stripe is set up on the server, the console routes rcoin
+  // top-ups through Stripe Checkout instead of the instant test RPC. This is
+  // just a UI switch — no Stripe secret is ever exposed here.
+  var stripeEnabled = /^(1|true|yes|on)$/i.test(String(process.env.STRIPE_ENABLED || ""));
 
   var body =
     "window.RUNINBACK_CONFIG = {" +
       "SUPABASE_URL: " + JSON.stringify(url) + "," +
       "SUPABASE_ANON_KEY: " + JSON.stringify(anon) + "," +
+      "STRIPE_ENABLED: " + JSON.stringify(stripeEnabled) + "," +
       "CONSOLE_URL: \"console.html\"" +
     "};" +
     "window.RUNINBACK_CONFIG.isConfigured = function () {" +
