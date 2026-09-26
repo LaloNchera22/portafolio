@@ -179,6 +179,14 @@
               <div class="row"><span>Entry commission (5%)</span><span id="buy-fee">$5.00</span></div>
               <div class="row tot"><span>You receive</span><span id="buy-get">95 rcoin</span></div>
             </div>
+            <div class="paymethod" id="pay-method" hidden>
+              <span class="paymethod__lbl">Pay with</span>
+              <div class="chips" data-chips="pay-method">
+                <button type="button" data-method="card" class="on">Card</button>
+                <button type="button" data-method="crypto">Crypto</button>
+              </div>
+              <p class="hint" id="pay-note" style="margin-top:8px"></p>
+            </div>
             <button type="button" class="btn btn--cta btn--wide" id="buy-go">Buy 95 rcoin</button>
             <p class="hint">Clear rate on screen: <strong>$100 = 95 rcoin</strong>. The 5% is charged once, on the way in. Inside the platform 1 rcoin = $1.</p>
             <p class="msg" id="wal-msg" hidden></p>

@@ -165,6 +165,10 @@
 .capp .chips button:hover { border-color: var(--c-cream); }
 .capp .chips button.on { color: var(--c-canvas); background: var(--c-cream); border-color: var(--c-cream); }
 
+/* payment-method selector (card / crypto) */
+.capp .paymethod { margin: 16px 0 4px; }
+.capp .paymethod__lbl { display: block; font-size: 13px; color: var(--c-dim); margin-bottom: 8px; }
+
 /* wallet layout */
 .capp .wallet-top { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; align-items: stretch; }
 .capp .wallet-card { background: var(--c-panel); border-radius: 14px; padding: 24px; display: flex; flex-direction: column; gap: 6px; justify-content: center; }

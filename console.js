@@ -64,6 +64,7 @@
   var handleCache = {}; // uuid -> username
   var gamesReady = false;
   var STRIPE = !!(window.RUNINBACK_CONFIG && window.RUNINBACK_CONFIG.STRIPE_ENABLED);
+  var CRYPTO = !!(window.RUNINBACK_CONFIG && window.RUNINBACK_CONFIG.CRYPTO_ENABLED);
 
   A.getSession().then(function (session) {
     if (!session) { toLanding(); return; }
@@ -277,6 +278,48 @@
     var r = parseFloat(String($("wd-amt").value).replace(",", ".")); if (!isFinite(r) || r < 0) r = 0;
     $("wd-get").textContent = "$" + Math.round(r).toFixed(2);
   }
+  // Which real payment rails are live. When more than one is on, the buyer picks
+  // between them; when just one, it's used silently; when none, the test RPC.
+  var payMethod = STRIPE ? "card" : (CRYPTO ? "crypto" : null);
+  var PAY_NOTES = {
+    card: "Secure card checkout via Stripe.",
+    crypto: "Pay in USDC/USDT on Base and other chains via Coinbase."
+  };
+  function setPayMethod(m) {
+    payMethod = m;
+    document.querySelectorAll('[data-chips="pay-method"] button').forEach(function (x) {
+      x.classList.toggle("on", x.getAttribute("data-method") === m);
+    });
+    if ($("pay-note")) $("pay-note").textContent = PAY_NOTES[m] || "";
+  }
+  function wirePayMethod() {
+    var wrap = $("pay-method");
+    if (!wrap) return;
+    // Show the chooser only when both rails are live (a real choice to make).
+    if (STRIPE && CRYPTO) {
+      wrap.hidden = false;
+      document.querySelectorAll('[data-chips="pay-method"] button').forEach(function (btn) {
+        btn.addEventListener("click", function () { setPayMethod(btn.getAttribute("data-method")); });
+      });
+      setPayMethod("card");
+    } else {
+      wrap.hidden = true; // single rail (or test mode) — no selector needed
+    }
+  }
+  // Start a hosted checkout (Stripe or Coinbase Commerce). The balance is
+  // credited only by the verified webhook after payment, never in the browser.
+  function startCheckout(fn, pay, btn) {
+    msg($("wal-msg"), "Redirecting to secure checkout…", true);
+    client.functions.invoke(fn, { body: { pay_cents: pay } })
+      .then(function (r) {
+        if (r.error || !r.data || !r.data.url) {
+          msg($("wal-msg"), "Couldn't start checkout. Try again in a moment.", false);
+          btn.disabled = false; return;
+        }
+        window.location.href = r.data.url;
+      })
+      .catch(function () { msg($("wal-msg"), "Network error.", false); btn.disabled = false; });
+  }
   function wireWallet() {
     if (!$("buy-go")) return;
     $("buy-usd").addEventListener("input", function () {
@@ -285,6 +328,7 @@
     });
     $("wd-amt").addEventListener("input", calcWd);
     $("wd-dest").addEventListener("change", calcWd);
+    wirePayMethod();
     calcBuy(); calcWd();
 
     $("buy-go").addEventListener("click", function () {
@@ -293,24 +337,10 @@
       if (pay > 200000) { msg($("wal-msg"), "Maximum $2000 per purchase.", false); return; }
       var b = $("buy-go"); b.disabled = true;
 
-      if (STRIPE) {
-        // Real payment path: create a Stripe Checkout session server-side and
-        // send the buyer to Stripe's hosted page. The balance is credited only
-        // by the verified webhook, never here.
-        msg($("wal-msg"), "Redirecting to secure checkout…", true);
-        client.functions.invoke("stripe-checkout", { body: { pay_cents: pay } })
-          .then(function (r) {
-            if (r.error || !r.data || !r.data.url) {
-              msg($("wal-msg"), "Couldn't start checkout. Try again in a moment.", false);
-              b.disabled = false; return;
-            }
-            window.location.href = r.data.url;
-          })
-          .catch(function () { msg($("wal-msg"), "Network error.", false); b.disabled = false; });
-        return;
-      }
+      if (payMethod === "card") { startCheckout("stripe-checkout", pay, b); return; }
+      if (payMethod === "crypto") { startCheckout("crypto-checkout", pay, b); return; }
 
-      // Test path (no Stripe keys yet): instant credit via the test RPC.
+      // Test path (no payment rails yet): instant credit via the test RPC.
       client.rpc("rib_buy_rcoin_test", { p_pay_cents: pay })
         .then(function (r) {
           if (r.error) { msg($("wal-msg"), ferr(r.error, "Couldn't complete the purchase."), false); return; }

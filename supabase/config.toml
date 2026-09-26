@@ -31,6 +31,17 @@ verify_jwt = true
 [functions.stripe-webhook]
 verify_jwt = false
 
+# crypto-checkout creates a Coinbase Commerce charge for the signed-in buyer. It
+# needs a user JWT (the platform verifies it, then the function calls getUser()).
+[functions.crypto-checkout]
+verify_jwt = true
+
+# crypto-webhook is called by COINBASE, not by a user, so it must be public. Its
+# authentication is the HMAC signature check inside the function — it credits
+# nothing until that passes.
+[functions.crypto-webhook]
+verify_jwt = false
+
 # OAuth providers (Google, GitHub, Apple) are enabled + given their client
 # id/secret in the Supabase dashboard (Authentication → Providers). These blocks
 # are only for local `supabase start`; hosted uses the dashboard settings.
