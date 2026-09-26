@@ -51,6 +51,19 @@ Deno.serve(async (req) => {
   const name = (payload.name ?? "default").toString().slice(0, 60);
   const projectId = typeof payload.project_id === "string" ? payload.project_id : null;
 
+  // If a project is named, it MUST belong to the caller. We check it through the
+  // user-scoped client (RLS only returns the caller's own rows), so a key can
+  // never be attached to someone else's project even though the insert below
+  // runs with the service role, which bypasses RLS.
+  if (projectId) {
+    const { data: owned, error: projErr } = await asUser
+      .from("projects")
+      .select("id")
+      .eq("id", projectId)
+      .maybeSingle();
+    if (projErr || !owned) return json({ error: "invalid_project" }, 403);
+  }
+
   // 3) Generate + hash the key. Only the hash and prefix are persisted.
   const fullKey = randomKey(environment);
   const keyHash = await sha256Hex(fullKey);
