@@ -679,52 +679,86 @@ window.RIBGames = (function () {
     loadOpenTables();
   }
 
-  /* ---- a game screen (mode chooser) --------------------------------------- */
+  /* ---- a game screen (mode chooser) ---------------------------------------
+   * One considered panel: the game's identity up top (icon, name, the side
+   * you play, a quiet "How to play"), then the two ways to play ranked by
+   * hairline — free practice first, then a staked table with a live pot
+   * preview. Depth comes from geometry and space, not from stacked boxes.
+   * ------------------------------------------------------------------------ */
   function openGame(gameId) {
     stopOnline();
     var mod = MODULES[gameId];
+    var help = getHelp(gameId);
     host.innerHTML = "";
-    var top = el("div", "gscreen__top");
-    var back = el("button", "btn btn--sm", "‹ All games");
+
+    var back = el("button", "gplay__back", "‹ All games");
     back.addEventListener("click", renderLobby);
-    top.appendChild(back);
-    top.appendChild(el("h2", "gscreen__name", mod.name));
-    var how = el("button", "btn btn--sm gscreen__how", "How to play");
+    host.appendChild(back);
+
+    var panel = el("div", "gplay");
+
+    // identity header
+    var head = el("div", "gplay__head");
+    head.appendChild(el("div", "gplay__ic", mod.icon));
+    var idcol = el("div", "gplay__id");
+    idcol.appendChild(el("h2", "gplay__name", mod.name));
+    if (help && help.you) idcol.appendChild(el("p", "gplay__you", help.you));
+    head.appendChild(idcol);
+    var how = el("button", "btn btn--sm gplay__how", "How to play");
     how.addEventListener("click", function () { showHelp(gameId); });
-    top.appendChild(how);
-    host.appendChild(top);
+    head.appendChild(how);
+    panel.appendChild(head);
 
-    var choose = el("div", "gchoose");
-    var practice = el("div", "gchoose__card");
-    practice.innerHTML = '<h3>Practice</h3><p>Free warmup against the house bot. No stake.</p>';
-    var pBtn = el("button", "btn btn--cta btn--wide", "Practice vs bot");
+    // option 1 — free practice
+    var free = el("div", "gplay__opt gplay__opt--free");
+    var freeL = el("div", "gplay__optL");
+    freeL.appendChild(el("p", "gplay__eyebrow", "Free"));
+    freeL.appendChild(el("h3", "gplay__optH", "Practice vs the bot"));
+    freeL.appendChild(el("p", "gplay__optD", "A warm-up against the house bot. No stake, play as many as you like."));
+    free.appendChild(freeL);
+    var pBtn = el("button", "btn btn--cta gplay__act", "Play free");
     pBtn.addEventListener("click", function () { startPractice(gameId); });
-    practice.appendChild(pBtn);
-    choose.appendChild(practice);
+    free.appendChild(pBtn);
+    panel.appendChild(free);
 
-    var forCoin = el("div", "gchoose__card");
-    forCoin.innerHTML = '<h3>Play for rcoin</h3><p>Stake rcoin, winner takes the full pot. No rake on the table.</p>';
-    var stakeRow = el("div", "chips gchoose__chips");
+    // option 2 — staked table
+    var coin = el("div", "gplay__opt");
+    var coinL = el("div", "gplay__optL");
+    coinL.appendChild(el("p", "gplay__eyebrow", "Staked · winner takes all"));
+    coinL.appendChild(el("h3", "gplay__optH", "Play for rcoin"));
+    coinL.appendChild(el("p", "gplay__optD", "Both players stake the same. No rake on the table — the whole pot goes to the winner."));
+    coin.appendChild(coinL);
+
+    var coinR = el("div", "gplay__optR");
+    coinR.appendChild(el("p", "gplay__stakeLbl", "Your stake"));
+    var stakeRow = el("div", "gplay__stakes");
+    var pot = el("p", "gplay__pot");
+    function setPot() {
+      var on = stakeRow.querySelector("button.on"); var r = on ? parseInt(on.getAttribute("data-r"), 10) : 50;
+      pot.innerHTML = 'Winner takes <b>' + (r * 2) + ' rcoin</b>';
+    }
     [25, 50, 100, 250].forEach(function (r, i) {
-      var b = el("button", i === 1 ? "on" : "", String(r));
+      var b = el("button", "gplay__stake" + (i === 1 ? " on" : ""), String(r));
       b.setAttribute("data-r", r);
-      b.addEventListener("click", function () { stakeRow.querySelectorAll("button").forEach(function (x) { x.classList.remove("on"); }); b.classList.add("on"); });
+      b.addEventListener("click", function () { stakeRow.querySelectorAll("button").forEach(function (x) { x.classList.remove("on"); }); b.classList.add("on"); setPot(); });
       stakeRow.appendChild(b);
     });
-    forCoin.appendChild(el("label", "gchoose__lbl", "Stake (rcoin)"));
-    forCoin.appendChild(stakeRow);
-    var cBtn = el("button", "btn btn--wide", "Create table");
+    coinR.appendChild(stakeRow);
+    setPot();
+    coinR.appendChild(pot);
+    var cBtn = el("button", "btn gplay__act", "Create table");
     cBtn.addEventListener("click", function () {
       var on = stakeRow.querySelector("button.on"); var r = on ? parseInt(on.getAttribute("data-r"), 10) : 50;
       createOnline(gameId, r * 100, cBtn);
     });
-    forCoin.appendChild(cBtn);
-    var note = el("p", "gchoose__note");
-    forCoin.appendChild(note);
-    if (!CTX.configured) { cBtn.disabled = true; note.textContent = "Connect the backend to play staked matches. Practice works now."; }
-    choose.appendChild(forCoin);
+    coinR.appendChild(cBtn);
+    var note = el("p", "gplay__note");
+    coinR.appendChild(note);
+    if (!CTX.configured) { cBtn.disabled = true; note.textContent = "Staked tables open once the backend is connected. Practice works now."; }
+    coin.appendChild(coinR);
+    panel.appendChild(coin);
 
-    host.appendChild(choose);
+    host.appendChild(panel);
 
     // show the rules automatically the first time you open this game
     if (firstTime(gameId)) showHelp(gameId);
