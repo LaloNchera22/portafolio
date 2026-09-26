@@ -616,9 +616,8 @@ window.RIBGames = (function () {
   function renderLobby() {
     stopOnline();
     host.innerHTML = "";
-    var intro = el("p", "games-intro");
-    intro.innerHTML = "Every game, two ways: <strong>practice free</strong> against the house bot, or <strong>play for rcoin</strong> — both players stake the same and the winner takes the whole pot. No rake on the table; the 5% is charged once when you buy rcoin.";
-    host.appendChild(intro);
+    // The intro copy is the static .games-lead in console.html, above this
+    // root — don't re-append it here or it shows twice.
 
     // category filters
     var filters = [
@@ -651,20 +650,22 @@ window.RIBGames = (function () {
         if (g.soon) return;                       // coming-soon games are hidden from the lobby
         if (!matchesFilter(g, lobbyFilter)) return;
         shown++;
-        var card = el("div", "gcard");
+        // The whole card is the tap target — a big, mobile-friendly hit area
+        // that takes you straight into the game screen (practice vs bot or
+        // play for rcoin). The rules live inside that screen (auto on first
+        // open, and via "How to play"), so there's no dead-end here.
+        var card = el("button", "gcard");
+        card.type = "button";
+        card.setAttribute("aria-label", "Open " + g.name);
         card.innerHTML =
-          '<div class="gcard__ic">' + esc(g.icon) + '</div>' +
-          '<div class="gcard__n">' + esc(g.name) + '</div>' +
-          '<p class="gcard__d">' + esc(g.blurb) + '</p>';
-        var foot = el("div", "gcard__foot");
-        var left = el("div", "gcard__left");
-        var play = el("button", "btn btn--sm gcard__play", "Play");
-        play.addEventListener("click", function () { openGame(g.id); });
-        left.appendChild(play);
-        left.appendChild(helpButton(g.id));
-        foot.appendChild(left);
+          '<span class="gcard__ic">' + esc(g.icon) + '</span>' +
+          '<span class="gcard__n">' + esc(g.name) + '</span>' +
+          '<span class="gcard__d">' + esc(g.blurb) + '</span>';
+        var foot = el("span", "gcard__foot");
         foot.appendChild(el("span", "gcard__tag", g.tag));
+        foot.appendChild(el("span", "gcard__play", "Play ›"));
         card.appendChild(foot);
+        card.addEventListener("click", function () { openGame(g.id); });
         grid.appendChild(card);
       });
       if (!shown) grid.innerHTML = '<p class="games-intro" style="margin:0">No games in this filter.</p>';
@@ -678,55 +679,106 @@ window.RIBGames = (function () {
     loadOpenTables();
   }
 
-  /* ---- a game screen (mode chooser) --------------------------------------- */
+  /* ---- a game screen (mode chooser) ---------------------------------------
+   * A pop-up over the lobby: the game's identity up top (icon, name, the
+   * side you play, a quiet "How to play"), then the two ways to play ranked
+   * by hairline — free practice first, then a staked table with a live pot
+   * preview. Picking a mode dismisses the pop-up and drops you into the
+   * game's own sub-page (the board). Depth comes from geometry, not shadows.
+   * ------------------------------------------------------------------------ */
   function openGame(gameId) {
-    stopOnline();
     var mod = MODULES[gameId];
-    host.innerHTML = "";
-    var top = el("div", "gscreen__top");
-    var back = el("button", "btn btn--sm", "‹ All games");
-    back.addEventListener("click", renderLobby);
-    top.appendChild(back);
-    top.appendChild(el("h2", "gscreen__name", mod.name));
-    var how = el("button", "btn btn--sm gscreen__how", "How to play");
+    var help = getHelp(gameId);
+
+    var backdrop = el("div", "gmodal-back");
+    var panel = el("div", "gplay gplay--modal");
+    panel.setAttribute("role", "dialog");
+    panel.setAttribute("aria-modal", "true");
+
+    function close() { if (backdrop.parentNode) backdrop.parentNode.removeChild(backdrop); document.removeEventListener("keydown", onKey); }
+    function onKey(e) { if (e.key === "Escape") close(); }
+    // launch a mode: dismiss the pop-up, then render the game's sub-page
+    function launch(fn) { close(); fn(); }
+
+    // identity header
+    var head = el("div", "gplay__head");
+    head.appendChild(el("div", "gplay__ic", mod.icon));
+    var idcol = el("div", "gplay__id");
+    idcol.appendChild(el("h2", "gplay__name", mod.name));
+    if (help && help.you) idcol.appendChild(el("p", "gplay__you", help.you));
+    head.appendChild(idcol);
+    var how = el("button", "btn btn--sm gplay__how", "How to play");
     how.addEventListener("click", function () { showHelp(gameId); });
-    top.appendChild(how);
-    host.appendChild(top);
+    head.appendChild(how);
+    var x = el("button", "gplay__x", "✕"); x.setAttribute("aria-label", "Close");
+    x.addEventListener("click", close);
+    head.appendChild(x);
+    panel.appendChild(head);
 
-    var choose = el("div", "gchoose");
-    var practice = el("div", "gchoose__card");
-    practice.innerHTML = '<h3>Practice</h3><p>Free warmup against the house bot. No stake.</p>';
-    var pBtn = el("button", "btn btn--cta btn--wide", "Practice vs bot");
-    pBtn.addEventListener("click", function () { startPractice(gameId); });
-    practice.appendChild(pBtn);
-    choose.appendChild(practice);
+    // option 1 — free practice
+    var free = el("div", "gplay__opt gplay__opt--free");
+    var freeL = el("div", "gplay__optL");
+    freeL.appendChild(el("p", "gplay__eyebrow", "Free"));
+    freeL.appendChild(el("h3", "gplay__optH", "Practice vs the bot"));
+    freeL.appendChild(el("p", "gplay__optD", "A warm-up against the house bot. No stake, play as many as you like."));
+    free.appendChild(freeL);
+    var pBtn = el("button", "btn btn--cta gplay__act", "Play free");
+    pBtn.addEventListener("click", function () { launch(function () { startPractice(gameId); }); });
+    free.appendChild(pBtn);
+    panel.appendChild(free);
 
-    var forCoin = el("div", "gchoose__card");
-    forCoin.innerHTML = '<h3>Play for rcoin</h3><p>Stake rcoin, winner takes the full pot. No rake on the table.</p>';
-    var stakeRow = el("div", "chips gchoose__chips");
-    [25, 50, 100, 250].forEach(function (r, i) {
-      var b = el("button", i === 1 ? "on" : "", String(r));
+    // option 2 — staked table
+    var coin = el("div", "gplay__opt");
+    var coinL = el("div", "gplay__optL");
+    coinL.appendChild(el("p", "gplay__eyebrow", "Staked · winner takes all"));
+    coinL.appendChild(el("h3", "gplay__optH", "Play for rcoin"));
+    coinL.appendChild(el("p", "gplay__optD", "Both players stake the same. No rake on the table — the whole pot goes to the winner."));
+    coin.appendChild(coinL);
+
+    var coinR = el("div", "gplay__optR");
+    coinR.appendChild(el("p", "gplay__stakeLbl", "Your stake (rcoin)"));
+    // low presets so anyone can join, plus a free-typed custom amount
+    var stakeRow = el("div", "gplay__stakes");
+    var custom = el("input", "gplay__custom");
+    custom.type = "number"; custom.min = "1"; custom.step = "1"; custom.inputMode = "numeric"; custom.placeholder = "Custom";
+    custom.setAttribute("aria-label", "Custom stake in rcoin");
+    var pot = el("p", "gplay__pot");
+    // the active stake: a typed custom amount wins, else the selected chip, else 1
+    function currentStake() {
+      var c = parseInt(custom.value, 10);
+      if (custom.value !== "" && c >= 1) return c;
+      var on = stakeRow.querySelector("button.on");
+      return on ? parseInt(on.getAttribute("data-r"), 10) : 1;
+    }
+    function setPot() { var r = currentStake(); pot.innerHTML = 'Winner takes <b>' + (r * 2) + ' rcoin</b>'; }
+    [1, 5, 10, 25].forEach(function (r, i) {
+      var b = el("button", "gplay__stake" + (i === 1 ? " on" : ""), String(r));
       b.setAttribute("data-r", r);
-      b.addEventListener("click", function () { stakeRow.querySelectorAll("button").forEach(function (x) { x.classList.remove("on"); }); b.classList.add("on"); });
+      b.addEventListener("click", function () { custom.value = ""; stakeRow.querySelectorAll("button").forEach(function (x) { x.classList.remove("on"); }); b.classList.add("on"); setPot(); });
       stakeRow.appendChild(b);
     });
-    forCoin.appendChild(el("label", "gchoose__lbl", "Stake (rcoin)"));
-    forCoin.appendChild(stakeRow);
-    var cBtn = el("button", "btn btn--wide", "Create table");
+    coinR.appendChild(stakeRow);
+    custom.addEventListener("input", function () { stakeRow.querySelectorAll("button").forEach(function (x) { x.classList.remove("on"); }); setPot(); });
+    coinR.appendChild(custom);
+    setPot();
+    coinR.appendChild(pot);
+    var cBtn = el("button", "btn gplay__act", "Create table");
     cBtn.addEventListener("click", function () {
-      var on = stakeRow.querySelector("button.on"); var r = on ? parseInt(on.getAttribute("data-r"), 10) : 50;
-      createOnline(gameId, r * 100, cBtn);
+      var r = currentStake();
+      launch(function () { createOnline(gameId, r * 100, cBtn); });
     });
-    forCoin.appendChild(cBtn);
-    var note = el("p", "gchoose__note");
-    forCoin.appendChild(note);
-    if (!CTX.configured) { cBtn.disabled = true; note.textContent = "Connect the backend to play staked matches. Practice works now."; }
-    choose.appendChild(forCoin);
+    coinR.appendChild(cBtn);
+    var note = el("p", "gplay__note");
+    coinR.appendChild(note);
+    if (!CTX.configured) { cBtn.disabled = true; note.textContent = "Staked tables open once the backend is connected. Practice works now."; }
+    coin.appendChild(coinR);
+    panel.appendChild(coin);
 
-    host.appendChild(choose);
-
-    // show the rules automatically the first time you open this game
-    if (firstTime(gameId)) showHelp(gameId);
+    backdrop.appendChild(panel);
+    backdrop.addEventListener("click", function (e) { if (e.target === backdrop) close(); });
+    document.addEventListener("keydown", onKey);
+    var root = (host && host.closest && host.closest(".capp")) || document.querySelector(".capp") || document.body;
+    root.appendChild(backdrop);
   }
 
   /* ---- practice loop (seat 0 = you, seat 1 = bot) ------------------------- */
@@ -737,7 +789,7 @@ window.RIBGames = (function () {
     host.innerHTML = "";
     var top = el("div", "gscreen__top");
     var back = el("button", "btn btn--sm", "‹ Leave");
-    back.addEventListener("click", function () { openGame(gameId); });
+    back.addEventListener("click", renderLobby);
     top.appendChild(back);
     top.appendChild(el("h2", "gscreen__name", mod.name + " · practice"));
     top.appendChild(helpButton(gameId));
@@ -789,7 +841,7 @@ window.RIBGames = (function () {
         '<p>Practice round — no rcoin at stake.</p>';
       var acts = el("div", "gover__acts");
       var again = el("button", "btn btn--cta", "Play again"); again.addEventListener("click", function () { startPractice(gameId); });
-      var leave = el("button", "btn", "Back"); leave.addEventListener("click", function () { openGame(gameId); });
+      var leave = el("button", "btn", "All games"); leave.addEventListener("click", renderLobby);
       acts.appendChild(again); acts.appendChild(leave); over.appendChild(acts);
     }
     // wire move through api
