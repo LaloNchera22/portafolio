@@ -736,25 +736,35 @@ window.RIBGames = (function () {
     coin.appendChild(coinL);
 
     var coinR = el("div", "gplay__optR");
-    coinR.appendChild(el("p", "gplay__stakeLbl", "Your stake"));
+    coinR.appendChild(el("p", "gplay__stakeLbl", "Your stake (rcoin)"));
+    // low presets so anyone can join, plus a free-typed custom amount
     var stakeRow = el("div", "gplay__stakes");
+    var custom = el("input", "gplay__custom");
+    custom.type = "number"; custom.min = "1"; custom.step = "1"; custom.inputMode = "numeric"; custom.placeholder = "Custom";
+    custom.setAttribute("aria-label", "Custom stake in rcoin");
     var pot = el("p", "gplay__pot");
-    function setPot() {
-      var on = stakeRow.querySelector("button.on"); var r = on ? parseInt(on.getAttribute("data-r"), 10) : 50;
-      pot.innerHTML = 'Winner takes <b>' + (r * 2) + ' rcoin</b>';
+    // the active stake: a typed custom amount wins, else the selected chip, else 1
+    function currentStake() {
+      var c = parseInt(custom.value, 10);
+      if (custom.value !== "" && c >= 1) return c;
+      var on = stakeRow.querySelector("button.on");
+      return on ? parseInt(on.getAttribute("data-r"), 10) : 1;
     }
-    [25, 50, 100, 250].forEach(function (r, i) {
+    function setPot() { var r = currentStake(); pot.innerHTML = 'Winner takes <b>' + (r * 2) + ' rcoin</b>'; }
+    [1, 5, 10, 25].forEach(function (r, i) {
       var b = el("button", "gplay__stake" + (i === 1 ? " on" : ""), String(r));
       b.setAttribute("data-r", r);
-      b.addEventListener("click", function () { stakeRow.querySelectorAll("button").forEach(function (x) { x.classList.remove("on"); }); b.classList.add("on"); setPot(); });
+      b.addEventListener("click", function () { custom.value = ""; stakeRow.querySelectorAll("button").forEach(function (x) { x.classList.remove("on"); }); b.classList.add("on"); setPot(); });
       stakeRow.appendChild(b);
     });
     coinR.appendChild(stakeRow);
+    custom.addEventListener("input", function () { stakeRow.querySelectorAll("button").forEach(function (x) { x.classList.remove("on"); }); setPot(); });
+    coinR.appendChild(custom);
     setPot();
     coinR.appendChild(pot);
     var cBtn = el("button", "btn gplay__act", "Create table");
     cBtn.addEventListener("click", function () {
-      var on = stakeRow.querySelector("button.on"); var r = on ? parseInt(on.getAttribute("data-r"), 10) : 50;
+      var r = currentStake();
       launch(function () { createOnline(gameId, r * 100, cBtn); });
     });
     coinR.appendChild(cBtn);
