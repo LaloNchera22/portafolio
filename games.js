@@ -585,7 +585,12 @@ window.RIBGames = (function () {
     ok.addEventListener("click", close);
     back.addEventListener("click", function (e) { if (e.target === back) close(); });
     document.addEventListener("keydown", onKey);
-    document.body.appendChild(back);
+    // Mount inside the .capp shell: the overlay's styles (fixed positioning,
+    // backdrop, panel) and the color variables all live under .capp, so
+    // appending to document.body would leave it unstyled — a raw block of
+    // text dumped at the foot of the page instead of a centered modal.
+    var root = (host && host.closest && host.closest(".capp")) || document.querySelector(".capp") || document.body;
+    root.appendChild(back);
   }
 
   function init(ctx) {
