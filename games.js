@@ -680,22 +680,25 @@ window.RIBGames = (function () {
   }
 
   /* ---- a game screen (mode chooser) ---------------------------------------
-   * One considered panel: the game's identity up top (icon, name, the side
-   * you play, a quiet "How to play"), then the two ways to play ranked by
-   * hairline — free practice first, then a staked table with a live pot
-   * preview. Depth comes from geometry and space, not from stacked boxes.
+   * A pop-up over the lobby: the game's identity up top (icon, name, the
+   * side you play, a quiet "How to play"), then the two ways to play ranked
+   * by hairline — free practice first, then a staked table with a live pot
+   * preview. Picking a mode dismisses the pop-up and drops you into the
+   * game's own sub-page (the board). Depth comes from geometry, not shadows.
    * ------------------------------------------------------------------------ */
   function openGame(gameId) {
-    stopOnline();
     var mod = MODULES[gameId];
     var help = getHelp(gameId);
-    host.innerHTML = "";
 
-    var back = el("button", "gplay__back", "‹ All games");
-    back.addEventListener("click", renderLobby);
-    host.appendChild(back);
+    var backdrop = el("div", "gmodal-back");
+    var panel = el("div", "gplay gplay--modal");
+    panel.setAttribute("role", "dialog");
+    panel.setAttribute("aria-modal", "true");
 
-    var panel = el("div", "gplay");
+    function close() { if (backdrop.parentNode) backdrop.parentNode.removeChild(backdrop); document.removeEventListener("keydown", onKey); }
+    function onKey(e) { if (e.key === "Escape") close(); }
+    // launch a mode: dismiss the pop-up, then render the game's sub-page
+    function launch(fn) { close(); fn(); }
 
     // identity header
     var head = el("div", "gplay__head");
@@ -707,6 +710,9 @@ window.RIBGames = (function () {
     var how = el("button", "btn btn--sm gplay__how", "How to play");
     how.addEventListener("click", function () { showHelp(gameId); });
     head.appendChild(how);
+    var x = el("button", "gplay__x", "✕"); x.setAttribute("aria-label", "Close");
+    x.addEventListener("click", close);
+    head.appendChild(x);
     panel.appendChild(head);
 
     // option 1 — free practice
@@ -717,7 +723,7 @@ window.RIBGames = (function () {
     freeL.appendChild(el("p", "gplay__optD", "A warm-up against the house bot. No stake, play as many as you like."));
     free.appendChild(freeL);
     var pBtn = el("button", "btn btn--cta gplay__act", "Play free");
-    pBtn.addEventListener("click", function () { startPractice(gameId); });
+    pBtn.addEventListener("click", function () { launch(function () { startPractice(gameId); }); });
     free.appendChild(pBtn);
     panel.appendChild(free);
 
@@ -749,7 +755,7 @@ window.RIBGames = (function () {
     var cBtn = el("button", "btn gplay__act", "Create table");
     cBtn.addEventListener("click", function () {
       var on = stakeRow.querySelector("button.on"); var r = on ? parseInt(on.getAttribute("data-r"), 10) : 50;
-      createOnline(gameId, r * 100, cBtn);
+      launch(function () { createOnline(gameId, r * 100, cBtn); });
     });
     coinR.appendChild(cBtn);
     var note = el("p", "gplay__note");
@@ -758,10 +764,11 @@ window.RIBGames = (function () {
     coin.appendChild(coinR);
     panel.appendChild(coin);
 
-    host.appendChild(panel);
-
-    // show the rules automatically the first time you open this game
-    if (firstTime(gameId)) showHelp(gameId);
+    backdrop.appendChild(panel);
+    backdrop.addEventListener("click", function (e) { if (e.target === backdrop) close(); });
+    document.addEventListener("keydown", onKey);
+    var root = (host && host.closest && host.closest(".capp")) || document.querySelector(".capp") || document.body;
+    root.appendChild(backdrop);
   }
 
   /* ---- practice loop (seat 0 = you, seat 1 = bot) ------------------------- */
@@ -772,7 +779,7 @@ window.RIBGames = (function () {
     host.innerHTML = "";
     var top = el("div", "gscreen__top");
     var back = el("button", "btn btn--sm", "‹ Leave");
-    back.addEventListener("click", function () { openGame(gameId); });
+    back.addEventListener("click", renderLobby);
     top.appendChild(back);
     top.appendChild(el("h2", "gscreen__name", mod.name + " · practice"));
     top.appendChild(helpButton(gameId));
@@ -824,7 +831,7 @@ window.RIBGames = (function () {
         '<p>Practice round — no rcoin at stake.</p>';
       var acts = el("div", "gover__acts");
       var again = el("button", "btn btn--cta", "Play again"); again.addEventListener("click", function () { startPractice(gameId); });
-      var leave = el("button", "btn", "Back"); leave.addEventListener("click", function () { openGame(gameId); });
+      var leave = el("button", "btn", "All games"); leave.addEventListener("click", renderLobby);
       acts.appendChild(again); acts.appendChild(leave); over.appendChild(acts);
     }
     // wire move through api
