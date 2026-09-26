@@ -21,6 +21,14 @@ window.RIBGames = (function () {
   function esc(s) { return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]; }); }
   function money(cents) { return "$" + ((Number(cents) || 0) / 100).toFixed(2); }
   function rcoin(cents) { return Math.round((Number(cents) || 0) / 100); }
+  // Surface a backend failure as a clean, professional toast. Routes through the
+  // shared error mapper so raw database strings never reach a player.
+  function notify(error, fallback, kind) {
+    var E = window.RIBErrors;
+    var text = (E && E.friendly) ? E.friendly(error, fallback) : (fallback || "Something went wrong. Please try again.");
+    if (E && E.toast) E.toast(text, kind || "err");
+    else if (kind !== "info" && kind !== "ok") alert(text);
+  }
 
   /* =========================================================================
    * GAME MODULES
@@ -893,7 +901,7 @@ window.RIBGames = (function () {
     btn.disabled = true;
     CTX.client.rpc("rib_game_create", { p_game: gameId, p_stake_cents: stakeCents, p_state: state })
       .then(function (r) {
-        if (r.error) { alert(r.error.message || "Could not create the table."); btn.disabled = false; return; }
+        if (r.error) { notify(r.error, "We couldn't create the table. Please try again."); btn.disabled = false; return; }
         if (CTX.refreshWallet) CTX.refreshWallet();
         enterOnline(r.data, mod, 0, state, "Waiting for a player to join…");
       })
@@ -906,7 +914,7 @@ window.RIBGames = (function () {
     btn.disabled = true;
     CTX.client.rpc("rib_game_join", { p_match_id: match.id, p_state: null })
       .then(function (r) {
-        if (r.error) { alert(r.error.message || "Could not join."); btn.disabled = false; return; }
+        if (r.error) { notify(r.error, "We couldn't join this table. Please try again."); btn.disabled = false; return; }
         if (CTX.refreshWallet) CTX.refreshWallet();
         var m = r.data;
         enterOnline(m, mod, 1, m.state, null);
@@ -975,7 +983,13 @@ window.RIBGames = (function () {
       var nextTurnId = nextSeat === 0 ? online.match.host_id : online.match.guest_id;
       var res = mod.result(next);
       CTX.client.rpc("rib_game_move", { p_match_id: online.match.id, p_state: next, p_next_turn: res ? null : nextTurnId })
-        .then(function (r) { if (r.error) { /* keep UI; will resync on next event */ } });
+        .then(function (r) {
+          // The move is applied locally right away and the board resyncs from
+          // the match row on the next realtime event, so a rejected move
+          // self-heals. Give a low-key heads-up so it doesn't feel silent.
+          if (r.error) notify(r.error, "That move couldn't be sent. The board will resync in a moment.", "info");
+        })
+        .catch(function () { notify(null, "That move couldn't be sent. The board will resync in a moment.", "info"); });
       online.render();
       if (res) reportResult(res);
     };
@@ -995,7 +1009,12 @@ window.RIBGames = (function () {
     var winnerId = null;
     if (res.winner != null) winnerId = res.winner === 0 ? online.match.host_id : online.match.guest_id;
     CTX.client.rpc("rib_game_report", { p_match_id: online.match.id, p_winner_id: winnerId })
-      .then(function (r) { if (!r.error && r.data) { online.match = r.data; if (CTX.refreshWallet) CTX.refreshWallet(); online.render(); } });
+      .then(function (r) {
+        if (!r.error && r.data) { online.match = r.data; if (CTX.refreshWallet) CTX.refreshWallet(); online.render(); return; }
+        // Let the player retry: the payout only settles once both reports match.
+        if (r.error) { online.reported = false; notify(r.error, "We couldn't record the result. It'll settle once both players report.", "info"); }
+      })
+      .catch(function () { online.reported = false; notify(null, "We couldn't record the result. It'll settle once both players report.", "info"); });
   }
 
   function finishOnline(m, res) {

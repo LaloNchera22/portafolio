@@ -125,6 +125,14 @@
 .capp .msg--ok { color: var(--c-good); background: rgba(53,208,127,.08); }
 .capp .muted { color: var(--c-dim); }
 
+/* toasts — transient notices where an inline slot doesn't fit (game board) */
+.rib-toasts { position: fixed; left: 50%; bottom: 22px; transform: translateX(-50%); z-index: 1000; display: flex; flex-direction: column; gap: 8px; width: calc(100% - 32px); max-width: 380px; pointer-events: none; }
+.rib-toast { pointer-events: auto; font-size: 13.5px; line-height: 1.4; border-radius: 12px; padding: 12px 15px; color: var(--c-cream, #fffce1); background: var(--c-elevated, #202220); border: 1px solid var(--c-hairline, #42433d); box-shadow: 0 8px 28px rgba(0,0,0,.35); opacity: 0; transform: translateY(8px); transition: opacity .22s ease, transform .22s ease; }
+.rib-toast.is-in { opacity: 1; transform: translateY(0); }
+.rib-toast--err { border-left: 3px solid var(--c-bad, #ff5b5b); }
+.rib-toast--ok { border-left: 3px solid var(--c-good, #35d07f); }
+.rib-toast--info { border-left: 3px solid var(--c-hairline, #42433d); }
+
 /* reveal-once key box */
 .capp .keybox { background: var(--c-elevated); border: 1px solid var(--c-hairline); border-radius: 12px; padding: 16px; margin-top: 16px; }
 .capp .keybox .lbl { font-size: 12px; color: var(--c-dim); margin-bottom: 8px; }
