@@ -486,7 +486,11 @@ ul {
   align-items: center;
   justify-content: center;
   border-radius: 50%;
+  border: 1px solid var(--color-surface-25);
+  background: transparent;
+  transition: border-color 0.25s var(--ease-out), background 0.25s var(--ease-out);
 }
+.nav.is-open .nav__toggle { border-color: var(--color-surface-cream); }
 .nav__toggle span {
   position: relative;
   width: 20px;
@@ -510,6 +514,10 @@ ul {
 .nav.is-open .nav__toggle span { background: transparent; }
 .nav.is-open .nav__toggle span::before { transform: translateY(6px) rotate(45deg); }
 .nav.is-open .nav__toggle span::after { transform: translateY(-6px) rotate(-45deg); }
+
+/* The scroll-progress bar sits above the nav; hide it while the full-screen
+   menu is open so no stray sliver shows over the overlay. */
+.nav.is-open ~ .progress { opacity: 0; }
 
 /* ==========================================================================
    Announcement banner
@@ -1711,32 +1719,101 @@ ul {
 }
 
 @media (max-width: 640px) {
+  /* Keep the brand + toggle row painted above the full-screen menu overlay. */
+  .nav__inner { position: relative; z-index: 2; }
+  .nav__inner .brand { position: relative; z-index: 3; }
+  .nav__toggle { display: flex; z-index: 3; }
+
+  /* While the menu is open the header must be a plain, solid surface: a
+     backdrop-filter (or transform) on .nav turns it into the containing block
+     for the fixed overlay below, which is exactly what broke the old menu on
+     scroll. Neutralise both so the overlay always maps to the viewport. */
+  .nav.is-open,
+  .nav.is-open.is-scrolled {
+    background: var(--surface-canvas);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+    border-bottom-color: transparent;
+    transform: none;
+  }
+
+  /* Full-screen menu overlay — opaque canvas, slides in from the right. */
   .nav__links {
     position: fixed;
-    inset: 0 0 0 auto;
-    width: min(80vw, 320px);
+    inset: 0;
+    width: 100%;
+    height: 100dvh;
     flex-direction: column;
-    align-items: flex-start;
-    justify-content: center;
-    gap: var(--spacing-32);
-    padding: var(--gutter);
-    background: var(--surface-panel);
-    border-left: 1px solid var(--color-surface-25);
+    align-items: stretch;
+    justify-content: flex-start;
+    gap: 0;
+    padding: calc(var(--spacing-96) + env(safe-area-inset-top))
+             var(--gutter)
+             calc(var(--gutter) + env(safe-area-inset-bottom));
+    background: var(--surface-canvas);
+    overflow-y: auto;
+    overscroll-behavior: contain;
     transform: translateX(100%);
-    transition: transform 0.4s var(--ease-out);
+    opacity: 0;
+    visibility: hidden;
+    transition: transform 0.42s var(--ease-in-out),
+                opacity 0.28s var(--ease-out),
+                visibility 0s linear 0.42s;
   }
   .nav.is-open .nav__links {
     transform: translateX(0);
+    opacity: 1;
+    visibility: visible;
+    transition: transform 0.42s var(--ease-in-out),
+                opacity 0.28s var(--ease-out);
   }
-  .nav__link { font-size: var(--text-body-lg); }
-  .nav__toggle { display: flex; z-index: 2; }
+
+  /* Menu items — full-width rows separated by hairlines. */
+  .nav__links .nav__link {
+    width: 100%;
+    font-size: var(--text-body-lg);
+    color: var(--color-surface-cream);
+    padding: var(--spacing-20) 0;
+    border-bottom: 1px solid var(--color-surface-25);
+  }
+  .nav__links .nav__link::after { display: none; }
+  .nav__links .nav__link:hover { color: var(--color-surface-50); }
+
+  /* Auth block sits at the foot of the sheet as two full-width pills. */
+  .nav__account {
+    flex-direction: column;
+    align-items: stretch;
+    width: 100%;
+    gap: var(--spacing-12);
+    margin-top: var(--spacing-48);
+  }
+  .nav__links .nav__auth {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    padding: 14px 26px;
+    border: 1px solid var(--color-surface-25);
+    border-radius: var(--radius-full);
+    font-size: 17px;
+    font-weight: var(--fw-semibold);
+    color: var(--color-surface-cream);
+  }
   .nav__links .btn { width: 100%; }
+  .nav__links .btn--sm {
+    padding: 14px 26px;
+    font-size: 17px;
+  }
 
   .grid--3,
   .grid--2 { grid-template-columns: 1fr; }
   .footer__top { grid-template-columns: 1fr; gap: var(--spacing-32); }
   .form__row { grid-template-columns: 1fr; }
   .hero__stats { gap: var(--spacing-32); }
+
+  /* Hero CTAs stack full-width so they read as deliberate, matched buttons. */
+  .hero__actions { flex-direction: column; align-items: stretch; }
+  .hero__actions .btn { width: 100%; }
 }
 
 /* ==========================================================================

@@ -120,21 +120,64 @@
   if (heroVideo) {
     const LOOP_END = 7;
     heroVideo.loop = false;
+
+    // iOS/Android autoplay only honors *inline muted* playback, and only if the
+    // element is muted at the JS level too — the attribute alone isn't always
+    // enough. Set every flag defensively before trying to play.
+    heroVideo.muted = true;
+    heroVideo.defaultMuted = true;
+    heroVideo.playsInline = true;
+    heroVideo.setAttribute("muted", "");
+    heroVideo.setAttribute("playsinline", "");
+    heroVideo.setAttribute("webkit-playsinline", "");
+
     const toStart = () => {
       try { heroVideo.currentTime = 0; } catch (e) {}
     };
+
+    // Attempt playback; if the browser blocks autoplay, arm a one-shot listener
+    // so the first user gesture (tap/scroll) kicks the video off.
+    let unlockBound = false;
+    const bindUnlock = () => {
+      if (unlockBound) return;
+      unlockBound = true;
+      const unlock = () => {
+        heroVideo.play().then(cleanup).catch(() => {});
+      };
+      const cleanup = () => {
+        ["touchstart", "pointerdown", "click", "scroll"].forEach((ev) =>
+          window.removeEventListener(ev, unlock)
+        );
+      };
+      ["touchstart", "pointerdown", "click", "scroll"].forEach((ev) =>
+        window.addEventListener(ev, unlock, { passive: true, once: false })
+      );
+    };
+    const tryPlay = () => {
+      if (reduceMotion) return;
+      const p = heroVideo.play();
+      if (p && typeof p.then === "function") {
+        p.catch(() => bindUnlock());
+      }
+    };
+
     heroVideo.addEventListener("timeupdate", () => {
       if (heroVideo.currentTime >= LOOP_END) toStart();
     });
     heroVideo.addEventListener("ended", () => {
       toStart();
-      if (!reduceMotion) heroVideo.play().catch(() => {});
+      tryPlay();
     });
+    // Retry as soon as there are frames to show — covers the case where the
+    // first play() call ran before the media was ready on a slow connection.
+    heroVideo.addEventListener("loadeddata", tryPlay);
+    heroVideo.addEventListener("canplay", tryPlay);
+
     if (reduceMotion) {
       toStart();
       heroVideo.pause();
     } else {
-      heroVideo.play().catch(() => {});
+      tryPlay();
     }
   }
 
