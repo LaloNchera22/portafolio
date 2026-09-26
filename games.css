@@ -21,13 +21,16 @@
 
 /* catalog grid */
 .capp .games-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 14px; }
-.capp .gcard { background: var(--c-panel); border-radius: 14px; padding: 20px; display: flex; flex-direction: column; gap: 9px; min-height: 150px; }
+.capp .gcard { background: var(--c-panel); border: 1px solid transparent; border-radius: 14px; padding: 20px; display: flex; flex-direction: column; gap: 9px; min-height: 150px; width: 100%; text-align: left; font: inherit; color: inherit; cursor: pointer; transition: border-color .15s, background .15s; -webkit-tap-highlight-color: transparent; }
+.capp .gcard:hover { border-color: var(--c-hairline); background: var(--c-elevated); }
+.capp .gcard:focus-visible { outline: none; border-color: var(--c-cream); }
 .capp .gcard--soon { opacity: .62; }
-.capp .gcard__ic { font-size: 26px; line-height: 1; }
-.capp .gcard__n { font-size: 17px; font-weight: 600; letter-spacing: -.01em; }
-.capp .gcard__d { font-size: 13px; color: var(--c-dim); line-height: 1.5; flex: 1; }
+.capp .gcard__ic { display: block; font-size: 26px; line-height: 1; }
+.capp .gcard__n { display: block; font-size: 17px; font-weight: 600; letter-spacing: -.01em; }
+.capp .gcard__d { display: block; font-size: 13px; color: var(--c-dim); line-height: 1.5; flex: 1; }
 .capp .gcard__foot { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 4px; }
 .capp .gcard__tag { font-family: var(--c-mono); font-size: 11px; color: var(--c-dim); }
+.capp .gcard__play { font-size: 13px; font-weight: 600; color: var(--c-cream); }
 .capp .gcard .soon { font-family: var(--c-mono); font-size: 10px; letter-spacing: .08em; text-transform: uppercase; color: var(--c-dim); border: 1px solid var(--c-hairline); border-radius: 100px; padding: 4px 11px; }
 
 .capp .games-open { margin-top: 40px; }

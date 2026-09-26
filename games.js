@@ -616,9 +616,8 @@ window.RIBGames = (function () {
   function renderLobby() {
     stopOnline();
     host.innerHTML = "";
-    var intro = el("p", "games-intro");
-    intro.innerHTML = "Every game, two ways: <strong>practice free</strong> against the house bot, or <strong>play for rcoin</strong> — both players stake the same and the winner takes the whole pot. No rake on the table; the 5% is charged once when you buy rcoin.";
-    host.appendChild(intro);
+    // The intro copy is the static .games-lead in console.html, above this
+    // root — don't re-append it here or it shows twice.
 
     // category filters
     var filters = [
@@ -651,20 +650,22 @@ window.RIBGames = (function () {
         if (g.soon) return;                       // coming-soon games are hidden from the lobby
         if (!matchesFilter(g, lobbyFilter)) return;
         shown++;
-        var card = el("div", "gcard");
+        // The whole card is the tap target — a big, mobile-friendly hit area
+        // that takes you straight into the game screen (practice vs bot or
+        // play for rcoin). The rules live inside that screen (auto on first
+        // open, and via "How to play"), so there's no dead-end here.
+        var card = el("button", "gcard");
+        card.type = "button";
+        card.setAttribute("aria-label", "Open " + g.name);
         card.innerHTML =
-          '<div class="gcard__ic">' + esc(g.icon) + '</div>' +
-          '<div class="gcard__n">' + esc(g.name) + '</div>' +
-          '<p class="gcard__d">' + esc(g.blurb) + '</p>';
-        var foot = el("div", "gcard__foot");
-        var left = el("div", "gcard__left");
-        var play = el("button", "btn btn--sm gcard__play", "Play");
-        play.addEventListener("click", function () { openGame(g.id); });
-        left.appendChild(play);
-        left.appendChild(helpButton(g.id));
-        foot.appendChild(left);
+          '<span class="gcard__ic">' + esc(g.icon) + '</span>' +
+          '<span class="gcard__n">' + esc(g.name) + '</span>' +
+          '<span class="gcard__d">' + esc(g.blurb) + '</span>';
+        var foot = el("span", "gcard__foot");
         foot.appendChild(el("span", "gcard__tag", g.tag));
+        foot.appendChild(el("span", "gcard__play", "Play ›"));
         card.appendChild(foot);
+        card.addEventListener("click", function () { openGame(g.id); });
         grid.appendChild(card);
       });
       if (!shown) grid.innerHTML = '<p class="games-intro" style="margin:0">No games in this filter.</p>';
