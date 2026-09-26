@@ -24,12 +24,17 @@ module.exports = function handler(req, res) {
   // top-ups through Stripe Checkout instead of the instant test RPC. This is
   // just a UI switch — no Stripe secret is ever exposed here.
   var stripeEnabled = /^(1|true|yes|on)$/i.test(String(process.env.STRIPE_ENABLED || ""));
+  // Public flag: when Coinbase Commerce is set up on the server, the console
+  // offers "Crypto" as a way to pay for rcoin. Same UI switch as Stripe — no
+  // Coinbase key is ever exposed here.
+  var cryptoEnabled = /^(1|true|yes|on)$/i.test(String(process.env.CRYPTO_ENABLED || ""));
 
   var body =
     "window.RUNINBACK_CONFIG = {" +
       "SUPABASE_URL: " + JSON.stringify(url) + "," +
       "SUPABASE_ANON_KEY: " + JSON.stringify(anon) + "," +
       "STRIPE_ENABLED: " + JSON.stringify(stripeEnabled) + "," +
+      "CRYPTO_ENABLED: " + JSON.stringify(cryptoEnabled) + "," +
       "CONSOLE_URL: \"console.html\"" +
     "};" +
     "window.RUNINBACK_CONFIG.isConfigured = function () {" +

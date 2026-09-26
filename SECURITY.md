@@ -123,6 +123,32 @@ The browser can **never** credit its own balance:
   once. The old instant `rib_buy_rcoin_test` RPC stays only as the fallback used
   when `STRIPE_ENABLED` is off.
 
+## Buying rcoin with crypto: same trust model via Coinbase Commerce (test-mode)
+
+`supabase/migrations/0008_crypto.sql` plus the `crypto-checkout` and
+`crypto-webhook` Edge Functions add a second way to pay — crypto (USDC/USDT on
+Base and other chains) via Coinbase Commerce. When both rails are live the buyer
+picks **Card** or **Crypto** in the wallet; the credit path is identical in shape
+to Stripe's, so the browser still can **never** credit itself:
+
+- **The client only starts a payment.** Choosing "Crypto" calls `crypto-checkout`,
+  which takes the buyer's id from the **verified JWT** (not the body), creates a
+  fixed-price Coinbase Commerce charge for the paid amount, and returns the hosted
+  URL. The browser is redirected to Coinbase; it holds no Coinbase key.
+- **Crediting happens only in the webhook.** Coinbase calls `crypto-webhook`, which
+  **verifies Coinbase's HMAC signature** (`COINBASE_COMMERCE_WEBHOOK_SECRET`) over
+  the raw body before trusting anything. Only on a signed `charge:confirmed` /
+  `charge:resolved` does it read the buyer id + amount that checkout stamped into
+  the charge metadata and credit the balance with the service role, through the
+  `rib_credit_rcoin_purchase_crypto` RPC (execute revoked from clients, granted
+  only to `service_role`).
+- **Exactly-once.** Each crypto credit writes an `rcoin_purchases` row with the
+  Coinbase **charge code** as a partial-UNIQUE `provider_ref`; Coinbase retries
+  until it gets a 2xx, so a replayed event credits once and only once. Why Coinbase
+  Commerce instead of watching the chain ourselves: it is the same shape as Stripe
+  (a hosted page + a signed webhook), so no RPC node, no chain polling, and it
+  settles in USDC on Base. The crypto rail shows only when `CRYPTO_ENABLED` is on.
+
 ## Social sign-in (Google, GitHub, Apple, Steam)
 
 - **Google, GitHub, Apple** use Supabase's native OAuth (`signInWithOAuth`).
@@ -154,7 +180,7 @@ bypasses the redirect and calls the API directly sees nothing that isn't theirs.
 1. Create a project at [supabase.com](https://supabase.com).
 2. **Apply the schema:** with the [Supabase CLI](https://supabase.com/docs/guides/cli),
    run `supabase link --project-ref <ref>` then `supabase db push` (applies
-   `0001_init.sql` through `0005_stripe.sql`). Or paste the migrations into the
+   `0001_init.sql` through `0008_crypto.sql`). Or paste the migrations into the
    SQL editor, in order — they are idempotent and safe to re-run.
 3. **Deploy the functions:**
    `supabase functions deploy issue-api-key` and
@@ -179,11 +205,25 @@ bypasses the redirect and calls the API directly sees nothing that isn't theirs.
      `STRIPE_WEBHOOK_SECRET` above.
    - In Vercel, set `STRIPE_ENABLED=true` (Production + Preview) to flip the
      console from the instant test RPC to Stripe Checkout, and redeploy.
-6. **Wire the site:** in Vercel → Settings → Environment Variables (Production
+6. **Set up crypto top-ups (Coinbase Commerce, optional, test mode):**
+   - Deploy the functions:
+     `supabase functions deploy crypto-checkout` and
+     `supabase functions deploy crypto-webhook --no-verify-jwt`.
+   - Set the Coinbase secrets:
+     `supabase secrets set COINBASE_COMMERCE_API_KEY=<api key>`
+     `supabase secrets set COINBASE_COMMERCE_WEBHOOK_SECRET=<shared secret>`
+     (Coinbase Commerce → Settings → API keys, and → Webhooks → shared secret).
+   - In Coinbase Commerce → Settings → Webhooks, add the endpoint
+     `https://<ref>.supabase.co/functions/v1/crypto-webhook` and copy its shared
+     secret into `COINBASE_COMMERCE_WEBHOOK_SECRET` above.
+   - In Vercel, set `CRYPTO_ENABLED=true` (Production + Preview) to show the
+     **Crypto** option in the wallet, and redeploy. With both flags on, buyers
+     choose Card or Crypto; with neither, the console uses the instant test RPC.
+7. **Wire the site:** in Vercel → Settings → Environment Variables (Production
    and Preview), set `SUPABASE_URL` and `SUPABASE_ANON_KEY` (both public/safe).
    The site reads them at runtime from the `/api/config` endpoint — nothing is
    hardcoded in the repo. Redeploy on Vercel.
-7. In Supabase Auth settings, add your domain + `console.html` to the allowed
+8. In Supabase Auth settings, add your domain + `console.html` to the allowed
    redirect URLs.
 
 Never commit `.env` (it is git-ignored); `.env.example` shows the shape.
