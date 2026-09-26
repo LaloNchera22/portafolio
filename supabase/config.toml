@@ -20,6 +20,17 @@ verify_jwt = true
 [functions.steam-auth]
 verify_jwt = false
 
+# stripe-checkout creates a Checkout session for the signed-in buyer. It needs a
+# user JWT (the platform verifies it, then the function calls getUser() too).
+[functions.stripe-checkout]
+verify_jwt = true
+
+# stripe-webhook is called by STRIPE, not by a user, so it must be public. Its
+# authentication is the Stripe signature check inside the function — it credits
+# nothing until that passes.
+[functions.stripe-webhook]
+verify_jwt = false
+
 # OAuth providers (Google, GitHub, Apple) are enabled + given their client
 # id/secret in the Supabase dashboard (Authentication → Providers). These blocks
 # are only for local `supabase start`; hosted uses the dashboard settings.

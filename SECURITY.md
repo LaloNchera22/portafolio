@@ -95,6 +95,34 @@ forge a balance:
 - These RPCs are the natural place to swap the test ledger for on-chain calls to
   the Base escrow contract in Fase 3 — the front end and RLS stay the same.
 
+## Buying rcoin: Stripe pays, only a verified webhook credits (test-mode)
+
+`supabase/migrations/0005_stripe.sql` plus the `stripe-checkout` and
+`stripe-webhook` Edge Functions add the real money leg for rcoin top-ups. It is
+still **test mode** — use Stripe *test* keys; no real money moves until legal
+review clears rcoin. The 5% entry fee is unchanged and transparent
+($100 = 95 rcoin).
+
+The browser can **never** credit its own balance:
+
+- **The client only starts a payment.** The "Buy rcoin" button calls
+  `stripe-checkout`, which takes the buyer's id from the **verified JWT** (not the
+  body), creates a Stripe Checkout session with the paid amount, and returns the
+  hosted URL. The browser is redirected to Stripe; it holds no Stripe secret.
+- **Crediting happens only in the webhook.** Stripe calls `stripe-webhook`, which
+  **verifies Stripe's signature** (`STRIPE_WEBHOOK_SECRET`) over the raw body
+  before trusting anything. Only on a signed `checkout.session.completed` with
+  `payment_status = paid` does it read the buyer id + amount that checkout stamped
+  into the session and credit the balance with the service role, through the
+  `rib_credit_rcoin_purchase` RPC. That RPC's `EXECUTE` is revoked from clients
+  and granted only to `service_role`.
+- **Exactly-once.** Every credited payment writes a row in `rcoin_purchases` with
+  a **UNIQUE** `stripe_session_id`. Stripe retries a webhook until it gets a 2xx,
+  so the RPC claims that id first and returns without moving money if it is
+  already there — a replayed or retried event credits the balance once and only
+  once. The old instant `rib_buy_rcoin_test` RPC stays only as the fallback used
+  when `STRIPE_ENABLED` is off.
+
 ## Social sign-in (Google, GitHub, Apple, Steam)
 
 - **Google, GitHub, Apple** use Supabase's native OAuth (`signInWithOAuth`).
@@ -125,9 +153,9 @@ bypasses the redirect and calls the API directly sees nothing that isn't theirs.
 
 1. Create a project at [supabase.com](https://supabase.com).
 2. **Apply the schema:** with the [Supabase CLI](https://supabase.com/docs/guides/cli),
-   run `supabase link --project-ref <ref>` then `supabase db push` (applies both
-   `0001_init.sql` and `0002_arena.sql`). Or paste both migrations into the SQL
-   editor, in order — they are idempotent and safe to re-run.
+   run `supabase link --project-ref <ref>` then `supabase db push` (applies
+   `0001_init.sql` through `0005_stripe.sql`). Or paste the migrations into the
+   SQL editor, in order — they are idempotent and safe to re-run.
 3. **Deploy the functions:**
    `supabase functions deploy issue-api-key` and
    `supabase functions deploy steam-auth --no-verify-jwt`, then set only the
@@ -138,11 +166,24 @@ bypasses the redirect and calls the API directly sees nothing that isn't theirs.
    are reserved and injected into every function automatically.
 4. **Enable social providers** in Authentication → Providers (Google, GitHub,
    Apple) with each provider's client id + secret. Steam needs nothing here.
-5. **Wire the site:** in Vercel → Settings → Environment Variables (Production
+5. **Set up Stripe (test mode) for rcoin top-ups:**
+   - Deploy the functions:
+     `supabase functions deploy stripe-checkout` and
+     `supabase functions deploy stripe-webhook --no-verify-jwt`.
+   - Set the Stripe secrets (test keys only):
+     `supabase secrets set STRIPE_SECRET_KEY=sk_test_...`
+     `supabase secrets set STRIPE_WEBHOOK_SECRET=whsec_...`
+   - In the Stripe dashboard (test mode) → Developers → Webhooks, add the
+     endpoint `https://<ref>.supabase.co/functions/v1/stripe-webhook` subscribed
+     to `checkout.session.completed`; copy its signing secret into
+     `STRIPE_WEBHOOK_SECRET` above.
+   - In Vercel, set `STRIPE_ENABLED=true` (Production + Preview) to flip the
+     console from the instant test RPC to Stripe Checkout, and redeploy.
+6. **Wire the site:** in Vercel → Settings → Environment Variables (Production
    and Preview), set `SUPABASE_URL` and `SUPABASE_ANON_KEY` (both public/safe).
    The site reads them at runtime from the `/api/config` endpoint — nothing is
    hardcoded in the repo. Redeploy on Vercel.
-6. In Supabase Auth settings, add your domain + `console.html` to the allowed
+7. In Supabase Auth settings, add your domain + `console.html` to the allowed
    redirect URLs.
 
 Never commit `.env` (it is git-ignored); `.env.example` shows the shape.
