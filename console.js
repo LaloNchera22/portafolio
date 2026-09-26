@@ -26,6 +26,11 @@
     el.className = "msg " + (ok ? "msg--ok" : "msg--err");
     el.hidden = false;
   }
+  // Clean, professional text for a backend error — never the raw DB message.
+  function ferr(error, fallback) {
+    var E = window.RIBErrors;
+    return (E && E.friendly) ? E.friendly(error, fallback) : (fallback || "Something went wrong. Please try again.");
+  }
   function money(cents) { return "$" + ((Number(cents) || 0) / 100).toFixed(2); }
   function rcoin(cents) { return Math.round((Number(cents) || 0) / 100); }
   function rc(cents) { return rcoin(cents) + " rcoin"; }
@@ -251,7 +256,7 @@
       var b = $("buy-go"); b.disabled = true;
       client.rpc("rib_buy_rcoin_test", { p_pay_cents: pay })
         .then(function (r) {
-          if (r.error) { msg($("wal-msg"), r.error.message || "Couldn't complete the purchase.", false); return; }
+          if (r.error) { msg($("wal-msg"), ferr(r.error, "Couldn't complete the purchase."), false); return; }
           msg($("wal-msg"), "Purchase complete.", true); refreshWallet(); loadLedger();
         })
         .catch(function () { msg($("wal-msg"), "Network error.", false); })
@@ -263,7 +268,7 @@
       var b = $("wd-go"); b.disabled = true;
       client.rpc("rib_withdraw_test", { p_amount_cents: amt })
         .then(function (r) {
-          if (r.error) { msg($("wal-msg"), r.error.message || "Couldn't withdraw.", false); return; }
+          if (r.error) { msg($("wal-msg"), ferr(r.error, "Couldn't withdraw."), false); return; }
           msg($("wal-msg"), "Withdrawal complete.", true); $("wd-amt").value = ""; calcWd(); refreshWallet(); loadLedger();
         })
         .catch(function () { msg($("wal-msg"), "Network error.", false); })
@@ -277,7 +282,7 @@
       var b = $("dev-wd-go"); b.disabled = true;
       client.rpc("rib_withdraw_test", { p_amount_cents: amt })
         .then(function (r) {
-          if (r.error) { msg($("dev-wd-msg"), r.error.message || "Couldn't withdraw.", false); return; }
+          if (r.error) { msg($("dev-wd-msg"), ferr(r.error, "Couldn't withdraw."), false); return; }
           msg($("dev-wd-msg"), "Withdrawal complete.", true); $("dev-wd-amt").value = ""; refreshWallet();
         })
         .catch(function () { msg($("dev-wd-msg"), "Network error.", false); })
@@ -368,7 +373,7 @@
   function rpcReto(fn, args, btn) {
     if (btn) btn.disabled = true;
     client.rpc(fn, args).then(function (r) {
-      if (r.error) { msg($("reto-msg"), r.error.message || "Couldn't complete the action.", false); if (btn) btn.disabled = false; return; }
+      if (r.error) { msg($("reto-msg"), ferr(r.error, "Couldn't complete the action."), false); if (btn) btn.disabled = false; return; }
       $("reto-msg").hidden = true; loadRetos(); refreshWallet();
     }).catch(function () { if (btn) btn.disabled = false; });
   }
@@ -387,7 +392,7 @@
       var b = $("reto-save"); b.disabled = true;
       client.rpc("rib_challenge_create", { p_game: game, p_mode: mode, p_stake_cents: stake, p_target_username: target || null })
         .then(function (r) {
-          if (r.error) { msg($("reto-msg"), r.error.message || "Couldn't create the challenge.", false); return; }
+          if (r.error) { msg($("reto-msg"), ferr(r.error, "Couldn't create the challenge."), false); return; }
           show(form, false); $("reto-game").value = ""; $("reto-target").value = "";
           loadRetos(); refreshWallet();
         })
@@ -453,7 +458,7 @@
   function rpcTor(fn, args, btn) {
     if (btn) btn.disabled = true;
     client.rpc(fn, args).then(function (r) {
-      if (r.error) { msgTor(r.error.message || "Couldn't complete the action."); if (btn) btn.disabled = false; return; }
+      if (r.error) { msgTor(ferr(r.error, "Couldn't complete the action.")); if (btn) btn.disabled = false; return; }
       $("tor-msg").hidden = true; loadTorneos(); refreshWallet();
     }).catch(function () { if (btn) btn.disabled = false; });
   }
@@ -473,7 +478,7 @@
       var b = $("tor-save"); b.disabled = true;
       client.rpc("rib_tournament_create", { p_name: nm, p_game: game, p_entry_fee_cents: fee, p_max_players: max, p_starts_at: null })
         .then(function (r) {
-          if (r.error) { msgTor(r.error.message || "Couldn't create."); return; }
+          if (r.error) { msgTor(ferr(r.error, "Couldn't create.")); return; }
           show(form, false); $("tor-name").value = ""; $("tor-game").value = ""; loadTorneos();
         })
         .catch(function () { msgTor("Network error."); })
@@ -505,7 +510,7 @@
       client.from("profiles").update({ username: username, display_name: display || null }).eq("id", UID)
         .then(function (r) {
           if (r.error) {
-            var m = (r.error.code === "23505") ? "That username is taken." : (r.error.message || "Couldn't save.");
+            var m = (r.error.code === "23505") ? "That username is taken." : ferr(r.error, "Couldn't save.");
             msg($("pf-msg"), m, false); return;
           }
           msg($("pf-msg"), "Saved.", true);
@@ -555,7 +560,7 @@
       var btn = $("proj-save"); btn.disabled = true;
       client.from("projects").insert({ owner_id: UID, name: nm, environment: env }).select().single()
         .then(function (r) {
-          if (r.error) { msg($("proj-msg"), r.error.message || "Couldn't create.", false); return; }
+          if (r.error) { msg($("proj-msg"), ferr(r.error, "Couldn't create."), false); return; }
           show(form, false); $("proj-name").value = ""; $("proj-msg").hidden = true;
           loadProjects();
         })
