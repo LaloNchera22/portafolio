@@ -58,6 +58,7 @@ const HINTS = {
   state_too_large: "That move couldn't be sent. Please try again.",
   void_too_soon: "A match can only be voided after 2 hours without progress.",
   key_already_revoked: "That API key is already revoked.",
+  wallet_frozen: "Your wallet is on hold after a reversed payment. Contact support to restore it.",
 };
 
 // Ordered rules (legacy fallback): the first substring that matches the (normalized) backend

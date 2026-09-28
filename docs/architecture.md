@@ -46,11 +46,12 @@ Vercel serves dist/ with CSP + HSTS; hashed assets are cached immutably.
    subscriber, full row images) with private Broadcast channels per match.
 3. **Tournament results.** Add a dispute / verification flow; the organizer can
    no longer award themself, but collusion through a second account is possible.
-4. **Refunds and chargebacks.** Handle `charge.refunded` / disputes (Stripe) and
-   failed charges (Coinbase) with a ledger reversal kind.
-5. **Data lifecycle.** Schedule `rib_cleanup_matches` and stale open-row expiry
-   with `pg_cron`; partition or archive `wallet_ledger`; paginate console lists
-   with keyset pagination.
+4. ~~**Refunds and chargebacks.**~~ Done in 0011: Stripe refunds / disputes
+   reverse the top-up and freeze the wallet on a shortfall. Crypto (Coinbase)
+   payments are not reversible on-chain; handle them with manual review.
+5. **Data lifecycle.** Escrow expiry and batched match cleanup run on
+   pg_cron since 0011. Still to do: partition or archive `wallet_ledger`, and
+   keyset pagination for the console lists.
 6. **Operability.** Error tracking (hidden source maps are already emitted),
    uptime checks, Supabase branching for preview deployments, and Playwright
    end-to-end tests against a seeded staging project.

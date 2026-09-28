@@ -99,6 +99,28 @@ begin
   perform pg_temp.expect(pg_temp.as_user(a, format('select public.rib_tournament_finish(%L, %L)', v_tournament, c)), 'ok', 'organizer awards carol');
   perform pg_temp.expect(pg_temp.balance(c)::text, '10500', 'carol receives the pool');
 
+  -- Escrow expiry: an open challenge older than 24h is refunded by the sweep.
+  perform pg_temp.as_user(b, 'select public.rib_challenge_create(''chess'', ''1v1'', 500, null)');
+  select id into v_challenge from public.challenges where creator_id = b and status = 'open' order by created_at desc limit 1;
+  perform pg_temp.expect(pg_temp.balance(b)::text, '8000', 'stake locked');
+  update public.challenges set created_at = now() - interval '25 hours' where id = v_challenge;
+  perform pg_temp.expect(pg_temp.as_user(b, 'select public.rib_expire_stale()'), '42501', 'sweep not callable by clients');
+  perform public.rib_expire_stale();
+  perform pg_temp.expect((select status from public.challenges where id = v_challenge), 'cancelled', 'stale challenge expired');
+  perform pg_temp.expect(pg_temp.balance(b)::text, '8500', 'expired stake refunded');
+
+  -- Chargeback: bob's card top-up is disputed after he spent part of it.
+  perform public.rib_credit_rcoin_purchase(b, 'cs_test_bob', 10000);           -- +9500
+  perform pg_temp.expect(pg_temp.balance(b)::text, '18000', 'stripe credit');
+  perform pg_temp.expect(pg_temp.as_user(b, 'select public.rib_withdraw_test(12000)'), 'ok', 'bob withdraws most of it');
+  perform pg_temp.expect(public.rib_reverse_rcoin_purchase('stripe', 'cs_test_bob', 'dispute')::text, '6000', 'reversal debits what is left');
+  perform pg_temp.expect(public.rib_reverse_rcoin_purchase('stripe', 'cs_test_bob', 'dispute')::text, '0', 'reversal is idempotent');
+  perform pg_temp.expect(pg_temp.balance(b)::text, '0', 'wallet emptied');
+  perform pg_temp.expect((select (frozen_at is not null)::text from public.wallets where user_id = b), 'true', 'shortfall freezes the wallet');
+  perform public.rib_credit_rcoin_purchase(b, 'cs_test_bob_2', 1000);
+  perform pg_temp.expect(pg_temp.as_user(b, 'select public.rib_withdraw_test(100)'), 'wallet_frozen', 'frozen wallet cannot withdraw');
+  perform pg_temp.expect(pg_temp.as_user(b, 'select public.rib_challenge_create(''chess'', ''1v1'', 100, null)'), 'wallet_frozen', 'frozen wallet cannot stake');
+
   -- Ledger integrity: every balance equals the sum of its ledger rows.
   perform pg_temp.expect(
     (select count(*)::text from public.wallets w
