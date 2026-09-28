@@ -10,7 +10,7 @@
 //
 // TEST MODE: set STRIPE_SECRET_KEY to a Stripe *test* secret key (sk_test_...).
 // ============================================================================
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.117.2";
 import Stripe from "https://esm.sh/stripe@16?target=deno";
 import { corsHeaders, json } from "../_shared/cors.ts";
 import { validatePayCents, calculateRcoin } from "../_shared/validate.ts";

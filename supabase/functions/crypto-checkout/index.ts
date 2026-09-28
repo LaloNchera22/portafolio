@@ -12,7 +12,7 @@
 //
 // TEST MODE: no real money moves until legal review clears rcoin.
 // ============================================================================
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.117.2";
 import { corsHeaders, json } from "../_shared/cors.ts";
 import { validatePayCents, calculateRcoin } from "../_shared/validate.ts";
 

@@ -11,7 +11,7 @@
 // verify_jwt is false for this function (see config.toml): the signature check
 // below is the authentication. Do NOT credit from anything unsigned.
 // ============================================================================
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.117.2";
 import Stripe from "https://esm.sh/stripe@16?target=deno";
 import { validatePayCents } from "../_shared/validate.ts";
 
@@ -43,13 +43,23 @@ Deno.serve(async (req) => {
     return new Response("bad_signature", { status: 400 });
   }
 
-  // 2) Only a completed, PAID Checkout session credits rcoin.
-  if (event.type === "checkout.session.completed") {
+  // 2) Only a completed, PAID Checkout session credits rcoin (delayed payment
+  //    methods report "paid" later via async_payment_succeeded).
+  if (event.type === "checkout.session.completed" || event.type === "checkout.session.async_payment_succeeded") {
     const session = event.data.object as Stripe.Checkout.Session;
     if (session.payment_status === "paid") {
       const meta = session.metadata ?? {};
       const userId = meta.user_id ?? session.client_reference_id ?? null;
-      const payCents = validatePayCents(meta.pay_cents ?? session.amount_total ?? 0, false);
+      // Credit what Stripe actually charged, never what metadata claims; a
+      // mismatch means the session was tampered with or misconfigured.
+      const payCents = validatePayCents(session.amount_total ?? 0, false);
+      if (payCents !== null && meta.pay_cents && Number(meta.pay_cents) !== payCents) {
+        console.error("stripe-webhook: amount_total does not match metadata", session.id);
+        return new Response(JSON.stringify({ received: true, credited: false }), {
+          status: 200,
+          headers: { "Content-Type": "application/json" },
+        });
+      }
 
       if (userId && payCents !== null) {
         const admin = createClient(SUPABASE_URL, SERVICE_ROLE_KEY, {

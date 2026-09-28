@@ -7,7 +7,7 @@
 // All DB writes go through supabase-js (bound parameters — no SQL string
 // building), so this path carries no SQL injection surface.
 // ============================================================================
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.117.2";
 import { corsHeaders, json } from "../_shared/cors.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
