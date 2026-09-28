@@ -113,24 +113,23 @@ export function initSiteInteractions() {
     }
   }
 
-  /* --- Hero background video: loop only 0–7s ---------------------------- */
-  const heroVideo = document.getElementById("hero-video");
-  if (heroVideo) {
-    const LOOP_END = 7;
-    heroVideo.loop = false;
+  /* --- Background videos: loop only 0–7s (hero + auth split panel) ------- */
+  const LOOP_END = 7;
+  const loopVideo = (video) => {
+    video.loop = false;
 
     // iOS/Android autoplay only honors *inline muted* playback, and only if the
     // element is muted at the JS level too — the attribute alone isn't always
     // enough. Set every flag defensively before trying to play.
-    heroVideo.muted = true;
-    heroVideo.defaultMuted = true;
-    heroVideo.playsInline = true;
-    heroVideo.setAttribute("muted", "");
-    heroVideo.setAttribute("playsinline", "");
-    heroVideo.setAttribute("webkit-playsinline", "");
+    video.muted = true;
+    video.defaultMuted = true;
+    video.playsInline = true;
+    video.setAttribute("muted", "");
+    video.setAttribute("playsinline", "");
+    video.setAttribute("webkit-playsinline", "");
 
     const toStart = () => {
-      try { heroVideo.currentTime = 0; } catch (e) {}
+      try { video.currentTime = 0; } catch (e) {}
     };
 
     // Attempt playback; if the browser blocks autoplay, arm a one-shot listener
@@ -140,7 +139,7 @@ export function initSiteInteractions() {
       if (unlockBound) return;
       unlockBound = true;
       const unlock = () => {
-        heroVideo.play().then(cleanup).catch(() => {});
+        video.play().then(cleanup).catch(() => {});
       };
       const cleanup = () => {
         ["touchstart", "pointerdown", "click", "scroll"].forEach((ev) =>
@@ -153,31 +152,35 @@ export function initSiteInteractions() {
     };
     const tryPlay = () => {
       if (reduceMotion) return;
-      const p = heroVideo.play();
+      const p = video.play();
       if (p && typeof p.then === "function") {
         p.catch(() => bindUnlock());
       }
     };
 
-    heroVideo.addEventListener("timeupdate", () => {
-      if (heroVideo.currentTime >= LOOP_END) toStart();
+    video.addEventListener("timeupdate", () => {
+      if (video.currentTime >= LOOP_END) toStart();
     });
-    heroVideo.addEventListener("ended", () => {
+    video.addEventListener("ended", () => {
       toStart();
       tryPlay();
     });
     // Retry as soon as there are frames to show — covers the case where the
     // first play() call ran before the media was ready on a slow connection.
-    heroVideo.addEventListener("loadeddata", tryPlay);
-    heroVideo.addEventListener("canplay", tryPlay);
+    video.addEventListener("loadeddata", tryPlay);
+    video.addEventListener("canplay", tryPlay);
 
     if (reduceMotion) {
       toStart();
-      heroVideo.pause();
+      video.pause();
     } else {
       tryPlay();
     }
-  }
+  };
+  [document.getElementById("hero-video")]
+    .concat(Array.from(document.querySelectorAll(".auth-aside__video")))
+    .filter(Boolean)
+    .forEach(loopVideo);
 
   /* --- FAQ accordion ---------------------------------------------------- */
   document.querySelectorAll("[data-faq]").forEach((item) => {

@@ -8,7 +8,7 @@
 insert into auth.users (id, email, raw_user_meta_data) values
   ('aaaaaaaa-0000-0000-0000-000000000001', 'alice@example.test', '{"username":"alice"}'),
   ('bbbbbbbb-0000-0000-0000-000000000002', 'bob@example.test',   '{"username":"bob"}'),
-  ('cccccccc-0000-0000-0000-000000000003', 'carol@example.test', '{"username":"carol"}');
+  ('cccccccc-0000-0000-0000-000000000003', 'carol@example.test', '{"username":"carol","role":"dev"}');
 
 -- Run a statement as a signed-in user; returns the SQL error hint (or 'ok').
 create function pg_temp.as_user(p_uid uuid, p_sql text) returns text
@@ -50,6 +50,9 @@ declare
   v_challenge uuid;
   v_tournament uuid;
 begin
+  -- Sign-up never trusts a client-supplied role.
+  perform pg_temp.expect((select role from public.profiles where id = c), 'player', 'signup ignores client role');
+
   -- Test top-ups are off by default: nobody can mint rcoin for free.
   perform pg_temp.expect(pg_temp.as_user(a, 'select public.rib_buy_rcoin_test(10000)'), 'test_payments_disabled', 'test buy disabled by default');
   perform pg_temp.expect(pg_temp.as_user(a, 'select public.rib_deposit_test(10000)'), 'test_payments_disabled', 'test deposit disabled by default');
