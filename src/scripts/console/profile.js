@@ -13,7 +13,7 @@ function showUsername(username) {
 }
 
 export function loadProfile() {
-  session.client.from("profiles").select("username, display_name, role, created_at").eq("id", session.uid).single()
+  session.client.from("profiles").select("username, display_name, created_at").eq("id", session.uid).single()
     .then(function (r) {
       const p = r.data || {};
       $("profile-username").value = p.username || "";

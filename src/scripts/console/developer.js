@@ -5,6 +5,7 @@
  * ========================================================================== */
 import { byId as $, escapeHtml as esc, setVisible, showMessage } from "../lib/dom.js";
 import { formatDate } from "../lib/format.js";
+import { functionError } from "../lib/errors.js";
 import { errorText, session } from "./context.js";
 
 function environmentTag(env) {
@@ -117,7 +118,9 @@ function initKeys() {
     $("key-reveal").hidden = true;
     session.client.functions.invoke("issue-api-key", { body: { name: name, environment: env, project_id: project } })
       .then(function (r) {
-        if (r.error || !r.data || !r.data.key) { showMessage($("key-msg"), "Couldn't issue the key. Check that the function is deployed.", false); return; }
+        if (r.error || !r.data || !r.data.key) {
+          return functionError(r.error).then(function (err) { showMessage($("key-msg"), errorText(err, "Couldn't issue the key. Please try again."), false); });
+        }
         $("key-msg").hidden = true;
         $("key-plaintext").textContent = r.data.key;
         $("key-copy").textContent = "Copy";

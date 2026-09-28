@@ -11,6 +11,8 @@ import { refreshWallet } from "./wallet.js";
 const STATUS_LABELS = {
   open: "Open", pending: "Invite", active: "In play", settled: "Finished", disputed: "In dispute", cancelled: "Cancelled",
 };
+// Newest first; older rows stay reachable through the ledger.
+const CHALLENGE_PAGE_SIZE = 50;
 const WON_TAG = '<span class="tag" style="color:var(--c-good);border-color:rgba(53,208,127,.4)">won</span>';
 
 function statusLabel(challenge) {
@@ -22,6 +24,7 @@ export function loadChallenges() {
   session.client.from("challenges").select("*")
     .or("creator_id.eq." + uid + ",opponent_id.eq." + uid + ",target_id.eq." + uid)
     .order("created_at", { ascending: false })
+    .limit(CHALLENGE_PAGE_SIZE)
     .then(function (r) {
       const rows = r.data || [];
       const ids = [];
@@ -30,6 +33,7 @@ export function loadChallenges() {
     });
   session.client.from("challenges").select("*").eq("status", "open").neq("creator_id", uid)
     .order("created_at", { ascending: false })
+    .limit(CHALLENGE_PAGE_SIZE)
     .then(function (r) {
       const rows = r.data || [];
       fetchUsernames(rows.map(function (c) { return c.creator_id; })).then(function () { renderOpen(rows); });

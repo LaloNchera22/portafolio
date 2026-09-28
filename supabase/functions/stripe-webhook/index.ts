@@ -76,6 +76,32 @@ Deno.serve(async (req) => {
     }
   }
 
+  // 3) Refunds and chargebacks claw the rcoin back (the RPC freezes the wallet
+  //    if it was already spent). Partial refunds are logged for manual review.
+  if (event.type === "charge.refunded" || event.type === "charge.dispute.created") {
+    const isDispute = event.type === "charge.dispute.created";
+    const object = event.data.object as Stripe.Charge | Stripe.Dispute;
+    const paymentIntent = typeof object.payment_intent === "string" ? object.payment_intent : object.payment_intent?.id;
+    const fullyRefunded = isDispute || (object as Stripe.Charge).refunded === true;
+
+    if (paymentIntent && !fullyRefunded) {
+      console.warn("stripe-webhook: partial refund needs manual review", paymentIntent);
+    } else if (paymentIntent) {
+      const sessions = await stripe.checkout.sessions.list({ payment_intent: paymentIntent, limit: 1 });
+      const sessionId = sessions.data[0]?.id;
+      if (sessionId) {
+        const admin = createClient(SUPABASE_URL, SERVICE_ROLE_KEY, { auth: { persistSession: false } });
+        const { error } = await admin.rpc("rib_reverse_rcoin_purchase", {
+          p_provider: "stripe",
+          p_ref: sessionId,
+          p_reason: isDispute ? "chargeback" : "refund",
+        });
+        // Retry on DB errors; the RPC is idempotent per session.
+        if (error) return new Response("reversal_failed", { status: 500 });
+      }
+    }
+  }
+
   // Acknowledge everything else so Stripe stops retrying events we don't act on.
   return new Response(JSON.stringify({ received: true }), {
     status: 200,

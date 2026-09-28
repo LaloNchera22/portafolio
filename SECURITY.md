@@ -201,7 +201,8 @@ bypasses the redirect and calls the API directly sees nothing that isn't theirs.
      `supabase secrets set STRIPE_WEBHOOK_SECRET=whsec_...`
    - In the Stripe dashboard (test mode) → Developers → Webhooks, add the
      endpoint `https://<ref>.supabase.co/functions/v1/stripe-webhook` subscribed
-     to `checkout.session.completed`; copy its signing secret into
+     to `checkout.session.completed`, `checkout.session.async_payment_succeeded`,
+     `charge.refunded` and `charge.dispute.created`; copy its signing secret into
      `STRIPE_WEBHOOK_SECRET` above.
    - In Vercel, set `STRIPE_ENABLED=true` (Production + Preview) to flip the
      console from the instant test RPC to Stripe Checkout, and redeploy.

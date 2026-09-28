@@ -15,7 +15,7 @@
  * ========================================================================== */
 import { el, escapeHtml as esc } from "../lib/dom.js";
 import { centsToRcoin as rcoin } from "../lib/format.js";
-import { notify } from "../lib/errors.js";
+import { functionError, notify } from "../lib/errors.js";
 import { CORE_GAMES } from "./catalog/core-games.js";
 import { EXTRA_GAMES } from "./catalog/extra-games.js";
 import { COMING_SOON_GAMES, isStakeable } from "./catalog/catalog-meta.js";
@@ -389,7 +389,7 @@ function loadOpenTables() {
       var panel = el("div", "panel");
       rows.forEach(function (m) {
         var mod = MODULES[m.game]; if (!mod) return;
-        var row = el("div", "row row--reto");
+        var row = el("div", "row row--challenge");
         row.innerHTML = '<div><div class="row__name">' + esc(mod.name) + ' · ' + rcoin(m.stake_cents) + ' rcoin</div><div class="row__meta">pot ' + rcoin(m.stake_cents * 2) + ' rcoin · winner takes all</div></div>';
         var act = el("div", "row__act");
         var join = el("button", "btn btn--cta btn--sm", "Join for " + rcoin(m.stake_cents) + " rcoin");
@@ -400,16 +400,22 @@ function loadOpenTables() {
     });
 }
 
+// Until the first move the authoritative position is the rules' initial one
+// (the server ignores whatever state the host stored); mirrors game-move-core.
+function authoritativeState(match, mod) {
+  var st = match && match.state;
+  return match && match.move_seq > 0 && st && typeof st.turn === "number" ? st : mod.init();
+}
+
 function createOnline(gameId, stakeCents, btn) {
   if (!CTX.configured) return;
   var mod = MODULES[gameId];
-  var state = mod.init();
   btn.disabled = true;
-  CTX.client.rpc("rib_game_create", { p_game: gameId, p_stake_cents: stakeCents, p_state: state })
+  CTX.client.rpc("rib_game_create", { p_game: gameId, p_stake_cents: stakeCents, p_state: mod.init() })
     .then(function (r) {
       if (r.error) { notify(r.error, "We couldn't create the table. Please try again."); btn.disabled = false; return; }
       if (CTX.refreshWallet) CTX.refreshWallet();
-      enterOnline(r.data, mod, 0, state, "Waiting for a player to join…");
+      enterOnline(r.data, mod, 0, "Waiting for a player to join…");
     })
     .catch(function () { btn.disabled = false; });
 }
@@ -422,21 +428,46 @@ function joinOnline(match, btn) {
     .then(function (r) {
       if (r.error) { notify(r.error, "We couldn't join this table. Please try again."); btn.disabled = false; return; }
       if (CTX.refreshWallet) CTX.refreshWallet();
-      var m = r.data;
-      enterOnline(m, mod, 1, m.state, null);
+      enterOnline(r.data, mod, 1, null);
     })
     .catch(function () { btn.disabled = false; });
 }
 
-function enterOnline(match, mod, seat, state, waitMsg) {
+// Every staked move goes through the game-move Edge Function, which validates
+// it with the shared rules and settles the pot when the game ends.
+function sendToServer(body) {
+  return CTX.client.functions.invoke("game-move", { body: body }).then(function (r) {
+    if (!r.error) return r.data && r.data.match;
+    return functionError(r.error).then(function (err) { throw err; });
+  });
+}
+
+function resyncOnline() {
+  if (!online) return;
+  CTX.client.from("game_matches").select("*").eq("id", online.match.id).single()
+    .then(function (r) { if (!r.error && r.data) onlineUpdate(r.data); });
+}
+
+function enterOnline(match, mod, seat, waitMsg) {
   stopOnline();
-  online = { match: match, mod: mod, seat: seat, state: state, channel: null, reported: false };
+  online = { match: match, mod: mod, seat: seat, state: authoritativeState(match, mod), channel: null, pending: false };
   host.innerHTML = "";
   var top = el("div", "gscreen__top");
   var back = el("button", "btn btn--sm", "‹ Leave");
   back.addEventListener("click", function () { stopOnline(); renderLobby(); });
   top.appendChild(back);
   top.appendChild(el("h2", "gscreen__name", mod.name + " · " + rcoin(match.stake_cents * 2) + " rcoin pot"));
+  var resign = el("button", "btn btn--sm btn--danger", "Resign");
+  resign.hidden = true;
+  resign.addEventListener("click", function () {
+    if (!online || online.match.status !== "active") return;
+    if (!window.confirm("Resign this match? Your opponent takes the pot.")) return;
+    resign.disabled = true;
+    sendToServer({ match_id: online.match.id, action: "resign" })
+      .then(function (m) { if (m) onlineUpdate(m); })
+      .catch(function (e) { resign.disabled = false; notify(e, "We couldn't resign right now. Please try again."); });
+  });
+  top.appendChild(resign);
   top.appendChild(helpButton(mod.id));
   host.appendChild(top);
   var stageWrap = el("div", "gstage");
@@ -449,7 +480,7 @@ function enterOnline(match, mod, seat, state, waitMsg) {
   stageWrap.appendChild(turnbar); stageWrap.appendChild(board); stageWrap.appendChild(over);
   host.appendChild(stageWrap);
 
-  // subscribe to match row updates
+  // subscribe to match row updates (state is written only by the server)
   var ch = CTX.client.channel("match-" + match.id)
     .on("postgres_changes", { event: "UPDATE", schema: "public", table: "game_matches", filter: "id=eq." + match.id }, function (payload) {
       onlineUpdate(payload["new"]);
@@ -461,13 +492,17 @@ function enterOnline(match, mod, seat, state, waitMsg) {
     var st = online.state, m = online.match;
     board.innerHTML = "";
     over.hidden = true;
+    resign.hidden = m.status !== "active";
     if (m.status === "open") { turnbar.textContent = waitMsg || "Waiting for a player to join…"; turnbar.className = "gturn opp"; mod.view(st, onlineApi(board, false)); return; }
-    var res = mod.result(st);
-    if (res && m.status !== "settled" && m.status !== "disputed" && !online.reported) return reportResult(res);
-    if (m.status === "settled" || m.status === "disputed") return finishOnline(m, res);
-    var yourTurn = (st.turn === online.seat);
-    turnbar.textContent = yourTurn ? "Your turn." : "Opponent's turn…";
-    turnbar.className = "gturn " + (yourTurn ? "you" : "opp");
+    if (m.status !== "active") return finishOnline(m);
+    if (mod.result(st)) {
+      turnbar.textContent = "Settling the pot…"; turnbar.className = "gturn";
+      mod.view(st, onlineApi(board, false));
+      return;
+    }
+    var yourTurn = (st.turn === online.seat) && !online.pending;
+    turnbar.textContent = st.turn === online.seat ? "Your turn." : "Opponent's turn…";
+    turnbar.className = "gturn " + (st.turn === online.seat ? "you" : "opp");
     mod.view(st, onlineApi(board, yourTurn));
   };
   online.render();
@@ -476,60 +511,50 @@ function enterOnline(match, mod, seat, state, waitMsg) {
 function onlineApi(board, yourTurn) {
   var mod = online.mod;
   var api = { board: board, canMove: yourTurn, oppName: online.seat === 0 ? "Guest" : "Host", online: true };
-  // per-game scratch (checkers selection, eights color pick) persists on `online`
+  // per-game scratch (checkers selection) persists on `online`
   Object.defineProperty(api, "_ck", { get: function () { return online._ck; }, set: function (v) { online._ck = v; } });
   Object.defineProperty(api, "_ce", { get: function () { return online._ce; }, set: function (v) { online._ce = v; } });
   api.rerender = online.render;
   api.move = function (m) {
-    if (online.state.turn !== online.seat) return;
-    var next = mod.apply(online.state, m);
-    online.state = next;
-    // determine turn_id to send
-    var nextSeat = next.turn;
-    var nextTurnId = nextSeat === 0 ? online.match.host_id : online.match.guest_id;
-    var res = mod.result(next);
-    CTX.client.rpc("rib_game_move", { p_match_id: online.match.id, p_state: next, p_next_turn: res ? null : nextTurnId })
-      .then(function (r) {
-        // The move is applied locally right away and the board resyncs from
-        // the match row on the next realtime event, so a rejected move
-        // self-heals. Give a low-key heads-up so it doesn't feel silent.
-        if (r.error) notify(r.error, "That move couldn't be sent. The board will resync in a moment.", "info");
-      })
-      .catch(function () { notify(null, "That move couldn't be sent. The board will resync in a moment.", "info"); });
+    if (online.pending || online.state.turn !== online.seat) return;
+    var match = online.match;
+    // Optimistic: show the move now; the server's answer is authoritative.
+    online.state = mod.apply(online.state, m);
+    online.pending = true;
     online.render();
-    if (res) reportResult(res);
+    sendToServer({ match_id: match.id, move: m, seq: match.move_seq })
+      .then(function (row) {
+        online.pending = false;
+        if (row) onlineUpdate(row);
+      })
+      .catch(function (e) {
+        online.pending = false;
+        notify(e, "That move couldn't be played. The board has been refreshed.", "info");
+        resyncOnline();
+      });
   };
   return api;
 }
 
 function onlineUpdate(row) {
   if (!online || row.id !== online.match.id) return;
+  // ignore stale realtime events that arrive after a newer server response
+  if (row.move_seq < online.match.move_seq) return;
   online.match = row;
-  if (row.state) online.state = row.state;
+  online.state = authoritativeState(row, online.mod);
+  if (row.status === "settled" && CTX.refreshWallet) CTX.refreshWallet();
   online.render();
 }
 
-function reportResult(res) {
-  if (!online || online.reported) return;
-  online.reported = true;
-  var winnerId = null;
-  if (res.winner != null) winnerId = res.winner === 0 ? online.match.host_id : online.match.guest_id;
-  CTX.client.rpc("rib_game_report", { p_match_id: online.match.id, p_winner_id: winnerId })
-    .then(function (r) {
-      if (!r.error && r.data) { online.match = r.data; if (CTX.refreshWallet) CTX.refreshWallet(); online.render(); return; }
-      // Let the player retry: the payout only settles once both reports match.
-      if (r.error) { online.reported = false; notify(r.error, "We couldn't record the result. It'll settle once both players report.", "info"); }
-    })
-    .catch(function () { online.reported = false; notify(null, "We couldn't record the result. It'll settle once both players report.", "info"); });
-}
-
-function finishOnline(m, res) {
+function finishOnline(m) {
   var board = h("g-board"), turnbar = h("g-turn"), over = h("g-over");
   board.innerHTML = ""; online.mod.view(online.state, onlineApi(board, false));
   turnbar.textContent = "";
   over.hidden = false;
-  if (m.status === "disputed") {
-    over.innerHTML = '<h3>Result in dispute</h3><p>The two reports didn\'t match, so the pot is held until it\'s resolved.</p>';
+  if (m.status === "cancelled") {
+    over.innerHTML = '<h3>Match voided</h3><p>Both stakes were refunded to your wallets.</p>';
+  } else if (m.status === "disputed") {
+    over.innerHTML = '<h3>Result in dispute</h3><p>The pot is held until it\'s resolved.</p>';
   } else if (m.is_draw) {
     over.innerHTML = '<h3>Draw</h3><p>Both stakes were refunded to your wallets.</p>';
   } else {
