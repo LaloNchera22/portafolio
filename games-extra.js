@@ -9,9 +9,9 @@
   var R = window.RIBGames;
   if (!R || !R.register) return;
 
-  function clone(o) { return JSON.parse(JSON.stringify(o)); }
-  function el(tag, cls, txt) { var e = document.createElement(tag); if (cls) e.className = cls; if (txt != null) e.textContent = txt; return e; }
-  function pick(a) { return a[(Math.random() * a.length) | 0]; }
+  var clone = window.RIBUtilities.clone;
+  var el = window.RIBUtilities.el;
+  var pick = window.RIBUtilities.pick;
 
   /* generic bounded minimax for small perfect-info games */
   function minimax(mod, s, me, depth, maxDepth, alpha, beta) {

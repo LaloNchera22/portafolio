@@ -16,8 +16,8 @@ window.RIBGames = (function () {
   "use strict";
 
   /* ---- tiny helpers ------------------------------------------------------- */
-  function clone(o) { return JSON.parse(JSON.stringify(o)); }
-  function el(tag, cls, txt) { var e = document.createElement(tag); if (cls) e.className = cls; if (txt != null) e.textContent = txt; return e; }
+  var clone = window.RIBUtilities.clone;
+  var el = window.RIBUtilities.el;
   function esc(s) { return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]; }); }
   function money(cents) { return "$" + ((Number(cents) || 0) / 100).toFixed(2); }
   function rcoin(cents) { return Math.round((Number(cents) || 0) / 100); }
