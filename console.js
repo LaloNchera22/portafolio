@@ -31,15 +31,10 @@
     var E = window.RIBErrors;
     return (E && E.friendly) ? E.friendly(error, fallback) : (fallback || "Something went wrong. Please try again.");
   }
-  function money(cents) { return "$" + ((Number(cents) || 0) / 100).toFixed(2); }
-  // rcoin is worth 1 USD but a balance can hold fractions of an rcoin (e.g. a
-  // $10 top-up credits 9.5 rcoin after the 5% fee). Show the exact amount with
-  // up to two decimals, trimming trailing zeros, so we never over- or
-  // under-state what the wallet holds.
-  function rcoin(cents) {
-    var n = (Number(cents) || 0) / 100;
-    return parseFloat(n.toFixed(2));
-  }
+  var money = window.RIBUtilities.money;
+  var rcoin = window.RIBUtilities.rcoin;
+  var esc = window.RIBUtilities.esc;
+  var notify = window.RIBUtilities.notify;
   function rc(cents) { return rcoin(cents) + " rcoin"; }
   function centsFromDollars(v) { var n = parseFloat(String(v).replace(",", ".")); return isFinite(n) ? Math.round(n * 100) : NaN; }
   function centsFromRcoin(v) { var n = parseFloat(String(v).replace(",", ".")); return isFinite(n) ? Math.round(n) * 100 : NaN; }
@@ -48,9 +43,6 @@
     try { return new Date(s).toLocaleDateString("en", { year: "numeric", month: "short", day: "numeric" }); }
     catch (e) { return "—"; }
   }
-  function esc(s) { return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) {
-    return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
-  }); }
 
   if (!A) { toLanding(); return; }
   if (!A.configured) {

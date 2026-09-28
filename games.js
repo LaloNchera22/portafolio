@@ -18,17 +18,10 @@ window.RIBGames = (function () {
   /* ---- tiny helpers ------------------------------------------------------- */
   var clone = window.RIBUtilities.clone;
   var el = window.RIBUtilities.el;
-  function esc(s) { return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]; }); }
-  function money(cents) { return "$" + ((Number(cents) || 0) / 100).toFixed(2); }
-  function rcoin(cents) { return Math.round((Number(cents) || 0) / 100); }
-  // Surface a backend failure as a clean, professional toast. Routes through the
-  // shared error mapper so raw database strings never reach a player.
-  function notify(error, fallback, kind) {
-    var E = window.RIBErrors;
-    var text = (E && E.friendly) ? E.friendly(error, fallback) : (fallback || "Something went wrong. Please try again.");
-    if (E && E.toast) E.toast(text, kind || "err");
-    else if (kind !== "info" && kind !== "ok") alert(text);
-  }
+  var esc = window.RIBUtilities.esc;
+  var money = window.RIBUtilities.money;
+  var rcoin = window.RIBUtilities.rcoin;
+  var notify = window.RIBUtilities.notify;
 
   /* =========================================================================
    * GAME MODULES
