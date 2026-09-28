@@ -1,0 +1,58 @@
+# Architecture
+
+## Overview
+
+```
+Browser (Vite-bundled ES modules)
+  ├─ supabase-js ──► PostgREST ──► Postgres (RLS: read own rows)
+  │                     └─ rpc('rib_*') ──► SECURITY DEFINER RPCs ──► rib_apply (single balance writer)
+  ├─ Realtime (postgres_changes on game_matches) for live staked games
+  └─ functions.invoke ──► Edge Functions (Deno)
+                            ├─ stripe-checkout / crypto-checkout  → hosted checkout
+                            ├─ stripe-webhook / crypto-webhook    → signature check → rib_credit_* (service role)
+                            ├─ steam-auth                         → OpenID 2.0 bridge → magic link
+                            └─ issue-api-key                      → hashed developer keys
+Vercel serves dist/ with CSP + HSTS; hashed assets are cached immutably.
+```
+
+## Key decisions
+
+- **No framework rewrite.** The UI is server-rendered HTML plus small modules.
+  Vite gives bundling, hashing, tree-shaking and a pinned supabase-js without
+  changing how pages are authored. Revisit a component framework only if the
+  console grows beyond what plain modules keep maintainable.
+- **Build-time public config.** `SUPABASE_URL`, `SUPABASE_ANON_KEY` and the
+  payment-rail flags are injected by `vite.config.js`. This removed the blocking
+  `/api/config` serverless call on every page view. Changing them needs a redeploy.
+- **Database is the security boundary.** RLS limits reads; all writes to money
+  tables go through RPCs; `rib_apply` performs the funds check atomically;
+  multi-wallet RPCs lock wallets in uuid order; per-user caps take an advisory
+  lock. Internal functions are not executable by client roles (migration 0009).
+- **Stable error codes.** RPCs raise English messages with a `hint` code; the
+  client maps hints to copy (`lib/errors.js`), so wording and language can change
+  without breaking the UI.
+- **Pure game rules.** Each game in `games/catalog` exposes
+  `init/legal/apply/result/bot` without DOM access, so rules are property-tested
+  in Node and can later run server-side.
+
+## Roadmap to 1M users (ordered by risk)
+
+1. **Server-authoritative staked games.** Today moves are applied in the browser
+   and the server trusts the submitted state; payouts need both players to agree
+   (a loser can force a dispute → void). Move validation into an Edge Function
+   that runs the same pure rules, draws randomness server-side and settles
+   automatically. Keep hidden hands out of the shared row.
+2. **Realtime at scale.** Replace `postgres_changes` (RLS evaluated per
+   subscriber, full row images) with private Broadcast channels per match.
+3. **Tournament results.** Add a dispute / verification flow; the organizer can
+   no longer award themself, but collusion through a second account is possible.
+4. **Refunds and chargebacks.** Handle `charge.refunded` / disputes (Stripe) and
+   failed charges (Coinbase) with a ledger reversal kind.
+5. **Data lifecycle.** Schedule `rib_cleanup_matches` and stale open-row expiry
+   with `pg_cron`; partition or archive `wallet_ledger`; paginate console lists
+   with keyset pagination.
+6. **Operability.** Error tracking (hidden source maps are already emitted),
+   uptime checks, Supabase branching for preview deployments, and Playwright
+   end-to-end tests against a seeded staging project.
+7. **Migration baseline.** Squash 0001–0009 into a baseline once every
+   environment is on 0009, and add pgTAP tests alongside the smoke suite.
