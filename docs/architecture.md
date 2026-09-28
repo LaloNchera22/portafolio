@@ -62,5 +62,10 @@ Vercel serves dist/ with CSP + HSTS; hashed assets are cached immutably.
 6. **Operability.** Error tracking (hidden source maps are already emitted),
    uptime checks, Supabase branching for preview deployments, and Playwright
    end-to-end tests against a seeded staging project.
-7. **Migration baseline.** Squash 0001–0009 into a baseline once every
+7. **Account closure vs. financial records (decision needed).** Deleting an
+   `auth.users` row cascades to `wallets`, `wallet_ledger` and
+   `rcoin_purchases`. Switching those foreign keys to `RESTRICT` preserves the
+   audit trail but blocks deletes, so it must ship together with an
+   anonymizing account-closure flow agreed with legal (retention vs. GDPR).
+8. **Migration baseline.** Squash 0001–0009 into a baseline once every
    environment is on 0009, and add pgTAP tests alongside the smoke suite.

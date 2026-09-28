@@ -11,6 +11,7 @@ import { byId as $, escapeHtml as esc, showMessage } from "../lib/dom.js";
 import {
   centsToRcoin, formatDate, formatRcoin, formatUsd, parseDollarsToCents, parseRcoinToCents, quotePurchase,
 } from "../lib/format.js";
+import { functionError } from "../lib/errors.js";
 import { errorText, session } from "./context.js";
 
 const MIN_PURCHASE_CENTS = 100;
@@ -110,9 +111,10 @@ function startCheckout(functionName, payCents, btn) {
   session.client.functions.invoke(functionName, { body: { pay_cents: payCents } })
     .then(function (r) {
       if (r.error || !r.data || !r.data.url) {
-        showMessage($("wallet-msg"), "Couldn't start checkout. Try again in a moment.", false);
         btn.disabled = false;
-        return;
+        return functionError(r.error).then(function (err) {
+          showMessage($("wallet-msg"), errorText(err, "Couldn't start checkout. Try again in a moment."), false);
+        });
       }
       window.location.href = r.data.url;
     })

@@ -14,7 +14,8 @@ grant usage on schema auth to anon, authenticated, service_role;
 create table auth.users (
   id                 uuid primary key,
   email              text,
-  raw_user_meta_data jsonb default '{}'::jsonb
+  raw_user_meta_data jsonb default '{}'::jsonb,
+  raw_app_meta_data  jsonb default '{}'::jsonb
 );
 create function auth.uid() returns uuid
 language sql stable
