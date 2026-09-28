@@ -12,6 +12,7 @@
 // ============================================================================
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.117.2";
 import { corsHeaders, json } from "../_shared/cors.ts";
+import { withinRateLimit } from "../_shared/rate-limit.ts";
 import { planMove } from "../_shared/game-move-core.js";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
@@ -33,6 +34,7 @@ Deno.serve(async (req) => {
   });
   const { data: { user }, error: userErr } = await asUser.auth.getUser();
   if (userErr || !user) return json({ error: "unauthorized" }, 401);
+  if (!(await withinRateLimit(admin, "gameMove", user.id))) return json({ error: "rate_limited" }, 429);
 
   let body: { match_id?: unknown; move?: unknown; seq?: unknown; action?: unknown } = {};
   try { body = await req.json(); } catch { /* validated below */ }

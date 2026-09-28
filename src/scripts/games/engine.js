@@ -15,7 +15,7 @@
  * ========================================================================== */
 import { el, escapeHtml as esc } from "../lib/dom.js";
 import { centsToRcoin as rcoin } from "../lib/format.js";
-import { notify } from "../lib/errors.js";
+import { functionError, notify } from "../lib/errors.js";
 import { CORE_GAMES } from "./catalog/core-games.js";
 import { EXTRA_GAMES } from "./catalog/extra-games.js";
 import { COMING_SOON_GAMES, isStakeable } from "./catalog/catalog-meta.js";
@@ -438,13 +438,7 @@ function joinOnline(match, btn) {
 function sendToServer(body) {
   return CTX.client.functions.invoke("game-move", { body: body }).then(function (r) {
     if (!r.error) return r.data && r.data.match;
-    var ctx = r.error.context;
-    var parse = ctx && typeof ctx.json === "function" ? ctx.json().catch(function () { return {}; }) : Promise.resolve({});
-    return parse.then(function (payload) {
-      var err = new Error((payload && payload.error) || "move_failed");
-      err.hint = payload && payload.error;
-      throw err;
-    });
+    return functionError(r.error).then(function (err) { throw err; });
   });
 }
 
