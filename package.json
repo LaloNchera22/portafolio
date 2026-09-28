@@ -1,0 +1,30 @@
+{
+  "name": "runinback",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Runinback — skill-based wagering layer for competitive gaming.",
+  "type": "module",
+  "engines": {
+    "node": ">=20.19"
+  },
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "lint": "eslint .",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "check": "npm run lint && npm run test && npm run build",
+    "test:db": "scripts/verify-migrations.sh"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "2.117.2"
+  },
+  "devDependencies": {
+    "@eslint/js": "10.0.1",
+    "eslint": "10.11.0",
+    "globals": "17.12.0",
+    "vite": "8.3.1",
+    "vitest": "5.0.2"
+  }
+}
