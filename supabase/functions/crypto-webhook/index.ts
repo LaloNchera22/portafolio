@@ -13,6 +13,7 @@
 // below is the authentication. Do NOT credit from anything unsigned.
 // ============================================================================
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { validatePayCents } from "../_shared/validate.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -59,9 +60,9 @@ Deno.serve(async (req) => {
     const meta = charge.metadata ?? {};
     const code = charge.code ?? null;
     const userId = meta.user_id ?? null;
-    const payCents = Math.trunc(Number(meta.pay_cents ?? 0));
+    const payCents = validatePayCents(meta.pay_cents ?? 0, false);
 
-    if (code && userId && Number.isFinite(payCents) && payCents >= 100) {
+    if (code && userId && payCents !== null) {
       const admin = createClient(SUPABASE_URL, SERVICE_ROLE_KEY, {
         auth: { persistSession: false },
       });

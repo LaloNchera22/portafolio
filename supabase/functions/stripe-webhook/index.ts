@@ -13,6 +13,7 @@
 // ============================================================================
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import Stripe from "https://esm.sh/stripe@16?target=deno";
+import { validatePayCents } from "../_shared/validate.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -48,9 +49,9 @@ Deno.serve(async (req) => {
     if (session.payment_status === "paid") {
       const meta = session.metadata ?? {};
       const userId = meta.user_id ?? session.client_reference_id ?? null;
-      const payCents = Math.trunc(Number(meta.pay_cents ?? session.amount_total ?? 0));
+      const payCents = validatePayCents(meta.pay_cents ?? session.amount_total ?? 0, false);
 
-      if (userId && Number.isFinite(payCents) && payCents >= 100) {
+      if (userId && payCents !== null) {
         const admin = createClient(SUPABASE_URL, SERVICE_ROLE_KEY, {
           auth: { persistSession: false },
         });

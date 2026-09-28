@@ -14,6 +14,7 @@
 // ============================================================================
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { corsHeaders, json } from "../_shared/cors.ts";
+import { validatePayCents, calculateRcoin } from "../_shared/validate.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
@@ -41,12 +42,12 @@ Deno.serve(async (req) => {
   // 2) Validate the amount (allowlist a plain integer number of cents).
   let payload: { pay_cents?: unknown } = {};
   try { payload = await req.json(); } catch { /* empty body -> invalid below */ }
-  const payCents = Math.trunc(Number(payload.pay_cents));
-  if (!Number.isFinite(payCents) || payCents < 100 || payCents > 200000) {
+  const payCents = validatePayCents(payload.pay_cents);
+  if (payCents === null) {
     return json({ error: "invalid_amount" }, 400);
   }
 
-  const rcoin = Math.floor((payCents * 95) / 100 / 100);
+  const rcoin = calculateRcoin(payCents);
   const base = (SITE_ORIGIN && SITE_ORIGIN !== "*") ? SITE_ORIGIN : new URL(req.url).origin;
   const amountUsd = (payCents / 100).toFixed(2);
 
