@@ -14,6 +14,8 @@ import { defineConfig, loadEnv } from "vite";
 
 const rootDir = import.meta.dirname;
 const srcDir = resolve(rootDir, "src");
+// Pure game rules shared with the game-move Edge Function (Deno).
+const gameRulesDir = resolve(rootDir, "supabase/functions/_shared/game-rules");
 
 const pages = Object.fromEntries(
   readdirSync(srcDir)
@@ -37,6 +39,9 @@ export default defineConfig(({ mode }) => {
     publicDir: resolve(rootDir, "public"),
     appType: "mpa",
     envDir: rootDir,
+    resolve: {
+      alias: { "@game-rules": gameRulesDir },
+    },
     define: {
       __RUNINBACK_CONFIG__: JSON.stringify(publicConfig),
     },
@@ -52,6 +57,7 @@ export default defineConfig(({ mode }) => {
     },
     server: {
       port: 5173,
+      fs: { allow: [srcDir, gameRulesDir] },
     },
   };
 });

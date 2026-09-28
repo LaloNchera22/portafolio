@@ -2,14 +2,14 @@
  * Runinback — catalog metadata shared by the games engine.
  * ========================================================================== */
 
+import { STAKEABLE_GAME_IDS } from "@game-rules/index.js";
+
 /**
- * Games the backend accepts for staked (rcoin) tables. MUST mirror the
- * allow-list in the `rib_game_create` RPC (supabase/migrations). Every other
- * game is practice-only until its rules are validated server-side.
+ * Games that can be played for rcoin: the ones whose rules the game-move Edge
+ * Function validates server-side (deterministic, perfect information). Every
+ * other game is practice-only.
  */
-export const STAKEABLE_GAME_IDS = Object.freeze([
-  "tictactoe", "connect4", "reversi", "checkers", "dots", "mancala", "eights",
-]);
+export { STAKEABLE_GAME_IDS };
 
 export function isStakeable(gameId) {
   return STAKEABLE_GAME_IDS.indexOf(gameId) !== -1;

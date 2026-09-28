@@ -58,6 +58,8 @@ const HINTS = {
   state_too_large: "That move couldn't be sent. Please try again.",
   void_too_soon: "A match can only be voided after 2 hours without progress.",
   key_already_revoked: "That API key is already revoked.",
+  stale_move: "The board changed before your move arrived. It has been refreshed — try again.",
+  illegal_move: "That move isn't allowed. The board has been refreshed.",
   wallet_frozen: "Your wallet is on hold after a reversed payment. Contact support to restore it.",
 };
 
