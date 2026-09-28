@@ -12,7 +12,7 @@
 // verify_jwt is false for this function (see config.toml): the signature check
 // below is the authentication. Do NOT credit from anything unsigned.
 // ============================================================================
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.117.2";
 import { validatePayCents } from "../_shared/validate.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;

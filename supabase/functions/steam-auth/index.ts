@@ -11,31 +11,62 @@
 // Zero-trust notes:
 //  - The assertion is verified straight back against Steam (check_authentication)
 //    before we trust the steamid — the query string alone is never trusted.
-//  - `redirect_to` is validated against ALLOWED_ORIGIN to prevent open redirects.
+//  - `redirect_to` is validated against ALLOWED_ORIGIN (required; the function
+//    fails closed without it) and the assertion must be bound to this callback.
 //  - The service-role key stays server-side; Steam gives no email, so we mint a
 //    stable synthetic identity (steam_<id>@steam.local) that RLS still ties to
 //    this one user. Deploy with verify_jwt = false (this IS the login entry).
 // ============================================================================
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.117.2";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-const ALLOWED_ORIGIN = Deno.env.get("ALLOWED_ORIGIN") ?? "";
+const ALLOWED_ORIGIN = (Deno.env.get("ALLOWED_ORIGIN") ?? "").trim().replace(/\/+$/, "");
 const STEAM_WEB_API_KEY = Deno.env.get("STEAM_WEB_API_KEY") ?? ""; // optional (nice name/avatar)
 
 const FUNCTION_BASE = `${SUPABASE_URL.replace(/\/+$/, "")}/functions/v1/steam-auth`;
 const STEAM_OPENID = "https://steamcommunity.com/openid/login";
 
+const OPENID_NS = "http://specs.openid.net/auth/2.0";
+const STEAM_CLAIMED_ID = /^https:\/\/steamcommunity\.com\/openid\/id\/(\d{17})$/;
+// Fields Steam must have signed for the assertion to bind to THIS callback.
+const REQUIRED_SIGNED = ["op_endpoint", "claimed_id", "identity", "return_to", "response_nonce", "assoc_handle"];
+
+// Only ever redirect back to our own site. Callers must check ALLOWED_ORIGIN
+// first (the handler fails closed when it is unset).
 function safeRedirect(target: string | null): string {
-  const fallback = ALLOWED_ORIGIN ? `${ALLOWED_ORIGIN}/console.html` : SUPABASE_URL;
+  const fallback = `${ALLOWED_ORIGIN}/console.html`;
   if (!target) return fallback;
   try {
     const u = new URL(target);
-    if (ALLOWED_ORIGIN && u.origin !== new URL(ALLOWED_ORIGIN).origin) return fallback;
-    return u.href;
+    return u.origin === new URL(ALLOWED_ORIGIN).origin ? u.href : fallback;
   } catch {
     return fallback;
   }
+}
+
+/**
+ * Reject assertions that were issued for a different relying party (replayed
+ * from another site that also uses Steam OpenID) or that don't name one Steam
+ * account consistently. Runs BEFORE check_authentication.
+ */
+function assertionSteamId(params: URLSearchParams, redirectTo: string): string | null {
+  if (params.get("openid.ns") !== OPENID_NS) return null;
+  if (params.get("openid.mode") !== "id_res") return null;
+  if (params.get("openid.op_endpoint") !== STEAM_OPENID) return null;
+
+  const signed = (params.get("openid.signed") ?? "").split(",");
+  if (!REQUIRED_SIGNED.every((field) => signed.includes(field))) return null;
+
+  let returnTo: URL;
+  try { returnTo = new URL(params.get("openid.return_to") ?? ""); } catch { return null; }
+  if (`${returnTo.origin}${returnTo.pathname}` !== `${FUNCTION_BASE}/callback`) return null;
+  if (safeRedirect(returnTo.searchParams.get("redirect_to")) !== redirectTo) return null;
+
+  const claimed = params.get("openid.claimed_id") ?? "";
+  if (claimed !== params.get("openid.identity")) return null;
+  const match = claimed.match(STEAM_CLAIMED_ID);
+  return match ? match[1] : null;
 }
 
 function redirect(location: string, status = 302): Response {
@@ -64,7 +95,11 @@ async function handleCallback(url: URL): Promise<Response> {
   const fail = (code: string) =>
     redirect(`${redirectTo}${redirectTo.includes("?") ? "&" : "?"}auth_error=${code}`);
 
-  // 1) Ask Steam to confirm the assertion it just handed the browser.
+  // 1) The assertion must be bound to this callback and name one Steam account.
+  const steamid = assertionSteamId(url.searchParams, redirectTo);
+  if (!steamid) return fail("steam_invalid");
+
+  // 2) Ask Steam to confirm the signature of the assertion it handed the browser.
   const verify = new URLSearchParams();
   for (const [k, v] of url.searchParams) if (k.startsWith("openid.")) verify.set(k, v);
   verify.set("openid.mode", "check_authentication");
@@ -75,13 +110,7 @@ async function handleCallback(url: URL): Promise<Response> {
     body: verify.toString(),
   });
   const body = await resp.text();
-  if (!/is_valid\s*:\s*true/i.test(body)) return fail("steam_invalid");
-
-  // 2) Pull the steamid out of the (now trusted) claimed_id.
-  const claimed = url.searchParams.get("openid.claimed_id") ?? "";
-  const m = claimed.match(/\/id\/(\d{17})$/) || claimed.match(/(\d{17})$/);
-  if (!m) return fail("steam_no_id");
-  const steamid = m[1];
+  if (!/^is_valid\s*:\s*true\s*$/im.test(body)) return fail("steam_invalid");
 
   // 3) Optional: enrich with the public Steam profile name.
   let username = `steam_${steamid}`;
@@ -104,6 +133,9 @@ async function handleCallback(url: URL): Promise<Response> {
   const { error: createErr } = await admin.auth.admin.createUser({
     email,
     email_confirm: true,
+    // app_metadata can only be written with the service role; the database
+    // rejects @steam.local accounts without it (migration 0013).
+    app_metadata: { steamid },
     user_metadata: { provider: "steam", steamid, username, display_name: displayName },
   });
   // A duplicate just means this Steam user has signed in before — that's fine.
@@ -123,6 +155,8 @@ async function handleCallback(url: URL): Promise<Response> {
 }
 
 Deno.serve(async (req) => {
+  // Fail closed: without a configured origin we can't validate redirects.
+  if (!ALLOWED_ORIGIN) return new Response("steam-auth is not configured", { status: 503 });
   const url = new URL(req.url);
   if (url.pathname.endsWith("/login")) return handleLogin(url);
   if (url.pathname.endsWith("/callback")) return await handleCallback(url);

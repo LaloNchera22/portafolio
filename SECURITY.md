@@ -171,7 +171,7 @@ to Stripe's, so the browser still can **never** credit itself:
 
 ## The client guard is not the security boundary
 
-`console.js` hides the console and redirects signed-out visitors. That is UX
+`src/scripts/console/console-app.js` hides the console and redirects signed-out visitors. That is UX
 only. The actual authorization boundary is RLS in the database: even a user who
 bypasses the redirect and calls the API directly sees nothing that isn't theirs.
 
@@ -201,7 +201,8 @@ bypasses the redirect and calls the API directly sees nothing that isn't theirs.
      `supabase secrets set STRIPE_WEBHOOK_SECRET=whsec_...`
    - In the Stripe dashboard (test mode) → Developers → Webhooks, add the
      endpoint `https://<ref>.supabase.co/functions/v1/stripe-webhook` subscribed
-     to `checkout.session.completed`; copy its signing secret into
+     to `checkout.session.completed`, `checkout.session.async_payment_succeeded`,
+     `charge.refunded` and `charge.dispute.created`; copy its signing secret into
      `STRIPE_WEBHOOK_SECRET` above.
    - In Vercel, set `STRIPE_ENABLED=true` (Production + Preview) to flip the
      console from the instant test RPC to Stripe Checkout, and redeploy.
@@ -221,8 +222,11 @@ bypasses the redirect and calls the API directly sees nothing that isn't theirs.
      choose Card or Crypto; with neither, the console uses the instant test RPC.
 7. **Wire the site:** in Vercel → Settings → Environment Variables (Production
    and Preview), set `SUPABASE_URL` and `SUPABASE_ANON_KEY` (both public/safe).
-   The site reads them at runtime from the `/api/config` endpoint — nothing is
-   hardcoded in the repo. Redeploy on Vercel.
+   Vite injects them into the bundle at build time — nothing is hardcoded in
+   the repo. Redeploy on Vercel after changing them.
+   Test top-ups (`rib_buy_rcoin_test`) are OFF by default since migration 0009;
+   enable them only on staging: `update public.platform_settings set value = 'true'
+   where key = 'test_payments_enabled';`
 8. In Supabase Auth settings, add your domain + `console.html` to the allowed
    redirect URLs.
 

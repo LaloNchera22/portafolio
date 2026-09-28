@@ -12,3 +12,7 @@ supabase/.env
 .DS_Store
 *.log
 node_modules/
+
+# Build output
+dist/
+coverage/
