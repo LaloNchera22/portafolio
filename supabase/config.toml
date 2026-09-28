@@ -57,3 +57,8 @@ verify_jwt = false
 #   enabled = true
 #   client_id = "env(APPLE_CLIENT_ID)"
 #   secret = "env(APPLE_SECRET)"
+
+# game-move validates and commits every staked move server-side. It needs a
+# user JWT (the platform verifies it, then the function calls getUser()).
+[functions.game-move]
+verify_jwt = true

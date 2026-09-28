@@ -7,6 +7,12 @@
  * view() touches the DOM, and only when called.
  * ========================================================================== */
 import { el } from "../../lib/dom.js";
+import TicTacToeRules from "@game-rules/tictactoe.js";
+import Connect4Rules, { COLS, ROWS } from "@game-rules/connect4.js";
+import ReversiRules from "@game-rules/reversi.js";
+import MancalaRules from "@game-rules/mancala.js";
+import CheckersRules from "@game-rules/checkers.js";
+import { withView } from "./with-view.js";
 
 function clone(o) { return JSON.parse(JSON.stringify(o)); }
 
@@ -18,30 +24,7 @@ function clone(o) { return JSON.parse(JSON.stringify(o)); }
  * ========================================================================= */
 
 /* ---- Tic-Tac-Toe (perfect minimax bot) ---------------------------------- */
-var TicTacToe = {
-  id: "tictactoe", name: "Tic-Tac-Toe", tag: "1 min", icon: "╳",
-  blurb: "The quickest warmup. Get three in a row before your rival.",
-  init: function () { return { b: [null, null, null, null, null, null, null, null, null], turn: 0 }; },
-  legal: function (s) { var m = []; for (var i = 0; i < 9; i++) if (s.b[i] == null) m.push(i); return m; },
-  apply: function (s, i) { var nb = s.b.slice(); nb[i] = s.turn; return { b: nb, turn: s.turn ^ 1 }; },
-  result: function (s) {
-    var L = [[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
-    for (var k = 0; k < L.length; k++) { var a = L[k]; if (s.b[a[0]] != null && s.b[a[0]] === s.b[a[1]] && s.b[a[1]] === s.b[a[2]]) return { over: true, winner: s.b[a[0]] }; }
-    return s.b.every(function (x) { return x != null; }) ? { over: true, winner: null } : null;
-  },
-  bot: function (s) {
-    var me = s.turn;
-    function mm(st, depth) {
-      var r = TicTacToe.result(st);
-      if (r) { if (r.winner === me) return 10 - depth; if (r.winner == null) return 0; return depth - 10; }
-      var moves = TicTacToe.legal(st), best = st.turn === me ? -1e9 : 1e9;
-      for (var i = 0; i < moves.length; i++) { var v = mm(TicTacToe.apply(st, moves[i]), depth + 1); best = st.turn === me ? Math.max(best, v) : Math.min(best, v); }
-      return best;
-    }
-    var moves = TicTacToe.legal(s), bestMove = moves[0], bestVal = -1e9;
-    for (var i = 0; i < moves.length; i++) { var v = mm(TicTacToe.apply(s, moves[i]), 0); if (v > bestVal) { bestVal = v; bestMove = moves[i]; } }
-    return bestMove;
-  },
+var TicTacToe = withView(TicTacToeRules, {
   view: function (s, api) {
     var g = el("div", "gg-ttt");
     for (var i = 0; i < 9; i++) (function (i) {
@@ -53,37 +36,10 @@ var TicTacToe = {
     })(i);
     api.board.appendChild(g);
   }
-};
+});
 
 /* ---- Connect Four ------------------------------------------------------- */
-var COLS = 7, ROWS = 6;
-var Connect4 = {
-  id: "connect4", name: "Connect Four", tag: "2 min", icon: "●",
-  blurb: "Drop discs and line up four before your opponent does.",
-  init: function () { var b = []; for (var c = 0; c < COLS; c++) b.push([]); return { b: b, turn: 0, last: null }; },
-  legal: function (s) { var m = []; for (var c = 0; c < COLS; c++) if (s.b[c].length < ROWS) m.push(c); return m; },
-  apply: function (s, c) { var n = clone(s); n.b[c].push(s.turn); n.last = { c: c, r: n.b[c].length - 1, p: s.turn }; n.turn = s.turn ^ 1; return n; },
-  _at: function (b, c, r) { return (c < 0 || c >= COLS || r < 0 || r >= ROWS) ? null : (b[c][r] == null ? null : b[c][r]); },
-  result: function (s) {
-    var dirs = [[1,0],[0,1],[1,1],[1,-1]];
-    for (var c = 0; c < COLS; c++) for (var r = 0; r < ROWS; r++) {
-      var v = Connect4._at(s.b, c, r); if (v == null) continue;
-      for (var d = 0; d < dirs.length; d++) {
-        var ok = true;
-        for (var k = 1; k < 4; k++) if (Connect4._at(s.b, c + dirs[d][0] * k, r + dirs[d][1] * k) !== v) { ok = false; break; }
-        if (ok) return { over: true, winner: v };
-      }
-    }
-    return Connect4.legal(s).length === 0 ? { over: true, winner: null } : null;
-  },
-  bot: function (s) {
-    var me = s.turn, opp = me ^ 1, legal = Connect4.legal(s);
-    for (var i = 0; i < legal.length; i++) { var r = Connect4.result(Connect4.apply(s, legal[i])); if (r && r.winner === me) return legal[i]; }
-    for (var j = 0; j < legal.length; j++) { var t = clone(s); t.turn = opp; var r2 = Connect4.result(Connect4.apply(t, legal[j])); if (r2 && r2.winner === opp) return legal[j]; }
-    var order = [3, 2, 4, 1, 5, 0, 6];
-    for (var o = 0; o < order.length; o++) if (legal.indexOf(order[o]) >= 0) return order[o];
-    return legal[0];
-  },
+var Connect4 = withView(Connect4Rules, {
   view: function (s, api) {
     var wrap = el("div", "gg-c4");
     for (var r = ROWS - 1; r >= 0; r--) for (var c = 0; c < COLS; c++) {
@@ -102,57 +58,10 @@ var Connect4 = {
     api.board.appendChild(bar);
     api.board.appendChild(wrap);
   }
-};
+});
 
 /* ---- Reversi (Othello) -------------------------------------------------- */
-var Reversi = {
-  id: "reversi", name: "Reversi", tag: "5 min", icon: "◑",
-  blurb: "Flank your rival's discs to flip them. Most discs at the end wins.",
-  init: function () {
-    var b = []; for (var i = 0; i < 64; i++) b.push(null);
-    b[27] = 1; b[28] = 0; b[35] = 0; b[36] = 1;
-    return { b: b, turn: 0, last: null };
-  },
-  _flips: function (b, idx, me) {
-    var x = idx % 8, y = (idx / 8) | 0, opp = me ^ 1, out = [];
-    var D = [[1,0],[-1,0],[0,1],[0,-1],[1,1],[1,-1],[-1,1],[-1,-1]];
-    for (var d = 0; d < 8; d++) {
-      var cx = x + D[d][0], cy = y + D[d][1], line = [];
-      while (cx >= 0 && cx < 8 && cy >= 0 && cy < 8) {
-        var ci = cy * 8 + cx, v = b[ci];
-        if (v === opp) { line.push(ci); cx += D[d][0]; cy += D[d][1]; }
-        else if (v === me) { out = out.concat(line); break; }
-        else break;
-      }
-    }
-    return out;
-  },
-  legal: function (s) { var m = []; for (var i = 0; i < 64; i++) if (s.b[i] == null && Reversi._flips(s.b, i, s.turn).length) m.push(i); return m; },
-  apply: function (s, idx) {
-    var n = clone(s), fl = Reversi._flips(s.b, idx, s.turn);
-    n.b[idx] = s.turn; for (var k = 0; k < fl.length; k++) n.b[fl[k]] = s.turn; n.last = idx;
-    n.turn = s.turn ^ 1;
-    if (!Reversi.legal(n).length) { n.turn = n.turn ^ 1; n.passed = !Reversi.legal(n).length; }
-    return n;
-  },
-  result: function (s) {
-    var meMoves = Reversi.legal(s).length; if (meMoves) return null;
-    var alt = clone(s); alt.turn = s.turn ^ 1; if (Reversi.legal(alt).length) return null;
-    var c0 = 0, c1 = 0; for (var i = 0; i < 64; i++) { if (s.b[i] === 0) c0++; else if (s.b[i] === 1) c1++; }
-    return { over: true, winner: c0 === c1 ? null : (c0 > c1 ? 0 : 1) };
-  },
-  bot: function (s) {
-    var legal = Reversi.legal(s), corners = [0, 7, 56, 63];
-    var best = legal[0], bestScore = -1e9;
-    for (var i = 0; i < legal.length; i++) {
-      var m = legal[i], sc = Reversi._flips(s.b, m, s.turn).length;
-      if (corners.indexOf(m) >= 0) sc += 20;
-      if ([1,6,8,9,14,15,48,49,54,55,57,62].indexOf(m) >= 0) sc -= 5; // squares next to corners
-      if (sc > bestScore) { bestScore = sc; best = m; }
-    }
-    return best;
-  },
-  count: function (s) { var c0 = 0, c1 = 0; for (var i = 0; i < 64; i++) { if (s.b[i] === 0) c0++; else if (s.b[i] === 1) c1++; } return [c0, c1]; },
+var Reversi = withView(ReversiRules, {
   view: function (s, api) {
     var legalSet = {}; if (api.canMove) Reversi.legal(s).forEach(function (m) { legalSet[m] = 1; });
     var g = el("div", "gg-rev");
@@ -170,54 +79,11 @@ var Reversi = {
     sc.innerHTML = '<span class="p0">You ' + c[0] + '</span><span class="p1">' + api.oppName + ' ' + c[1] + '</span>';
     api.board.appendChild(sc);
   }
-};
+});
 
 /* ---- Mancala (Kalah, 6 pits, 4 seeds) ----------------------------------- */
 // pits[0..5] you, pits[6] your store, pits[7..12] opp, pits[13] opp store.
-var Mancala = {
-  id: "mancala", name: "Mancala", tag: "5 min", icon: "◔",
-  blurb: "Sow your seeds, land in your store for another turn, capture across.",
-  init: function () { var p = [4,4,4,4,4,4,0,4,4,4,4,4,4,0]; return { p: p, turn: 0 }; },
-  _mine: function (t) { return t === 0 ? [0,1,2,3,4,5] : [7,8,9,10,11,12]; },
-  _store: function (t) { return t === 0 ? 6 : 13; },
-  legal: function (s) { return Mancala._mine(s.turn).filter(function (i) { return s.p[i] > 0; }); },
-  apply: function (s, i) {
-    var n = clone(s), seeds = n.p[i], idx = i, me = s.turn, myStore = Mancala._store(me), oppStore = Mancala._store(me ^ 1);
-    n.p[i] = 0;
-    while (seeds > 0) { idx = (idx + 1) % 14; if (idx === oppStore) continue; n.p[idx]++; seeds--; }
-    // capture: last seed in own empty pit, opposite has seeds
-    var myPits = Mancala._mine(me);
-    if (myPits.indexOf(idx) >= 0 && n.p[idx] === 1) {
-      var opposite = 12 - idx; // mirror across the board (0<->12, 5<->7)
-      if (n.p[opposite] > 0) { n.p[myStore] += n.p[opposite] + 1; n.p[opposite] = 0; n.p[idx] = 0; }
-    }
-    // extra turn if last seed landed in own store
-    if (idx !== myStore) n.turn = me ^ 1;
-    Mancala._sweepIfDone(n);
-    return n;
-  },
-  _sweepIfDone: function (n) {
-    var side0 = [0,1,2,3,4,5].every(function (i) { return n.p[i] === 0; });
-    var side1 = [7,8,9,10,11,12].every(function (i) { return n.p[i] === 0; });
-    if (side0 || side1) {
-      for (var i = 0; i < 6; i++) { n.p[6] += n.p[i]; n.p[i] = 0; }
-      for (var j = 7; j < 13; j++) { n.p[13] += n.p[j]; n.p[j] = 0; }
-      n.done = true;
-    }
-  },
-  result: function (s) {
-    if (!s.done) return null;
-    return { over: true, winner: s.p[6] === s.p[13] ? null : (s.p[6] > s.p[13] ? 0 : 1) };
-  },
-  bot: function (s) {
-    var legal = Mancala.legal(s), me = s.turn, myStore = Mancala._store(me), best = legal[0], bestSc = -1e9;
-    for (var i = 0; i < legal.length; i++) {
-      var n = Mancala.apply(s, legal[i]), sc = n.p[myStore] - s.p[myStore];
-      if (n.turn === me && !n.done) sc += 3; // earned an extra turn
-      if (sc > bestSc) { bestSc = sc; best = legal[i]; }
-    }
-    return best;
-  },
+var Mancala = withView(MancalaRules, {
   view: function (s, api) {
     var legalSet = {}; if (api.canMove) Mancala.legal(s).forEach(function (i) { legalSet[i] = 1; });
     var wrap = el("div", "gg-man");
@@ -238,105 +104,12 @@ var Mancala = {
       return b;
     }
   }
-};
+});
 
 /* ---- Checkers (English draughts, forced captures, multi-jump) ------------ */
 // board: 64 cells, null or {p:0|1, k:bool}. Player 0 moves up (row decreasing),
 // player 1 moves down. Only dark squares used.
-var Checkers = {
-  id: "checkers", name: "Checkers", tag: "10 min", icon: "◆",
-  blurb: "Jump your rival's pieces, crown your kings, take the board.",
-  init: function () {
-    var b = []; for (var i = 0; i < 64; i++) b.push(null);
-    for (var r = 0; r < 8; r++) for (var c = 0; c < 8; c++) {
-      if ((r + c) % 2 === 1) { if (r < 3) b[r*8+c] = { p: 1, k: false }; else if (r > 4) b[r*8+c] = { p: 0, k: false }; }
-    }
-    return { b: b, turn: 0, noProg: 0 };
-  },
-  _dirs: function (pc) { return pc.k ? [[-1,-1],[-1,1],[1,-1],[1,1]] : (pc.p === 0 ? [[-1,-1],[-1,1]] : [[1,-1],[1,1]]); },
-  _capsFrom: function (b, idx) {
-    // returns list of full jump paths [{path:[idx...], caps:[idx...]}] (maximal)
-    var pc = b[idx]; if (!pc) return [];
-    var results = [];
-    function rec(board, at, caps, path) {
-      var piece = board[at], moved = false;
-      var dirs = Checkers._dirs(piece), r = (at / 8) | 0, c = at % 8;
-      for (var d = 0; d < dirs.length; d++) {
-        var mr = r + dirs[d][0], mc = c + dirs[d][1], lr = r + dirs[d][0] * 2, lc = c + dirs[d][1] * 2;
-        if (lr < 0 || lr > 7 || lc < 0 || lc > 7) continue;
-        var mid = mr * 8 + mc, land = lr * 8 + lc;
-        if (board[mid] && board[mid].p !== piece.p && !board[land] && caps.indexOf(mid) < 0) {
-          var nb = board.slice(); var np = { p: piece.p, k: piece.k };
-          // promotion mid-jump ends the move in standard rules; keep king status if reached back row
-          if (!np.k && ((np.p === 0 && lr === 0) || (np.p === 1 && lr === 7))) np.k = true;
-          nb[at] = null; nb[mid] = null; nb[land] = np;
-          moved = true;
-          var promotedNow = np.k && !piece.k;
-          if (promotedNow) results.push({ path: path.concat([land]), caps: caps.concat([mid]) });
-          else rec(nb, land, caps.concat([mid]), path.concat([land]));
-        }
-      }
-      if (!moved && caps.length) results.push({ path: path, caps: caps });
-    }
-    rec(b.slice(), idx, [], [idx]);
-    // keep only maximal-length capture sequences from this square
-    var maxLen = 0; results.forEach(function (r) { if (r.caps.length > maxLen) maxLen = r.caps.length; });
-    return results.filter(function (r) { return r.caps.length === maxLen && maxLen > 0; });
-  },
-  legal: function (s) {
-    var caps = [], simple = [];
-    for (var i = 0; i < 64; i++) { var pc = s.b[i]; if (pc && pc.p === s.turn) { var cf = Checkers._capsFrom(s.b, i); for (var k = 0; k < cf.length; k++) caps.push({ from: i, path: cf[k].path, caps: cf[k].caps }); } }
-    if (caps.length) return caps; // forced capture
-    for (var j = 0; j < 64; j++) { var p2 = s.b[j]; if (p2 && p2.p === s.turn) {
-      var dirs = Checkers._dirs(p2), r = (j / 8) | 0, c = j % 8;
-      for (var d = 0; d < dirs.length; d++) { var nr = r + dirs[d][0], nc = c + dirs[d][1]; if (nr>=0&&nr<8&&nc>=0&&nc<8) { var t = nr*8+nc; if (!s.b[t]) simple.push({ from: j, to: t }); } }
-    } }
-    return simple;
-  },
-  apply: function (s, m) {
-    var n = clone(s), pc = n.b[m.from];
-    var wasMan = !s.b[m.from].k, isCap = !!(m.caps && m.caps.length);
-    n.noProg = (isCap || wasMan) ? 0 : ((s.noProg || 0) + 1);   // 40-move-rule style draw guard
-    if (m.caps && m.caps.length) {
-      n.b[m.from] = null; var last = m.path[m.path.length - 1];
-      for (var k = 0; k < m.caps.length; k++) n.b[m.caps[k]] = null;
-      var lr = (last / 8) | 0;
-      if (!pc.k && ((pc.p === 0 && lr === 0) || (pc.p === 1 && lr === 7))) pc.k = true;
-      n.b[last] = pc;
-    } else {
-      n.b[m.from] = null; var tr = (m.to / 8) | 0;
-      if (!pc.k && ((pc.p === 0 && tr === 0) || (pc.p === 1 && tr === 7))) pc.k = true;
-      n.b[m.to] = pc;
-    }
-    n.turn = s.turn ^ 1;
-    return n;
-  },
-  result: function (s) {
-    if ((s.noProg || 0) >= 60) return { over: true, winner: null }; // 30 moves each with no capture/advance = draw
-    var hasPiece = [false, false];
-    for (var i = 0; i < 64; i++) if (s.b[i]) hasPiece[s.b[i].p] = true;
-    if (!hasPiece[0]) return { over: true, winner: 1 };
-    if (!hasPiece[1]) return { over: true, winner: 0 };
-    if (!Checkers.legal(s).length) return { over: true, winner: s.turn ^ 1 }; // no moves = loss
-    return null;
-  },
-  bot: function (s) {
-    var legal = Checkers.legal(s);
-    // prefer the longest capture; then advance / king safely
-    var caps = legal.filter(function (m) { return m.caps && m.caps.length; });
-    if (caps.length) { caps.sort(function (a, b) { return b.caps.length - a.caps.length; }); return caps[0]; }
-    var best = legal[0], bestSc = -1e9;
-    for (var i = 0; i < legal.length; i++) {
-      var m = legal[i], to = m.to, tr = (to / 8) | 0, sc = 0, pc = s.b[m.from];
-      if (pc.p === 1) sc += tr; else sc += (7 - tr);        // advance toward promotion
-      if (!pc.k && ((pc.p === 0 && tr === 0) || (pc.p === 1 && tr === 7))) sc += 5;
-      var next = Checkers.apply(s, m);                       // avoid handing an immediate capture
-      if (Checkers.legal(next).some(function (x) { return x.caps && x.caps.length; })) sc -= 4;
-      sc += Math.random();
-      if (sc > bestSc) { bestSc = sc; best = m; }
-    }
-    return best;
-  },
+var Checkers = withView(CheckersRules, {
   view: function (s, api) {
     var legal = api.canMove ? Checkers.legal(s) : [];
     var fromSel = api._ck && api._ck.from != null ? api._ck.from : null;
@@ -358,7 +131,7 @@ var Checkers = {
     api.board.appendChild(g);
     if (api.canMove) { var hint = el("p", "gg-hint", fromSel == null ? "Tap a piece, then its destination." + (legal.some(function (m) { return m.caps && m.caps.length; }) ? " A capture is available and must be taken." : "") : "Tap a highlighted square to move, or the piece again to cancel."); api.board.appendChild(hint); }
   }
-};
+});
 
 /* ---- Crazy Eights (public-domain ancestor of UNO) ----------------------- */
 var CE_COLORS = ["r", "y", "g", "b"], CE_CNAME = { r: "Red", y: "Yellow", g: "Green", b: "Blue" };

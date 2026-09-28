@@ -5,11 +5,11 @@ import globals from "globals";
 
 export default [
   {
-    ignores: ["dist/**", "coverage/**", "node_modules/**", "supabase/functions/**"],
+    ignores: ["dist/**", "coverage/**", "node_modules/**", "supabase/functions/**/*.ts"],
   },
   js.configs.recommended,
   {
-    files: ["src/**/*.js"],
+    files: ["src/**/*.js", "supabase/functions/_shared/game-rules/*.js"],
     languageOptions: {
       ecmaVersion: 2022,
       sourceType: "module",

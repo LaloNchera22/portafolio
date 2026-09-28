@@ -133,6 +133,9 @@ async function handleCallback(url: URL): Promise<Response> {
   const { error: createErr } = await admin.auth.admin.createUser({
     email,
     email_confirm: true,
+    // app_metadata can only be written with the service role; the database
+    // rejects @steam.local accounts without it (migration 0013).
+    app_metadata: { steamid },
     user_metadata: { provider: "steam", steamid, username, display_name: displayName },
   });
   // A duplicate just means this Steam user has signed in before — that's fine.

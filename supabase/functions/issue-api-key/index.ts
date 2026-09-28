@@ -9,6 +9,7 @@
 // ============================================================================
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.117.2";
 import { corsHeaders, json } from "../_shared/cors.ts";
+import { withinRateLimit } from "../_shared/rate-limit.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
@@ -42,6 +43,13 @@ Deno.serve(async (req) => {
   });
   const { data: { user }, error: userErr } = await asUser.auth.getUser();
   if (userErr || !user) return json({ error: "unauthorized" }, 401);
+
+  // Abuse guard: per-user rate limit (service role; fails open on DB errors).
+  const limiter = createClient(SUPABASE_URL, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!, { auth: { persistSession: false } });
+  if (!(await withinRateLimit(limiter, "apiKey", user.id))) return json({ error: "rate_limited" }, 429);
+  const { count: activeKeys } = await limiter.from("api_keys").select("id", { count: "exact", head: true })
+    .eq("owner_id", user.id).is("revoked_at", null);
+  if ((activeKeys ?? 0) >= 25) return json({ error: "too_many_keys" }, 409);
 
   // 2) Validate input (allowlist only — reject anything unexpected).
   let payload: { name?: string; environment?: string; project_id?: string } = {};

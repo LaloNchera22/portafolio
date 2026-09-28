@@ -49,6 +49,11 @@ declare
   c uuid := 'cccccccc-0000-0000-0000-000000000003';
   v_challenge uuid;
   v_tournament uuid;
+  v_match uuid;
+  v_before_a bigint;
+  v_before_c bigint;
+  v_hint text;
+  i int;
 begin
   -- Sign-up never trusts a client-supplied role.
   perform pg_temp.expect((select role from public.profiles where id = c), 'player', 'signup ignores client role');
@@ -120,6 +125,51 @@ begin
   perform public.rib_credit_rcoin_purchase(b, 'cs_test_bob_2', 1000);
   perform pg_temp.expect(pg_temp.as_user(b, 'select public.rib_withdraw_test(100)'), 'wallet_frozen', 'frozen wallet cannot withdraw');
   perform pg_temp.expect(pg_temp.as_user(b, 'select public.rib_challenge_create(''chess'', ''1v1'', 100, null)'), 'wallet_frozen', 'frozen wallet cannot stake');
+
+  -- Server-authoritative staked games (0012).
+  perform pg_temp.expect(pg_temp.as_user(a, 'select public.rib_game_create(''eights'', 100, ''{}'')'), 'unknown_game', 'crazy eights not stakeable');
+  perform pg_temp.expect(pg_temp.as_user(a, 'select public.rib_game_create(''tictactoe'', 100, ''{}'')'), 'ok', 'alice opens a table');
+  select id into v_match from public.game_matches where host_id = a and status = 'open' order by created_at desc limit 1;
+  perform pg_temp.expect(pg_temp.as_user(c, format('select public.rib_game_join(%L, null)', v_match)), 'ok', 'carol joins the table');
+  perform pg_temp.expect(pg_temp.as_user(a, format('select public.rib_game_move(%L, ''{}'', null)', v_match)), '42501', 'client cannot write the board');
+  perform pg_temp.expect(pg_temp.as_user(a, format('select public.rib_game_report(%L, %L)', v_match, a)), '42501', 'client cannot report results');
+  perform pg_temp.expect(pg_temp.as_user(a, format('select public.rib_game_commit_move(%L, 0, ''{}'', null, true, %L)', v_match, a)), '42501', 'client cannot commit moves');
+  v_before_a := pg_temp.balance(a);
+  v_before_c := pg_temp.balance(c);
+  perform public.rib_game_commit_move(v_match, 0, '{"turn":1}', c, false, null);
+  perform pg_temp.expect((select move_seq::text from public.game_matches where id = v_match), '1', 'move committed');
+  begin
+    perform public.rib_game_commit_move(v_match, 0, '{"turn":1}', c, false, null);
+    raise exception 'FAIL stale move accepted';
+  exception when others then
+    get stacked diagnostics v_hint = pg_exception_hint;
+    perform pg_temp.expect(v_hint, 'stale_move', 'stale move rejected');
+  end;
+  perform public.rib_game_commit_move(v_match, 1, '{"turn":0}', null, true, a);
+  perform pg_temp.expect((select status || ':' || (winner_id = a)::text from public.game_matches where id = v_match), 'settled:true', 'server settles the pot');
+  perform pg_temp.expect((pg_temp.balance(a) - v_before_a)::text, '200', 'winner receives the pot');
+  perform pg_temp.expect((pg_temp.balance(c) - v_before_c)::text, '0', 'loser stake already spent');
+
+  -- Abuse limits and identity (0013).
+  for i in 1..3 loop
+    perform pg_temp.expect(public.rib_rate_limit_hit('test', a, 3, 60)::text, 'true', 'hit within limit');
+  end loop;
+  perform pg_temp.expect(public.rib_rate_limit_hit('test', a, 3, 60)::text, 'false', 'hit over limit is refused');
+  perform pg_temp.expect(pg_temp.as_user(a, format('select public.rib_rate_limit_hit(''test'', %L, 3, 60)', a)), '42501', 'rate limiter not callable by clients');
+  begin
+    insert into auth.users (id, email) values ('dddddddd-0000-0000-0000-000000000004', 'steam_76561197960287930@steam.local');
+    raise exception 'FAIL reserved email accepted';
+  exception when others then
+    get stacked diagnostics v_hint = pg_exception_hint;
+    perform pg_temp.expect(v_hint, 'email_reserved', 'client cannot claim a steam.local e-mail');
+  end;
+  insert into auth.users (id, email, raw_app_meta_data, raw_user_meta_data)
+  values ('dddddddd-0000-0000-0000-000000000004', 'steam_76561197960287930@steam.local',
+          '{"steamid":"76561197960287930"}', '{"username":"steam_76561197960287930"}');
+  perform pg_temp.expect('ok', 'ok', 'steam-auth can create the steam.local account');
+  perform pg_temp.expect(pg_temp.as_user(a, $q$update public.profiles set username = 'BOB' where id = 'aaaaaaaa-0000-0000-0000-000000000001'$q$), '23505', 'usernames unique regardless of case');
+  perform pg_temp.expect(pg_temp.as_user(a, 'select role from public.profiles limit 1'), '42501', 'role column not readable by players');
+  perform pg_temp.expect(pg_temp.as_user(a, 'select id, username, display_name from public.profiles limit 1'), 'ok', 'handles readable by players');
 
   -- Ledger integrity: every balance equals the sum of its ledger rows.
   perform pg_temp.expect(

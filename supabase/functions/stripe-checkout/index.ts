@@ -13,6 +13,7 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.117.2";
 import Stripe from "https://esm.sh/stripe@16?target=deno";
 import { corsHeaders, json } from "../_shared/cors.ts";
+import { withinRateLimit } from "../_shared/rate-limit.ts";
 import { validatePayCents, calculateRcoin } from "../_shared/validate.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
@@ -41,6 +42,10 @@ Deno.serve(async (req) => {
   });
   const { data: { user }, error: userErr } = await asUser.auth.getUser();
   if (userErr || !user) return json({ error: "unauthorized" }, 401);
+
+  // Abuse guard: per-user rate limit (service role; fails open on DB errors).
+  const limiter = createClient(SUPABASE_URL, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!, { auth: { persistSession: false } });
+  if (!(await withinRateLimit(limiter, "checkout", user.id))) return json({ error: "rate_limited" }, 429);
 
   // 2) Validate the amount (allowlist a plain integer number of cents).
   let payload: { pay_cents?: unknown } = {};

@@ -39,8 +39,10 @@ Scopes: `web`, `console`, `games`, `auth`, `db`, `functions`, `ci`, `docs`.
 - Database changes: add a **new** migration (never edit a shipped one), keep it
   idempotent, use `using hint = '<code>'` for every user-facing error and map the
   hint in `src/scripts/lib/errors.js`, and extend `supabase/tests/rpc-smoke.test.sql`.
-- Staked games: a game may be added to `STAKEABLE_GAME_IDS` only together with
-  the matching allow-list change in `rib_game_create`.
+- Staked games: a game becomes stakeable by adding its pure rules to
+  `supabase/functions/_shared/game-rules/index.js` together with the matching
+  allow-list change in `rib_game_create` (a unit test enforces the match). Only
+  deterministic, perfect-information games qualify.
 
 ## Code conventions
 

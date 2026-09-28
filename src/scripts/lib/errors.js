@@ -58,6 +58,11 @@ const HINTS = {
   state_too_large: "That move couldn't be sent. Please try again.",
   void_too_soon: "A match can only be voided after 2 hours without progress.",
   key_already_revoked: "That API key is already revoked.",
+  stale_move: "The board changed before your move arrived. It has been refreshed — try again.",
+  illegal_move: "That move isn't allowed. The board has been refreshed.",
+  rate_limited: "You're doing that too often. Please wait a moment and try again.",
+  too_many_keys: "You have the maximum number of active API keys. Revoke one first.",
+  email_reserved: "That e-mail address can't be used. Please use another.",
   wallet_frozen: "Your wallet is on hold after a reversed payment. Contact support to restore it.",
 };
 
@@ -197,4 +202,17 @@ export function notify(error, fallback, kind) {
   const text = friendlyError(error, fallback);
   if (typeof document !== "undefined" && document.body) toast(text, kind || "err");
   else if (kind !== "info" && kind !== "ok") alert(text);
+}
+
+/**
+ * Edge Functions answer errors as JSON `{ error: "<code>" }`. Resolve that code
+ * into an error object friendlyError() understands (codes double as hints).
+ */
+export function functionError(error) {
+  const ctx = error && error.context;
+  const read = ctx && typeof ctx.json === "function" ? ctx.json().catch(function () { return {}; }) : Promise.resolve({});
+  return read.then(function (payload) {
+    const code = payload && payload.error;
+    return { message: code || (error && error.message) || "", hint: code };
+  });
 }

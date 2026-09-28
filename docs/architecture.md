@@ -31,19 +31,26 @@ Vercel serves dist/ with CSP + HSTS; hashed assets are cached immutably.
 - **Stable error codes.** RPCs raise English messages with a `hint` code; the
   client maps hints to copy (`lib/errors.js`), so wording and language can change
   without breaking the UI.
-- **Pure game rules.** Each game in `games/catalog` exposes
-  `init/legal/apply/result/bot` without DOM access, so rules are property-tested
-  in Node and can later run server-side.
+- **Pure game rules.** Each game exposes `init/legal/apply/result/bot`
+  without DOM access. The stakeable ones live in
+  `supabase/functions/_shared/game-rules` (imported by the web app through the
+  `@game-rules` alias and by the `game-move` Edge Function), so the browser and
+  the server run the exact same rules.
 
 ## Roadmap to 1M users (ordered by risk)
 
-1. **Server-authoritative staked games.** Today moves are applied in the browser
-   and the server trusts the submitted state; payouts need both players to agree
-   (a loser can force a dispute → void). Move validation into an Edge Function
-   that runs the same pure rules, draws randomness server-side and settles
-   automatically. Keep hidden hands out of the shared row.
+1. ~~**Server-authoritative staked games.**~~ Done in 0012: the `game-move`
+   Edge Function validates every staked move with the shared pure rules
+   (`supabase/functions/_shared/game-rules`) and settles the pot atomically;
+   clients can no longer write boards or report results. Only deterministic,
+   perfect-information games are stakeable. **Next:** server-side randomness
+   and per-player hidden state to re-enable Crazy Eights and card games.
 2. **Realtime at scale.** Replace `postgres_changes` (RLS evaluated per
-   subscriber, full row images) with private Broadcast channels per match.
+   subscriber, full row images) with private Broadcast channels per match
+   (`realtime.broadcast_changes` trigger + RLS on `realtime.messages`). Kept on
+   `postgres_changes` for now on purpose: the transport only carries
+   server-validated state, and switching it must be verified on a staging
+   project first.
 3. **Tournament results.** Add a dispute / verification flow; the organizer can
    no longer award themself, but collusion through a second account is possible.
 4. ~~**Refunds and chargebacks.**~~ Done in 0011: Stripe refunds / disputes
@@ -55,5 +62,10 @@ Vercel serves dist/ with CSP + HSTS; hashed assets are cached immutably.
 6. **Operability.** Error tracking (hidden source maps are already emitted),
    uptime checks, Supabase branching for preview deployments, and Playwright
    end-to-end tests against a seeded staging project.
-7. **Migration baseline.** Squash 0001–0009 into a baseline once every
+7. **Account closure vs. financial records (decision needed).** Deleting an
+   `auth.users` row cascades to `wallets`, `wallet_ledger` and
+   `rcoin_purchases`. Switching those foreign keys to `RESTRICT` preserves the
+   audit trail but blocks deletes, so it must ship together with an
+   anonymizing account-closure flow agreed with legal (retention vs. GDPR).
+8. **Migration baseline.** Squash 0001–0009 into a baseline once every
    environment is on 0009, and add pgTAP tests alongside the smoke suite.
