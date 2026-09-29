@@ -180,7 +180,7 @@ bypasses the redirect and calls the API directly sees nothing that isn't theirs.
 1. Create a project at [supabase.com](https://supabase.com).
 2. **Apply the schema:** with the [Supabase CLI](https://supabase.com/docs/guides/cli),
    run `supabase link --project-ref <ref>` then `supabase db push` (applies
-   `0001_init.sql` through `0008_crypto.sql`). Or paste the migrations into the
+   every file in `supabase/migrations`, in order). Or paste the migrations into the
    SQL editor, in order — they are idempotent and safe to re-run.
 3. **Deploy the functions:**
    `supabase functions deploy issue-api-key` and
@@ -231,3 +231,17 @@ bypasses the redirect and calls the API directly sees nothing that isn't theirs.
    redirect URLs.
 
 Never commit `.env` (it is git-ignored); `.env.example` shows the shape.
+
+## Hardening since 0009 (summary)
+
+| Migration | What it enforces |
+|-----------|------------------|
+| 0009 | Test top-ups off by default; internal money functions and money tables unreachable by client roles; atomic funds check; deterministic wallet lock order; English errors with stable `hint` codes |
+| 0010 | Sign-up never trusts a client-supplied role |
+| 0011 | Stuck escrow expires and refunds; refunded/disputed top-ups are reversed and a shortfall freezes the wallet |
+| 0012 | Staked games are server-authoritative (`game-move` validates every move; clients can't write boards or results) |
+| 0013 | Per-user rate limits; `@steam.local` identities reserved for `steam-auth`; case-insensitive usernames; handles readable, roles not |
+| 0014–0017 | Player stats, ranking and challenge lobby RPCs (authenticated only) |
+| 0018 | Ranking snapshot is server-only and single-flight; ranking counts only server-validated games; 10-minute turn clock (a stalled player loses instead of forcing a refund) |
+
+`supabase/tests/rpc-smoke.test.sql` asserts these properties on every CI run.

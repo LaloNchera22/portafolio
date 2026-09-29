@@ -35,7 +35,12 @@ function setText(id, text) {
 export function refreshWallet() {
   return session.client.from("wallets").select("test_balance_cents, test_locked_cents").eq("user_id", session.uid).single()
     .then(function (r) {
-      const w = r.data || { test_balance_cents: 0, test_locked_cents: 0 };
+      // Never show a made-up zero: on failure keep the last known balance.
+      if (r.error || !r.data) {
+        if (session.balanceCents == null) setText("wallet-chip", "— rcoin");
+        return null;
+      }
+      const w = r.data;
       session.balanceCents = w.test_balance_cents;
       document.dispatchEvent(new CustomEvent("rib:balance", { detail: w.test_balance_cents }));
       setText("wallet-chip", formatRcoin(w.test_balance_cents));
@@ -45,7 +50,8 @@ export function refreshWallet() {
       setText("wallet-usd", formatUsd(w.test_balance_cents));
       setText("dev-balance", formatRcoin(w.test_balance_cents));
       return w;
-    });
+    })
+    .catch(function () { return null; });
 }
 
 export function loadLedger() {
@@ -80,6 +86,7 @@ export function updatePurchaseQuote() {
 function updateWithdrawQuote() {
   let amount = parseFloat(String($("withdraw-amount").value).replace(",", "."));
   if (!isFinite(amount) || amount < 0) amount = 0;
+  // Whole rcoin only (the server rounds), paid out 1:1.
   setText("withdraw-receive", "$" + Math.round(amount).toFixed(2));
 }
 
@@ -140,6 +147,11 @@ function withdraw(amountInput, msgNode, btn, onDone) {
 
 export function initWallet() {
   if (!$("buy-submit")) return;
+  // Coming back from a hosted checkout via the back button restores this page
+  // from the bfcache with the buy button still disabled.
+  window.addEventListener("pageshow", function (e) {
+    if (e.persisted) { $("buy-submit").disabled = false; $("wallet-msg").hidden = true; }
+  });
   $("buy-amount").addEventListener("input", function () {
     document.querySelectorAll('[data-chips="buy-amount"] button').forEach(function (x) { x.classList.remove("on"); });
     updatePurchaseQuote();
@@ -205,7 +217,10 @@ export function handleCheckoutReturn(goToPage) {
       tries++;
       refreshWallet();
       loadLedger();
-      if (tries >= 5) clearInterval(poll);
+      if (tries >= 5) {
+        clearInterval(poll);
+        showMessage($("wallet-msg"), "Still processing. Card payments usually land within a minute and crypto can take a few more; your activity updates as soon as it does.", true);
+      }
     }, 2000);
   } else if (result === "cancel") {
     goToPage("page-wallet");

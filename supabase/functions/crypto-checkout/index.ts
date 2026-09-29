@@ -82,7 +82,8 @@ Deno.serve(async (req) => {
     const url = body?.data?.hosted_url;
     if (!url) return json({ error: "crypto_error" }, 502);
     return json({ url });
-  } catch (_e) {
+  } catch (e) {
+    console.error("crypto-checkout: provider call failed", e instanceof Error ? e.message : String(e));
     return json({ error: "crypto_error" }, 502);
   }
 });

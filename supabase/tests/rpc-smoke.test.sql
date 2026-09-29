@@ -171,18 +171,24 @@ begin
   perform pg_temp.expect(pg_temp.as_user(a, 'select role from public.profiles limit 1'), '42501', 'role column not readable by players');
   perform pg_temp.expect(pg_temp.as_user(a, 'select id, username, display_name from public.profiles limit 1'), 'ok', 'handles readable by players');
 
-  -- Leaderboard (0014). From the games above:
-  --   carol: tournament +1000, lost a 100 table     → net +900, 1W 1L
-  --   alice: won challenge +1000, paid entry -1000, won table +100 → net +100, 2W
-  --   bob:   lost challenge -1000                    → net -1000, 1L
+  -- Leaderboard (0014-0018). Only server-validated staked games count:
+  --   alice won the 100 tictactoe table (+100, 1-0); carol lost it (-100, 0-1).
+  --   Challenges and tournament prizes are self-reported and don't rank.
+  perform public.refresh_player_rankings();
   perform pg_temp.expect(
     (select string_agg(username || ':' || net_cents || ':' || wins || '-' || losses, ',' order by rank)
        from public.rib_leaderboard('all', 10, 0)),
-    'carol:900:1-1,alice:100:2-0,bob:-1000:0-1', 'all-time leaderboard ranks by net winnings');
+    'alice:100:1-0,carol:-100:0-1', 'all-time leaderboard ranks verified results by net');
   perform pg_temp.expect(
-    (select count(*)::text from public.rib_leaderboard('week', 10, 0)), '3', 'weekly board has this week''s players');
-  perform set_config('request.jwt.claim.sub', a::text, true);
+    (select string_agg(username, ',') from public.rib_leaderboard('all', 1, 1)), 'carol', 'second page continues after rank 1');
+  perform pg_temp.expect(
+    (select count(*)::text from public.rib_leaderboard('week', 10, 0)), '2', 'weekly board has this week''s players');
+  perform set_config('request.jwt.claim.sub', c::text, true);
   perform pg_temp.expect((select rank::text from public.rib_my_standing('all')), '2', 'my standing shows my rank');
+  update public.player_rankings set rank_all = 0 where user_id = c;
+  perform pg_temp.expect((select rank::text from public.rib_my_standing('all')), '2', 'standing falls back to a live rank before the next refresh');
+  perform pg_temp.expect(pg_temp.as_user(a, 'select * from public.player_rankings'), '42501', 'ranking snapshot not readable by clients');
+  perform pg_temp.expect(pg_temp.as_user(a, 'select public.refresh_player_rankings()'), '42501', 'ranking refresh not callable by clients');
   perform pg_temp.expect(pg_temp.as_user(a, 'select * from public.player_stats'), '42501', 'raw stats not readable by clients');
 
   -- Challenge lobby (0014).
@@ -207,6 +213,34 @@ begin
     '1', 'second page returns the tied row');
   perform pg_temp.expect(
     (select count(*)::text from public.rib_open_challenges('%', null, null, null, 30)), '0', 'search treats % literally');
+
+  -- Turn clock (0018): a player who stops moving loses on time.
+  perform pg_temp.expect(pg_temp.as_user(a, 'select public.rib_game_create(''connect4'', 100, ''{}'')'), 'ok', 'alice opens a timed table');
+  select id into v_match from public.game_matches where host_id = a and status = 'open' order by created_at desc limit 1;
+  perform pg_temp.expect(pg_temp.as_user(c, format('select public.rib_game_join(%L, null)', v_match)), 'ok', 'carol joins the timed table');
+  perform pg_temp.expect((select (turn_deadline > now())::text from public.game_matches where id = v_match), 'true', 'joining starts the host''s clock');
+  perform pg_temp.expect(pg_temp.as_user(c, format('select public.rib_game_claim_timeout(%L)', v_match)), 'not_timed_out', 'cannot claim while the clock runs');
+  perform pg_temp.expect(pg_temp.as_user(c, format('select public.rib_game_void(%L)', v_match)), 'use_timeout_claim', 'timed matches cannot be voided for a refund');
+  update public.game_matches set turn_deadline = now() - interval '1 minute' where id = v_match;
+  begin
+    perform public.rib_game_commit_move(v_match, 0, '{"turn":1}', c, false, null);
+    raise exception 'FAIL late move accepted';
+  exception when others then
+    get stacked diagnostics v_hint = pg_exception_hint;
+    perform pg_temp.expect(v_hint, 'turn_timed_out', 'a move after the deadline is refused');
+  end;
+  perform pg_temp.expect(pg_temp.as_user(a, format('select public.rib_game_claim_timeout(%L)', v_match)), 'not_timed_out', 'the late player cannot claim');
+  v_before_c := pg_temp.balance(c);
+  perform pg_temp.expect(pg_temp.as_user(c, format('select public.rib_game_claim_timeout(%L)', v_match)), 'ok', 'the waiting player claims on time');
+  perform pg_temp.expect((select status || ':' || (winner_id = c)::text from public.game_matches where id = v_match), 'settled:true', 'claim settles the pot');
+  perform pg_temp.expect((pg_temp.balance(c) - v_before_c)::text, '200', 'the waiting player takes the pot');
+  -- The background job does the same for unclaimed matches.
+  perform pg_temp.as_user(c, 'select public.rib_game_create(''tictactoe'', 100, ''{}'')');
+  select id into v_match from public.game_matches where host_id = c and status = 'open' order by created_at desc limit 1;
+  perform pg_temp.as_user(a, format('select public.rib_game_join(%L, null)', v_match));
+  update public.game_matches set turn_deadline = now() - interval '5 minutes' where id = v_match;
+  perform pg_temp.expect(public.rib_forfeit_timeouts()::text, '1', 'forfeit job resolves the timed-out match');
+  perform pg_temp.expect((select (winner_id = a)::text from public.game_matches where id = v_match), 'true', 'the player on move forfeits');
 
   -- Ledger integrity: every balance equals the sum of its ledger rows.
   perform pg_temp.expect(

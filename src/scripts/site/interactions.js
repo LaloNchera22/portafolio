@@ -55,10 +55,15 @@ export function initSiteInteractions() {
     /* Mobile menu toggle */
     const toggle = nav.querySelector("[data-nav-toggle]");
     if (toggle) {
-      toggle.addEventListener("click", () => {
-        const open = nav.classList.toggle("is-open");
+      const setMenu = (open) => {
+        nav.classList.toggle("is-open", open);
         toggle.setAttribute("aria-expanded", String(open));
         document.body.style.overflow = open ? "hidden" : "";
+      };
+      toggle.addEventListener("click", () => setMenu(!nav.classList.contains("is-open")));
+      // Escape closes the menu and returns focus to the toggle.
+      document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape" && nav.classList.contains("is-open")) { setMenu(false); toggle.focus(); }
       });
       nav.querySelectorAll(".nav__link, .nav__links .btn").forEach((link) => {
         link.addEventListener("click", () => {
@@ -188,9 +193,13 @@ export function initSiteInteractions() {
     const panel = item.querySelector(".faq__a");
     if (!btn || !panel) return;
     btn.setAttribute("aria-expanded", "false");
+    if (btn.tagName === "BUTTON") btn.type = "button";
+    // A closed answer must not stay in the tab order or be read out.
+    panel.inert = true;
     btn.addEventListener("click", () => {
       const open = item.classList.toggle("is-open");
       btn.setAttribute("aria-expanded", String(open));
+      panel.inert = !open;
       panel.style.maxHeight = open ? panel.scrollHeight + "px" : "0px";
     });
   });
@@ -265,6 +274,7 @@ export function initSiteInteractions() {
   if (!reduceMotion) {
     const curtain = document.createElement("div");
     curtain.className = "curtain";
+    curtain.setAttribute("aria-hidden", "true");
     document.body.appendChild(curtain);
 
     /* Reveal on load */
@@ -286,6 +296,8 @@ export function initSiteInteractions() {
     };
 
     document.addEventListener("click", (e) => {
+      // Leave modified and middle clicks alone (open in new tab/window).
+      if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
       const link = e.target.closest("a");
       if (!link) return;
       const href = link.getAttribute("href");

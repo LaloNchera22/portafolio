@@ -20,6 +20,8 @@ const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const STRIPE_SECRET_KEY = Deno.env.get("STRIPE_SECRET_KEY") ?? "";
 const STRIPE_WEBHOOK_SECRET = Deno.env.get("STRIPE_WEBHOOK_SECRET") ?? "";
 
+const admin = createClient(SUPABASE_URL, SERVICE_ROLE_KEY, { auth: { persistSession: false } });
+
 const stripe = new Stripe(STRIPE_SECRET_KEY, {
   apiVersion: "2024-06-20",
   httpClient: Stripe.createFetchHttpClient(),
@@ -39,7 +41,8 @@ Deno.serve(async (req) => {
   let event: Stripe.Event;
   try {
     event = await stripe.webhooks.constructEventAsync(raw, sig, STRIPE_WEBHOOK_SECRET);
-  } catch (_e) {
+  } catch (e) {
+    console.error("stripe-webhook: signature verification failed", e instanceof Error ? e.message : String(e));
     return new Response("bad_signature", { status: 400 });
   }
 
@@ -61,17 +64,23 @@ Deno.serve(async (req) => {
         });
       }
 
-      if (userId && payCents !== null) {
-        const admin = createClient(SUPABASE_URL, SERVICE_ROLE_KEY, {
-          auth: { persistSession: false },
-        });
+      if (!userId || payCents === null) {
+        // A paid session we can't attribute or price: never acknowledge it
+        // silently. A 500 keeps it visible (and retried) in the Stripe dashboard.
+        console.error("stripe-webhook: paid session missing user or valid amount", session.id);
+        return new Response("unattributable_payment", { status: 500 });
+      }
+      {
         const { error } = await admin.rpc("rib_credit_rcoin_purchase", {
           p_user_id: userId,
           p_stripe_session_id: session.id,
           p_pay_cents: payCents,
         });
         // On a DB error, return 500 so Stripe retries (idempotency makes retries safe).
-        if (error) return new Response("credit_failed", { status: 500 });
+        if (error) {
+          console.error("stripe-webhook: credit failed", session.id, error.message);
+          return new Response("credit_failed", { status: 500 });
+        }
       }
     }
   }
@@ -87,17 +96,28 @@ Deno.serve(async (req) => {
     if (paymentIntent && !fullyRefunded) {
       console.warn("stripe-webhook: partial refund needs manual review", paymentIntent);
     } else if (paymentIntent) {
-      const sessions = await stripe.checkout.sessions.list({ payment_intent: paymentIntent, limit: 1 });
-      const sessionId = sessions.data[0]?.id;
-      if (sessionId) {
-        const admin = createClient(SUPABASE_URL, SERVICE_ROLE_KEY, { auth: { persistSession: false } });
+      let sessionId: string | undefined;
+      try {
+        const sessions = await stripe.checkout.sessions.list({ payment_intent: paymentIntent, limit: 1 });
+        sessionId = sessions.data[0]?.id;
+      } catch (e) {
+        console.error("stripe-webhook: session lookup failed", paymentIntent, e instanceof Error ? e.message : String(e));
+        return new Response("lookup_failed", { status: 500 });
+      }
+      if (!sessionId) {
+        // Not an rcoin checkout (or already gone): nothing to reverse, but say so.
+        console.warn("stripe-webhook: no checkout session for refunded payment", paymentIntent);
+      } else {
         const { error } = await admin.rpc("rib_reverse_rcoin_purchase", {
           p_provider: "stripe",
           p_ref: sessionId,
           p_reason: isDispute ? "chargeback" : "refund",
         });
         // Retry on DB errors; the RPC is idempotent per session.
-        if (error) return new Response("reversal_failed", { status: 500 });
+        if (error) {
+          console.error("stripe-webhook: reversal failed", sessionId, error.message);
+          return new Response("reversal_failed", { status: 500 });
+        }
       }
     }
   }

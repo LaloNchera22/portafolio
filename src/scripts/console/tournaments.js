@@ -37,6 +37,8 @@ export function loadTournaments() {
       const ids = tournaments.map(function (t) { return t.id; });
       session.client.from("tournament_entries").select("tournament_id, user_id, placement").in("tournament_id", ids)
         .then(function (er) {
+          // Without entries we can't show who joined; don't render a wrong state.
+          if (er.error) { list.innerHTML = '<p class="muted">Couldn\'t load tournament entries. Try again in a moment.</p>'; return; }
           const entries = er.data || [];
           const byTournament = {};
           entries.forEach(function (e) { (byTournament[e.tournament_id] = byTournament[e.tournament_id] || []).push(e); });
@@ -104,11 +106,11 @@ function render(tournaments, byTournament) {
 function callTournamentRpc(fn, args, btn) {
   if (btn) btn.disabled = true;
   session.client.rpc(fn, args).then(function (r) {
-    if (r.error) { showError(errorText(r.error, "Couldn't complete the action.")); if (btn) btn.disabled = false; return; }
+    if (r.error) { showError(errorText(r.error, "Couldn't complete the action.")); if (btn) btn.disabled = false; loadTournaments(); return; }
     $("tournament-msg").hidden = true;
     loadTournaments();
     refreshWallet();
-  }).catch(function () { if (btn) btn.disabled = false; });
+  }).catch(function () { if (btn) btn.disabled = false; showError("Network error. Check your connection and try again."); });
 }
 
 export function initTournaments() {

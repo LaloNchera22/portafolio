@@ -66,6 +66,12 @@ function loadLobby(append) {
     }
     renderLobby(rows.length === LOBBY_PAGE_SIZE);
     $("lobby-status").textContent = lobby.rows.length === 1 ? "1 open challenge" : lobby.rows.length + " open challenges";
+  }).catch(function () {
+    if (request !== lobby.request) return;
+    lobby.loading = false;
+    $("lobby-more").disabled = false;
+    $("challenge-open").setAttribute("aria-busy", "false");
+    if (!append) $("challenge-open").innerHTML = '<p class="muted">You\'re offline. The lobby loads when you reconnect.</p>';
   });
 }
 
@@ -118,6 +124,7 @@ function loadMine() {
     .order("created_at", { ascending: false })
     .limit(MINE_PAGE_SIZE)
     .then(function (r) {
+      if (r.error) { $("challenge-mine").innerHTML = '<p class="muted">Couldn\'t load your challenges. Try again in a moment.</p>'; return; }
       const rows = r.data || [];
       const ids = [];
       rows.forEach(function (c) { ids.push(c.creator_id, c.opponent_id, c.target_id); });
@@ -162,8 +169,9 @@ function actionsFor(c) {
   }
   if (c.status === "active") {
     if (myReport) return '<span class="tag">waiting for opponent</span>' + voidBtn;
+    const opponent = isCreator ? c.opponent_id : c.creator_id;
     return '<button type="button" class="btn btn--sm" data-won="' + esc(c.id) + '">I won</button>' +
-      '<button type="button" class="btn btn--sm" data-lost="' + esc(c.id) + '">I lost</button>' + voidBtn;
+      '<button type="button" class="btn btn--sm" data-lost="' + esc(c.id) + '" data-opponent="' + esc(opponent) + '">I lost</button>' + voidBtn;
   }
   if (c.status === "settled") return c.winner_id === session.uid ? WON_TAG : '<span class="tag revoked">lost</span>';
   if (c.status === "disputed") return '<span class="tag revoked">in dispute</span>' + voidBtn;
@@ -176,17 +184,25 @@ function callChallengeRpc(fn, args, btn, okText) {
     if (r.error) {
       showMessage($("challenge-msg"), errorText(r.error, "Couldn't complete the action."), false);
       if (btn) btn.disabled = false;
+      loadChallenges(); // someone else may have accepted or cancelled it
       return;
     }
     if (okText) showMessage($("challenge-msg"), okText, true);
     else $("challenge-msg").hidden = true;
     loadChallenges();
     refreshWallet();
-  }).catch(function () { if (btn) btn.disabled = false; });
+  }).catch(function () {
+    if (btn) btn.disabled = false;
+    showMessage($("challenge-msg"), "Network error. Check your connection and try again.", false);
+  });
 }
 
-function reportResult(id, winnerId, btn) {
-  callChallengeRpc("rib_challenge_report", { p_challenge_id: id, p_winner_id: winnerId }, btn);
+// Results are final once both players agree, so confirm before sending.
+function reportResult(id, winnerId, btn, won) {
+  const text = won ? "Report that you won? If your opponent reports the same, you take the pot."
+    : "Report that you lost? If your opponent reports the same, they take the pot.";
+  if (!window.confirm(text)) return;
+  callChallengeRpc("rib_challenge_report", { p_challenge_id: id, p_winner_id: winnerId }, btn, "Result sent. The pot is paid when both reports match.");
 }
 
 function acceptChallenge(btn) {
@@ -214,17 +230,10 @@ function wireRowActions(box) {
     });
   });
   box.querySelectorAll("[data-won]").forEach(function (b) {
-    b.addEventListener("click", function () { reportResult(b.getAttribute("data-won"), session.uid, b); });
+    b.addEventListener("click", function () { reportResult(b.getAttribute("data-won"), session.uid, b, true); });
   });
   box.querySelectorAll("[data-lost]").forEach(function (b) {
-    b.addEventListener("click", function () {
-      const id = b.getAttribute("data-lost");
-      session.client.from("challenges").select("creator_id, opponent_id").eq("id", id).single().then(function (r) {
-        if (r.error || !r.data) return;
-        const other = r.data.creator_id === session.uid ? r.data.opponent_id : r.data.creator_id;
-        reportResult(id, other, b);
-      });
-    });
+    b.addEventListener("click", function () { reportResult(b.getAttribute("data-lost"), b.getAttribute("data-opponent"), b, false); });
   });
 }
 

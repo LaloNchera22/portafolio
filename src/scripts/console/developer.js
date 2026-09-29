@@ -58,6 +58,7 @@ function initProjects() {
         $("project-name").value = "";
         $("project-msg").hidden = true;
         loadProjects();
+        loadDeveloperMetrics();
       })
       .catch(function () { showMessage($("project-msg"), "Network error. Try again.", false); })
       .finally(function () { btn.disabled = false; });
@@ -91,22 +92,32 @@ export function loadKeys() {
 }
 
 function revokeKey(id, btn) {
+  if (!window.confirm("Revoke this key? Apps using it stop working immediately. This can't be undone.")) return;
   btn.disabled = true;
   session.client.from("api_keys").update({ revoked_at: new Date().toISOString() }).eq("id", id)
     .then(function (r) {
       if (r.error) { btn.disabled = false; showMessage($("key-msg"), errorText(r.error, "Couldn't revoke the key."), false); return; }
       loadKeys();
+      loadDeveloperMetrics();
     })
-    .catch(function () { btn.disabled = false; });
+    .catch(function () { btn.disabled = false; showMessage($("key-msg"), "Network error. Try again.", false); });
 }
 
 function initKeys() {
   const form = $("key-form");
   $("key-new").addEventListener("click", function () { setVisible(form, true); $("key-reveal").hidden = true; $("key-name").focus(); });
-  $("key-cancel").addEventListener("click", function () { setVisible(form, false); $("key-msg").hidden = true; $("key-reveal").hidden = true; });
+  $("key-cancel").addEventListener("click", function () {
+    setVisible(form, false);
+    $("key-msg").hidden = true;
+    $("key-reveal").hidden = true;
+    $("key-plaintext").textContent = ""; // don't leave a secret in the DOM
+  });
   $("key-copy").addEventListener("click", function () {
     const text = $("key-plaintext").textContent || "";
-    if (navigator.clipboard) navigator.clipboard.writeText(text).then(function () { $("key-copy").textContent = "Copied"; }).catch(function () {});
+    if (!navigator.clipboard) { $("key-copy").textContent = "Select and copy"; return; }
+    navigator.clipboard.writeText(text)
+      .then(function () { $("key-copy").textContent = "Copied"; })
+      .catch(function () { $("key-copy").textContent = "Copy failed: select it manually"; });
   });
   form.addEventListener("submit", function (e) {
     e.preventDefault();
@@ -127,6 +138,7 @@ function initKeys() {
         $("key-reveal").hidden = false;
         $("key-name").value = "";
         loadKeys();
+        loadDeveloperMetrics();
       })
       .catch(function () { showMessage($("key-msg"), "Network error. Try again.", false); })
       .finally(function () { btn.disabled = false; });
@@ -136,9 +148,10 @@ function initKeys() {
 /* ---- metrics (real, derived from your account) --------------------------- */
 export function loadDeveloperMetrics() {
   session.client.from("projects").select("id", { count: "exact", head: true }).then(function (r) {
-    $("metric-projects").textContent = String(r.count || 0);
+    $("metric-projects").textContent = r.error ? "—" : String(r.count || 0);
   });
   session.client.from("api_keys").select("revoked_at").then(function (r) {
+    if (r.error) { $("metric-keys-total").textContent = "—"; $("metric-keys-active").textContent = "—"; return; }
     const rows = r.data || [];
     $("metric-keys-total").textContent = String(rows.length);
     $("metric-keys-active").textContent = String(rows.filter(function (k) { return !k.revoked_at; }).length);

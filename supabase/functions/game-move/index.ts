@@ -67,7 +67,8 @@ Deno.serve(async (req) => {
   });
   if (commitErr) {
     const code = commitErr.hint || "server_error";
-    return json({ error: code }, code === "stale_move" ? 409 : 500);
+    if (code === "server_error") console.error("game-move: commit failed", match.id, commitErr.message);
+    return json({ error: code }, code === "stale_move" || code === "turn_timed_out" ? 409 : 500);
   }
   return json({ match: committed });
 });

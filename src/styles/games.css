@@ -219,3 +219,9 @@
   .capp .gg-ttt__cell { font-size: 38px; }
   .capp .gg-man__pit.store { width: 40px; }
 }
+
+/* turn clock (staked tables) */
+.capp .gclock { display: flex; align-items: center; justify-content: center; gap: 12px; margin: -4px 0 12px; font-size: 13.5px; color: var(--c-dim); font-variant-numeric: tabular-nums; }
+.capp .gclock[hidden] { display: none; }
+.capp .gclock.is-low .gclock__time { color: var(--c-escrow, #ff8709); }
+.capp .gplay__pot.is-error { color: var(--c-bad, #ff5b5b); }
