@@ -6,7 +6,7 @@
 
   <!-- Primary SEO -->
   <title>Runinback — The Skill-Based Wagering Layer for Competitive Gaming</title>
-  <meta name="description" content="Runinback is a trustless, Solana-powered wagering layer for competitive games. Add skill-based match escrow and automated settlement in under 10 lines of code." />
+  <meta name="description" content="Runinback is a skill-based wagering layer for competitive games on Base. Add match escrow and automated settlement in under 10 lines of code." />
   <meta name="author" content="Runinback" />
   <meta name="robots" content="index, follow" />
   <meta name="theme-color" content="#0e100f" />
@@ -28,7 +28,7 @@
   <!-- Twitter -->
   <meta name="twitter:card" content="summary_large_image" />
   <meta name="twitter:title" content="Runinback — Skill-Based Wagering Layer for Competitive Gaming" />
-  <meta name="twitter:description" content="Trustless, Solana-powered match escrow and automated settlement for competitive games. Ship in under 10 lines." />
+  <meta name="twitter:description" content="Match escrow and automated settlement for competitive games, built for Base. Ship in under 10 lines." />
   <meta name="twitter:image" content="https://runinback.com/og-image.png" />
   <meta name="twitter:image:alt" content="Runinback — the wagering layer for competitive gaming" />
 
@@ -51,7 +51,7 @@
     "name": "Runinback",
     "applicationCategory": "DeveloperApplication",
     "operatingSystem": "Web",
-    "description": "A trustless, Solana-powered wagering layer that adds skill-based match escrow and automated settlement to competitive games.",
+    "description": "A skill-based wagering layer for competitive games that adds match escrow and automated settlement, built for Base.",
     "url": "https://runinback.com/",
     "image": "https://runinback.com/og-image.png",
     "publisher": {
@@ -168,7 +168,7 @@
           <div class="feature__body" data-rise="right" style="--d:.12s">
             <p class="lead muted">Drop in a challenge overlay that connects both players' wallets and locks the wager terms before the first frame renders.</p>
             <ul class="feature__list">
-              <li>Wallet connect for Solana &amp; embedded custodial accounts</li>
+              <li>Wallet connect for Base (USDC) &amp; embedded accounts</li>
               <li>Configurable stake, currency and match rules</li>
               <li>Anti-collusion checks baked into pairing</li>
             </ul>
@@ -204,7 +204,7 @@
             <ul class="feature__list">
               <li>Signed result submission from your backend</li>
               <li>Dispute window with cryptographic evidence</li>
-              <li>Sub-second payout once verified</li>
+              <li>Automatic payout once the result is verified</li>
             </ul>
             <a href="how-it-works.html" class="text-link">Explore settlement <span class="arrow">→</span></a>
           </div>
@@ -234,7 +234,7 @@
 
 <span class="tok-kw">const</span> match = <span class="tok-kw">await</span> Runinback.<span class="tok-fn">createMatch</span>({
   players: [<span class="tok-str">'player1_wallet'</span>, <span class="tok-str">'player2_wallet'</span>],
-  wager: { amount: <span class="tok-num">1</span>, currency: <span class="tok-str">'SOL'</span> }
+  wager: { amount: <span class="tok-num">1</span>, currency: <span class="tok-str">'USDC'</span> }
 });
 
 <span class="tok-kw">await</span> match.<span class="tok-fn">start</span>();

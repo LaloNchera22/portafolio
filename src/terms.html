@@ -64,7 +64,7 @@
         <p class="eyebrow" data-reveal>Legal</p>
         <h1 class="h-lg page-head__title" data-reveal>Terms &amp; Conditions</h1>
         <p class="lead" data-reveal>The agreement between you and Runinback for using our site, accounts and developer tools.</p>
-        <p class="legal__meta" data-reveal>Last updated: <span class="legal__ph">[effective date]</span> · Version 0.1 (draft)</p>
+        <p class="legal__meta" data-reveal>Last updated: <span class="legal__ph">[effective date]</span> · Version 0.2 (draft, pending legal review)</p>
       </div>
     </section>
 
@@ -86,7 +86,11 @@
               <li><a href="#eligibility">Eligibility</a></li>
               <li><a href="#accounts">Accounts &amp; security</a></li>
               <li><a href="#service">The service</a></li>
-              <li><a href="#wagering">Skill-based wagering &amp; funds</a></li>
+              <li><a href="#test-mode">Test mode &amp; rcoin</a></li>
+              <li><a href="#wagering">Skill-based play &amp; funds</a></li>
+              <li><a href="#rules">Matches, challenges &amp; tournaments</a></li>
+              <li><a href="#payments">Top-ups, refunds &amp; chargebacks</a></li>
+              <li><a href="#responsible">Responsible play</a></li>
               <li><a href="#acceptable-use">Acceptable use</a></li>
               <li><a href="#developer">Developer terms &amp; API</a></li>
               <li><a href="#ip">Intellectual property</a></li>
@@ -103,27 +107,50 @@
           <p>These Terms &amp; Conditions ("Terms") govern your access to and use of the Runinback website, accounts, console and application programming interfaces (together, the "Service"), operated by <span class="legal__ph">[legal entity name]</span> ("Runinback", "we", "us"). By creating an account, accessing or using the Service, you agree to be bound by these Terms and by our <a href="privacy.html">Privacy Policy</a> and <a href="cookies.html">Cookie Policy</a>. If you do not agree, do not use the Service.</p>
 
           <h2 id="eligibility">2. Eligibility</h2>
-          <p>You must be at least <span class="legal__ph">[minimum age]</span> years old, or the age of majority in your jurisdiction, whichever is higher, to use the Service. Skill-based wagering is prohibited in some regions; you are responsible for ensuring that your use of the Service is lawful where you live. We may restrict access from certain jurisdictions.</p>
+          <p>You must be at least 18 years old, or the age of majority in your jurisdiction, whichever is higher, to use the Service. You confirm this, and that playing skill-based games for stakes is lawful where you live, when you create an account; we record that confirmation. Skill-based wagering is prohibited in some regions; you are responsible for ensuring that your use of the Service is lawful where you live. We may restrict access from certain jurisdictions.</p>
           <p>By using the Service you represent that you are not located in, or a resident of, any country or territory in which the Service is prohibited by <span class="legal__ph">[applicable law / sanctions]</span>.</p>
 
           <h2 id="accounts">3. Accounts &amp; security</h2>
           <p>To use most features you must create an account. You agree to provide accurate information and to keep it current. You are responsible for all activity under your account and for keeping your credentials secure.</p>
-          <p>Runinback is <strong>non-custodial by design</strong>: we never hold your funds or your private keys. You are solely responsible for safeguarding your wallet, keys and recovery material. Loss of your keys may result in permanent, unrecoverable loss of access to your funds.</p>
+          <p>One account per person. Creating or using several accounts to play against yourself, to move rcoin between your own accounts or to influence rankings or tournaments is prohibited and may lead to suspension and the reversal of affected results.</p>
 
           <h2 id="service">4. The service</h2>
-          <p>Runinback provides infrastructure for trustless, skill-based wagering in competitive games — including matchmaking, programmable escrow, settlement and developer tooling. The Service connects to on-chain smart contracts on <span class="legal__ph">[target network]</span>. On-chain transactions are final and irreversible once confirmed.</p>
+          <p>Runinback provides infrastructure for skill-based play in competitive games — including matchmaking, escrow of stakes, settlement, rankings and developer tooling. The production escrow is planned to run on smart contracts on Base; on-chain transactions are final and irreversible once confirmed. Until then, and during test mode, escrow and settlement are performed by Runinback's own systems as described below.</p>
           <p>We may add, change or remove features at any time. We do not guarantee uninterrupted or error-free operation.</p>
 
-          <h2 id="wagering">5. Skill-based wagering &amp; funds</h2>
-          <p>Matches offered through the Service are intended to be resolved by player skill. Outcomes and settlement are governed by the relevant smart contracts and by the rules of the game or integration you take part in. You are responsible for understanding those rules before you stake.</p>
+          <h2 id="test-mode">5. Test mode &amp; rcoin</h2>
+          <p>The Service currently runs in <strong>test mode</strong>. Balances are denominated in <strong>rcoin</strong>, an in-platform unit (1 rcoin is displayed as US$1). In test mode:</p>
           <ul>
-            <li>Funds placed into escrow are controlled by smart contracts, not by Runinback.</li>
-            <li>Fees, if any, are disclosed at the point of use.</li>
+            <li>rcoin balances are <strong>simulated, have no cash value and cannot be exchanged for money</strong>, unless and until we announce real-money play in your jurisdiction under updated terms.</li>
+            <li>Runinback holds and records balances in its own ledger (it is custodial during test mode). Stakes locked in a match, challenge or tournament are held in escrow in that ledger until the result settles.</li>
+            <li>Real-money play will start only after legal review, may not be available everywhere, and will be governed by the version of these Terms in force at that time.</li>
+          </ul>
+
+          <h2 id="wagering">6. Skill-based play &amp; funds</h2>
+          <p>Matches offered through the Service are intended to be resolved by player skill. You are responsible for understanding the rules of a game before you stake.</p>
+          <ul>
+            <li>A 5% fee is charged once when you buy rcoin (for example, $100 buys 95 rcoin). There is no fee on stakes, pots or withdrawals. Any other fee is disclosed before you confirm an action.</li>
+            <li>Both players stake the same amount; the winner receives both stakes. A draw returns each stake.</li>
             <li>Runinback does not guarantee the conduct of any counterparty, game or third-party integration.</li>
             <li>You are responsible for any taxes arising from your activity.</li>
           </ul>
 
-          <h2 id="acceptable-use">6. Acceptable use</h2>
+          <h2 id="rules">7. Matches, challenges &amp; tournaments</h2>
+          <ul>
+            <li><strong>Staked games</strong> played in the console are validated move by move by our servers, and the pot is settled automatically when the game ends or a player resigns.</li>
+            <li><strong>Turn clock.</strong> Each move in a staked game must be made within the time shown (currently 10 minutes). If a player runs out of time, the opponent may claim the win, and otherwise the match is awarded to the opponent automatically.</li>
+            <li><strong>Challenges</strong> (games played outside the console) are settled when both players report the same result. If the reports conflict, or no result is reported, the stakes stay in escrow and can be returned to both players after the period shown in the console; abandoned or unaccepted challenges expire and are refunded.</li>
+            <li><strong>Tournaments.</strong> The organizer may not enter their own paid tournament, may not be declared the winner, and may only finish a tournament that has the minimum number of entrants. The prize is held for a review period after the organizer declares a winner, during which any entrant may dispute the result; disputed prizes are reviewed and may be paid, reassigned or refunded to entrants.</li>
+            <li><strong>Rankings</strong> count only results validated by our servers. We may correct or remove results obtained through collusion, multiple accounts or other abuse.</li>
+          </ul>
+
+          <h2 id="payments">8. Top-ups, refunds &amp; chargebacks</h2>
+          <p>rcoin top-ups are processed by our payment providers (card via Stripe; crypto via Coinbase Commerce). If a payment is refunded or disputed, we reverse the corresponding rcoin. If that rcoin was already used, the remaining balance is debited and the account may be restricted from staking and withdrawing until the shortfall is resolved.</p>
+
+          <h2 id="responsible">9. Responsible play</h2>
+          <p>Only stake what you can afford to lose. You can stop playing at any time; to close your account or to request a break, contact <a href="mailto:support@runinback.com">support@runinback.com</a>. If gaming stops being fun, seek help from a local support service in your country.</p>
+
+          <h2 id="acceptable-use">10. Acceptable use</h2>
           <p>You agree not to:</p>
           <ul>
             <li>Use the Service for any unlawful purpose or in violation of any applicable law, including gambling, financial or sanctions laws.</li>
@@ -134,28 +161,28 @@
             <li>Reverse engineer the Service except to the extent that restriction is prohibited by law.</li>
           </ul>
 
-          <h2 id="developer">7. Developer terms &amp; API</h2>
+          <h2 id="developer">11. Developer terms &amp; API</h2>
           <p>If you access the API or SDK, you agree to use API keys only as permitted, to keep them confidential, and to comply with any rate limits and documentation. We may revoke keys that are misused. You are responsible for your integration and for the users you bring to the Service through it.</p>
 
-          <h2 id="ip">8. Intellectual property</h2>
+          <h2 id="ip">12. Intellectual property</h2>
           <p>The Service, including its software, design, logos and content, is owned by Runinback or its licensors and is protected by intellectual-property laws. We grant you a limited, non-exclusive, non-transferable licence to use the Service in accordance with these Terms. Open-source components remain under their own licences.</p>
 
-          <h2 id="disclaimers">9. Disclaimers</h2>
+          <h2 id="disclaimers">13. Disclaimers</h2>
           <p>The Service is provided <strong>"as is" and "as available"</strong>, without warranties of any kind, whether express or implied, including fitness for a particular purpose, non-infringement, and uninterrupted or secure operation. Blockchain networks, wallets and third-party integrations are outside our control. Nothing in these Terms is financial, legal or tax advice.</p>
 
-          <h2 id="liability">10. Limitation of liability</h2>
+          <h2 id="liability">14. Limitation of liability</h2>
           <p>To the maximum extent permitted by law, Runinback and its affiliates will not be liable for any indirect, incidental, special, consequential or punitive damages, or for any loss of funds, profits, data or goodwill, arising from your use of the Service. Our total liability for any claim is limited to <span class="legal__ph">[liability cap]</span>. Some jurisdictions do not allow certain limitations, so some of these may not apply to you.</p>
 
-          <h2 id="termination">11. Suspension &amp; termination</h2>
+          <h2 id="termination">15. Suspension &amp; termination</h2>
           <p>We may suspend or terminate your access at any time if we believe you have violated these Terms or applicable law, or to protect the Service or other users. You may stop using the Service at any time. Provisions that by their nature should survive termination will survive.</p>
 
-          <h2 id="changes">12. Changes to these terms</h2>
+          <h2 id="changes">16. Changes to these terms</h2>
           <p>We may update these Terms from time to time. When we do, we will revise the "Last updated" date and, for material changes, provide reasonable notice. Your continued use of the Service after changes take effect means you accept the revised Terms.</p>
 
-          <h2 id="law">13. Governing law</h2>
+          <h2 id="law">17. Governing law</h2>
           <p>These Terms are governed by the laws of <span class="legal__ph">[governing jurisdiction]</span>, without regard to conflict-of-law rules. Any dispute will be subject to <span class="legal__ph">[dispute resolution / venue]</span>.</p>
 
-          <h2 id="contact">14. Contact</h2>
+          <h2 id="contact">18. Contact</h2>
           <p>Questions about these Terms can be sent to <a href="mailto:legal@runinback.com">legal@runinback.com</a>, or to <span class="legal__ph">[registered company name and address]</span>.</p>
 
         </div>

@@ -14,7 +14,7 @@
   <meta property="og:type" content="website" />
   <meta property="og:site_name" content="Runinback" />
   <meta property="og:title" content="How Runinback works — the trustless match engine" />
-  <meta property="og:description" content="Pairing, escrow, verification and instant settlement — the full non-custodial wagering loop explained." />
+  <meta property="og:description" content="Pairing, escrow, verification and automatic settlement — the full skill-based wagering loop explained." />
   <meta property="og:url" content="https://runinback.com/how-it-works.html" />
   <meta property="og:image" content="https://runinback.com/og-image.png" />
   <meta property="og:image:type" content="image/png" />
@@ -82,7 +82,7 @@
       <div class="shell">
         <p class="eyebrow" data-reveal>The engine</p>
         <h1 class="h-lg page-head__title" data-reveal>A trustless loop from pairing to payout.</h1>
-        <p class="lead" data-reveal>No treasury. No manual payouts. No custody risk. Runinback runs every wagered match through the same verifiable four-step path, secured by an on-chain program.</p>
+        <p class="lead" data-reveal>No manual payouts and no treasury on your side. Runinback runs every wagered match through the same verifiable four-step path, designed to settle on-chain on Base.</p>
       </div>
     </section>
 
@@ -96,7 +96,7 @@
             <div class="step__num">01</div>
             <div>
               <h2 class="step__title"><span class="label--match" style="color:var(--accent-match)">Matchmaking</span> — pair &amp; agree</h2>
-              <p class="step__text">Both players connect a wallet (native Solana or an embedded custodial account) and confirm the stake, currency and match rules through a drop-in challenge overlay. Anti-collusion heuristics run before a match is ever created.</p>
+              <p class="step__text">Both players connect a wallet (any Base wallet or an embedded account) and confirm the stake, currency and match rules through a drop-in challenge overlay. Anti-collusion heuristics run before a match is ever created.</p>
             </div>
           </div>
           <div class="step" data-reveal>
@@ -134,7 +134,7 @@
         <div class="grid grid--3">
           <div class="card" data-reveal style="--card-accent:var(--accent-brand)">
             <div class="card__icon"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg></div>
-            <h3 class="card__title">Non-custodial by design</h3>
+            <h3 class="card__title">You never touch player funds</h3>
             <p class="card__text">You never touch player funds, so you avoid money-transmitter exposure and the operational weight of a payments stack.</p>
           </div>
           <div class="card" data-reveal style="--card-accent:var(--accent-match)">
@@ -145,7 +145,7 @@
           <div class="card" data-reveal style="--card-accent:var(--accent-settle)">
             <div class="card__icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M13 2L4 14h6l-1 8 9-12h-6Z"/></svg></div>
             <h3 class="card__title">Instant &amp; automatic</h3>
-            <p class="card__text">No support tickets, no batch payouts. The oracle settles the moment a result is verified, sub-second on Solana.</p>
+            <p class="card__text">No support tickets, no batch payouts. The oracle settles the moment a result is verified, paid out on Base.</p>
           </div>
         </div>
       </div>
@@ -161,7 +161,7 @@
         <div data-reveal>
           <div class="faq__item" data-faq>
             <button class="faq__q">Do you ever hold player money? <span class="faq__icon" aria-hidden="true"></span></button>
-            <div class="faq__a"><p>No. Stakes go directly into an on-chain escrow program. Runinback coordinates the match and settlement logic but is never a custodian of funds.</p></div>
+            <div class="faq__a"><p>In production, stakes are designed to sit in an on-chain escrow contract on Base that neither player nor Runinback can move until the result is verified. Today the platform runs in test mode: rcoin balances are simulated, have no cash value and are recorded in Runinback's own ledger.</p></div>
           </div>
           <div class="faq__item" data-faq>
             <button class="faq__q">What stops someone from faking a win? <span class="faq__icon" aria-hidden="true"></span></button>
@@ -169,7 +169,7 @@
           </div>
           <div class="faq__item" data-faq>
             <button class="faq__q">Which chains and currencies are supported? <span class="faq__icon" aria-hidden="true"></span></button>
-            <div class="faq__a"><p>The developer preview runs on Solana with SOL and major SPL tokens. Additional chains are on the roadmap — join the waitlist to help prioritize.</p></div>
+            <div class="faq__a"><p>Runinback is built for Base: stakes and payouts will settle in USDC on Base. Today the platform runs in test mode with simulated rcoin (1 rcoin = $1), and card or crypto top-ups are in test mode until legal review clears real-money play.</p></div>
           </div>
           <div class="faq__item" data-faq>
             <button class="faq__q">What happens if a match is interrupted? <span class="faq__icon" aria-hidden="true"></span></button>
