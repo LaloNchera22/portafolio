@@ -171,6 +171,43 @@ begin
   perform pg_temp.expect(pg_temp.as_user(a, 'select role from public.profiles limit 1'), '42501', 'role column not readable by players');
   perform pg_temp.expect(pg_temp.as_user(a, 'select id, username, display_name from public.profiles limit 1'), 'ok', 'handles readable by players');
 
+  -- Leaderboard (0014). From the games above:
+  --   carol: tournament +1000, lost a 100 table     → net +900, 1W 1L
+  --   alice: won challenge +1000, paid entry -1000, won table +100 → net +100, 2W
+  --   bob:   lost challenge -1000                    → net -1000, 1L
+  perform pg_temp.expect(
+    (select string_agg(username || ':' || net_cents || ':' || wins || '-' || losses, ',' order by rank)
+       from public.rib_leaderboard('all', 10, 0)),
+    'carol:900:1-1,alice:100:2-0,bob:-1000:0-1', 'all-time leaderboard ranks by net winnings');
+  perform pg_temp.expect(
+    (select count(*)::text from public.rib_leaderboard('week', 10, 0)), '3', 'weekly board has this week''s players');
+  perform set_config('request.jwt.claim.sub', a::text, true);
+  perform pg_temp.expect((select rank::text from public.rib_my_standing('all')), '2', 'my standing shows my rank');
+  perform pg_temp.expect(pg_temp.as_user(a, 'select * from public.player_stats'), '42501', 'raw stats not readable by clients');
+
+  -- Challenge lobby (0014).
+  perform pg_temp.as_user(a, 'select public.rib_challenge_create(''Valorant'', ''1v1'', 300, null)');
+  perform set_config('request.jwt.claim.sub', c::text, true);
+  perform pg_temp.expect(
+    (select string_agg(game || ':' || creator_username, ',') from public.rib_open_challenges('valo', null, null, null, 30)),
+    'Valorant:alice', 'lobby filters by game and shows the creator handle');
+  perform pg_temp.expect(
+    (select count(*)::text from public.rib_open_challenges(null, 500, null, null, 30)), '0', 'lobby filters by minimum stake');
+  perform set_config('request.jwt.claim.sub', a::text, true);
+  perform pg_temp.expect(
+    (select count(*)::text from public.rib_open_challenges(null, null, null, null, 30)), '0', 'lobby hides my own challenges');
+
+  -- Keyset pagination never skips rows that share a timestamp.
+  perform pg_temp.as_user(a, 'select public.rib_challenge_create(''Chess'', ''1v1'', 100, null)');
+  update public.challenges set created_at = '2026-09-01T00:00:00Z' where status = 'open' and creator_id = a;
+  perform set_config('request.jwt.claim.sub', c::text, true);
+  select id into v_match from public.rib_open_challenges(null, null, null, null, 1);
+  perform pg_temp.expect(
+    (select count(*)::text from public.rib_open_challenges(null, null, null, '2026-09-01T00:00:00Z', 1, v_match)),
+    '1', 'second page returns the tied row');
+  perform pg_temp.expect(
+    (select count(*)::text from public.rib_open_challenges('%', null, null, null, 30)), '0', 'search treats % literally');
+
   -- Ledger integrity: every balance equals the sum of its ledger rows.
   perform pg_temp.expect(
     (select count(*)::text from public.wallets w

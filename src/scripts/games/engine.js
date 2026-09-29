@@ -185,6 +185,12 @@ function renderLobby() {
   }
   drawGrid();
 
+  // your own staked tables: resume a live match, or cancel a table nobody joined
+  var mineWrap = el("div", "games-open");
+  mineWrap.id = "games-mine";
+  host.appendChild(mineWrap);
+  loadMyTables();
+
   // open online tables to join (staked, if backend live) — plain list, no decoration
   var openWrap = el("div", "games-open");
   openWrap.id = "games-open";
@@ -407,6 +413,55 @@ function authoritativeState(match, mod) {
   return match && match.move_seq > 0 && st && typeof st.turn === "number" ? st : mod.init();
 }
 
+function loadMyTables() {
+  var box = h("games-mine"); if (!box) return;
+  if (!CTX.configured) { box.innerHTML = ""; return; }
+  CTX.client.from("game_matches").select("*")
+    .or("host_id.eq." + CTX.UID + ",guest_id.eq." + CTX.UID)
+    .in("status", ["open", "active"])
+    .order("created_at", { ascending: false }).limit(20)
+    .then(function (r) {
+      var rows = (r.data || []).filter(function (m) { return MODULES[m.game]; });
+      if (r.error || !rows.length) { box.innerHTML = ""; return; }
+      box.innerHTML = '<div class="sec__head"><h2>Your tables</h2><span class="sec__note">staked, in progress</span></div>';
+      var panel = el("div", "panel");
+      rows.forEach(function (m) {
+        var mod = MODULES[m.game];
+        var seat = m.host_id === CTX.UID ? 0 : 1;
+        var row = el("div", "row row--challenge");
+        var waiting = m.status === "open";
+        var yourTurn = !waiting && m.turn_id === CTX.UID;
+        row.innerHTML = '<div><div class="row__name">' + esc(mod.name) + ' · ' + rcoin(m.stake_cents * 2) + ' rcoin pot</div><div class="row__meta">' +
+          (waiting ? "waiting for a player" : (yourTurn ? "your turn" : "opponent's turn")) + '</div></div>';
+        var act = el("div", "row__act");
+        var resume = el("button", "btn btn--cta btn--sm", waiting ? "Open" : "Resume");
+        resume.addEventListener("click", function () { enterOnline(m, mod, seat, waiting ? "Waiting for a player to join…" : null); });
+        act.appendChild(resume);
+        if (waiting && seat === 0) {
+          var cancel = el("button", "btn btn--sm btn--danger", "Cancel");
+          cancel.addEventListener("click", function () { cancelTable(m, cancel, loadMyTables); });
+          act.appendChild(cancel);
+        }
+        row.appendChild(act); panel.appendChild(row);
+      });
+      box.appendChild(panel);
+    });
+}
+
+// Host only, before anyone joins: the stake goes straight back to the wallet.
+function cancelTable(match, btn, after) {
+  if (!window.confirm("Cancel this table? Your " + rcoin(match.stake_cents) + " rcoin stake goes back to your wallet.")) return;
+  btn.disabled = true;
+  CTX.client.rpc("rib_game_cancel", { p_match_id: match.id })
+    .then(function (r) {
+      if (r.error) { btn.disabled = false; notify(r.error, "We couldn't cancel this table. Please try again."); return; }
+      notify(null, "Table cancelled. Your stake is back in your wallet.", "ok");
+      if (CTX.refreshWallet) CTX.refreshWallet();
+      if (after) after();
+    })
+    .catch(function () { btn.disabled = false; });
+}
+
 function createOnline(gameId, stakeCents, btn) {
   if (!CTX.configured) return;
   var mod = MODULES[gameId];
@@ -460,7 +515,11 @@ function enterOnline(match, mod, seat, waitMsg) {
   var resign = el("button", "btn btn--sm btn--danger", "Resign");
   resign.hidden = true;
   resign.addEventListener("click", function () {
-    if (!online || online.match.status !== "active") return;
+    if (!online) return;
+    if (online.match.status === "open") {
+      return cancelTable(online.match, resign, function () { stopOnline(); renderLobby(); });
+    }
+    if (online.match.status !== "active") return;
     if (!window.confirm("Resign this match? Your opponent takes the pot.")) return;
     resign.disabled = true;
     sendToServer({ match_id: online.match.id, action: "resign" })
@@ -492,7 +551,8 @@ function enterOnline(match, mod, seat, waitMsg) {
     var st = online.state, m = online.match;
     board.innerHTML = "";
     over.hidden = true;
-    resign.hidden = m.status !== "active";
+    resign.hidden = !(m.status === "active" || (m.status === "open" && online.seat === 0));
+    resign.textContent = m.status === "open" ? "Cancel table" : "Resign";
     if (m.status === "open") { turnbar.textContent = waitMsg || "Waiting for a player to join…"; turnbar.className = "gturn opp"; mod.view(st, onlineApi(board, false)); return; }
     if (m.status !== "active") return finishOnline(m);
     if (mod.result(st)) {

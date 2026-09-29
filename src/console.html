@@ -28,9 +28,10 @@
           <img class="brand__word" src="/logo-word.png" width="56" height="13" alt="" />
         </a>
         <nav class="capp__tabs only-desktop" aria-label="Main">
-          <a data-page="page-games" aria-current="page">Play</a>
-          <a data-page="page-compete">Compete</a>
-          <a data-page="page-wallet">Wallet</a>
+          <a href="#" data-page="page-games" aria-current="page">Play</a>
+          <a href="#" data-page="page-compete">Compete</a>
+          <a href="#" data-page="page-ranking">Ranking</a>
+          <a href="#" data-page="page-wallet">Wallet</a>
         </nav>
         <div class="capp__end">
           <button type="button" class="wallet-chip" id="wallet-chip" data-page="page-wallet" title="Available balance (test mode)">0 rcoin</button>
@@ -45,8 +46,8 @@
         <div class="nm" id="acct-name">@player</div>
         <div class="n" id="acct-email">—</div>
       </div>
-      <a role="menuitem" data-page="page-profile">Profile <span class="chev">›</span></a>
-      <a role="menuitem" id="switch-to-developer">Switch to developer <span class="chev">Dev ›</span></a>
+      <a href="#" role="menuitem" data-page="page-profile">Profile <span class="chev">›</span></a>
+      <a href="#" role="menuitem" id="switch-to-developer">Switch to developer <span class="chev">Dev ›</span></a>
       <button type="button" role="menuitem" class="acct-menu__out" data-auth-signout>Log out</button>
     </div>
 
@@ -68,49 +69,67 @@
 
       <!-- ========================== COMPETE ========================== -->
       <section class="page" id="page-compete" hidden>
-        <div class="head"><div><p class="eyebrow">Stake · Escrow · Winner takes all</p><h1>Compete.</h1></div></div>
-        <div class="seg" id="compete-seg" role="tablist" aria-label="Compete">
-          <button type="button" role="tab" data-seg="challenges" aria-selected="true">1v1 Challenges</button>
-          <button type="button" role="tab" data-seg="tournaments" aria-selected="false">Tournaments</button>
+        <div class="head">
+          <div><p class="eyebrow">Stake · Escrow · Winner takes all</p><h1>Compete.</h1></div>
+          <div class="head__r"><button type="button" class="btn btn--cta btn--sm" id="challenge-new">New challenge</button></div>
+        </div>
+        <div class="seg" id="compete-seg" role="group" aria-label="Compete">
+          <button type="button" data-seg="lobby" aria-pressed="true">Lobby</button>
+          <button type="button" data-seg="mine" aria-pressed="false">My challenges</button>
+          <button type="button" data-seg="tournaments" aria-pressed="false">Tournaments</button>
         </div>
 
-        <!-- challenges -->
-        <div id="compete-challenges">
-          <div class="head head--tight">
-            <p class="muted lead-inline">Challenge anyone at your own game — set the stake, report the result,
-              escrow pays the winner.</p>
-            <button type="button" class="btn btn--cta btn--sm" id="challenge-new">New challenge</button>
+        <!-- new challenge -->
+        <form id="challenge-form" class="card-box challenge-form" hidden novalidate>
+          <h2 class="form-title">New challenge</h2>
+          <div class="field--row">
+            <div class="field"><label for="challenge-game">Game</label><input id="challenge-game" type="text" maxlength="40" placeholder="Valorant, CS2, FIFA…" autocomplete="off" /></div>
+            <div class="field"><label for="challenge-mode">Format</label><input id="challenge-mode" type="text" maxlength="40" placeholder="1v1" value="1v1" /></div>
           </div>
-          <form id="challenge-form" class="card-box" hidden>
-            <div class="field--row">
-              <div class="field"><label for="challenge-game">Game</label><input id="challenge-game" type="text" maxlength="40" placeholder="Valorant, CS2, FIFA…" /></div>
-              <div class="field"><label for="challenge-mode">Mode</label><input id="challenge-mode" type="text" maxlength="40" placeholder="1v1" value="1v1" /></div>
-            </div>
-            <div class="field">
-              <label>Stake</label>
-              <div class="chips" data-chips="challenge-stake">
-                <button type="button" data-amt="500">5</button>
-                <button type="button" data-amt="1000" class="on">10</button>
-                <button type="button" data-amt="2500">25</button>
-                <button type="button" data-amt="5000">50</button>
+          <fieldset class="stake" id="challenge-stake">
+            <legend>Your stake</legend>
+            <div class="stake__dial">
+              <button type="button" class="stake__step" data-step="-1" aria-label="Minus: lower the stake by 1 rcoin"><span aria-hidden="true">−</span></button>
+              <div class="stake__value">
+                <label for="challenge-stake-input" class="visually-hidden">Stake in rcoin</label>
+                <input id="challenge-stake-input" type="text" inputmode="numeric" pattern="[0-9]*" value="10" maxlength="4" autocomplete="off" aria-describedby="challenge-stake-help challenge-stake-error" />
+                <span class="stake__unit" aria-hidden="true">rcoin</span>
               </div>
+              <button type="button" class="stake__step" data-step="1" aria-label="Plus: raise the stake by 1 rcoin"><span aria-hidden="true">+</span></button>
             </div>
-            <div class="field"><label for="challenge-target">Opponent (optional)</label><input id="challenge-target" type="text" maxlength="24" placeholder="username — leave empty for an open challenge" /></div>
-            <div class="head__r">
-              <button type="submit" class="btn btn--cta" id="challenge-save">Create challenge</button>
-              <button type="button" class="btn" id="challenge-cancel">Cancel</button>
-            </div>
-            <p class="msg" id="challenge-msg" hidden></p>
-          </form>
+            <div class="chips stake__presets" data-stake-presets></div>
+            <p class="stake__summary" id="challenge-stake-help"></p>
+            <p class="stake__error" id="challenge-stake-error" role="alert"></p>
+          </fieldset>
+          <div class="field"><label for="challenge-target">Opponent (optional)</label><input id="challenge-target" type="text" maxlength="24" placeholder="Leave empty to post it in the lobby" autocomplete="off" /></div>
+          <div class="head__r">
+            <button type="submit" class="btn btn--cta" id="challenge-save">Post challenge</button>
+            <button type="button" class="btn" id="challenge-cancel">Cancel</button>
+          </div>
+        </form>
+        <p class="msg" id="challenge-msg" role="status" hidden></p>
 
+        <!-- lobby: every open challenge you can accept -->
+        <div id="compete-lobby">
+          <form class="lobby-filters" id="lobby-filters">
+            <input type="search" id="lobby-game" placeholder="Search a game" aria-label="Search a game" maxlength="40" autocomplete="off" />
+            <div class="chips" data-lobby-range role="group" aria-label="Stake">
+              <button type="button" data-range="any" class="on" aria-pressed="true">Any stake</button>
+              <button type="button" data-range="low" aria-pressed="false">Up to 5</button>
+              <button type="button" data-range="mid" aria-pressed="false">5 to 25</button>
+              <button type="button" data-range="high" aria-pressed="false">25 and up</button>
+            </div>
+          </form>
           <div class="sec">
-            <div class="sec__head"><h2>My challenges</h2></div>
-            <div id="challenge-mine"><p class="muted">Loading…</p></div>
+            <p class="visually-hidden" role="status" id="lobby-status"></p>
+            <div id="challenge-open" aria-busy="true"><p class="muted">Loading…</p></div>
+            <button type="button" class="btn btn--sm lobby-more" id="lobby-more" hidden>Show more</button>
           </div>
-          <div class="sec">
-            <div class="sec__head"><h2>Open challenges</h2><span class="sec__note">from other players</span></div>
-            <div id="challenge-open"><p class="muted">Loading…</p></div>
-          </div>
+        </div>
+
+        <!-- my challenges -->
+        <div id="compete-mine" hidden>
+          <div class="sec"><div id="challenge-mine"><p class="muted">Loading…</p></div></div>
         </div>
 
         <!-- tournaments -->
@@ -147,6 +166,22 @@
           </form>
           <div class="sec"><div id="tournament-list"><p class="muted">Loading…</p></div></div>
         </div>
+      </section>
+
+      <!-- ========================== RANKING ========================== -->
+      <section class="page" id="page-ranking" hidden>
+        <div class="head">
+          <div><p class="eyebrow">Net rcoin won</p><h1>Ranking.</h1></div>
+          <div class="seg seg--inline" id="ranking-period" role="group" aria-label="Ranking period">
+            <button type="button" data-period="week" aria-pressed="true">This week</button>
+            <button type="button" data-period="all" aria-pressed="false">All time</button>
+          </div>
+        </div>
+        <div class="standing" id="ranking-me" hidden></div>
+        <p class="visually-hidden" role="status" id="ranking-status"></p>
+        <div id="ranking-list" aria-busy="true"><p class="muted">Loading…</p></div>
+        <button type="button" class="btn btn--sm lobby-more" id="ranking-more" hidden>Show more</button>
+        <p class="testnote">Net rcoin won counts every settled game, challenge and tournament: pots and prizes won, minus stakes and entry fees lost. The weekly board resets every Monday (UTC).</p>
       </section>
 
       <!-- =========================== WALLET =========================== -->
@@ -234,6 +269,10 @@
             <p class="msg" id="profile-msg" hidden></p>
           </form>
         </div>
+        <div class="sec">
+          <div class="sec__head"><h2>Your record</h2><a class="sec__note" data-page="page-ranking" href="#">See the ranking</a></div>
+          <div class="statline" id="profile-stats"><p class="muted">Loading…</p></div>
+        </div>
       </section>
 
       <!-- ============================= DEV ============================= -->
@@ -255,11 +294,11 @@
           <div><span class="n" id="metric-keys-total">0</span><span class="k">keys issued</span></div>
         </div>
 
-        <div class="devnav" id="dev-nav" role="tablist" aria-label="Developer">
-          <a role="tab" data-dev="projects" aria-current="page">Projects</a>
-          <a role="tab" data-dev="keys">API keys</a>
-          <a role="tab" data-dev="payouts">Payouts</a>
-        </div>
+        <nav class="devnav" id="dev-nav" aria-label="Developer">
+          <a href="#" data-dev="projects" aria-current="page">Projects</a>
+          <a href="#" data-dev="keys">API keys</a>
+          <a href="#" data-dev="payouts">Payouts</a>
+        </nav>
 
         <!-- projects -->
         <div id="dev-projects">
@@ -335,13 +374,15 @@
 
     <!-- bottom nav (mobile) -->
     <nav class="capp__bnav only-mobile" aria-label="Main">
-      <a data-page="page-games" aria-current="page">
+      <a href="#" data-page="page-games" aria-current="page">
         <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="M8 12h4M10 10v4"/><circle cx="16" cy="11" r="1"/><circle cx="17.5" cy="13.5" r="1"/></svg><span>Play</span></a>
-      <a data-page="page-compete">
+      <a href="#" data-page="page-compete">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 21h8M12 17v4M6 4h12v5a6 6 0 0 1-12 0zM6 6H3v2a3 3 0 0 0 3 3M18 6h3v2a3 3 0 0 1-3 3"/></svg><span>Compete</span></a>
-      <a data-page="page-wallet">
+      <a href="#" data-page="page-ranking">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20V11h4v9M10 20V5h4v15M16 20v-6h4v6"/></svg><span>Ranking</span></a>
+      <a href="#" data-page="page-wallet">
         <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="6" width="18" height="13" rx="2.5"/><path d="M3 10h18"/><circle cx="16.5" cy="14" r="1.2"/></svg><span>Wallet</span></a>
-      <a data-page="page-developer">
+      <a href="#" data-page="page-developer">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 8l-4 4 4 4M15 8l4 4-4 4"/></svg><span>Dev</span></a>
     </nav>
   </div>

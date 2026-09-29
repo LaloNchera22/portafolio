@@ -7,6 +7,7 @@ import { friendlyError } from "../lib/errors.js";
 export const session = {
   client: null,
   uid: null,
+  balanceCents: null, // last known available balance (UI hints only; the server decides)
 };
 
 const usernameCache = {}; // user id -> username

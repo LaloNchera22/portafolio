@@ -36,6 +36,8 @@ export function refreshWallet() {
   return session.client.from("wallets").select("test_balance_cents, test_locked_cents").eq("user_id", session.uid).single()
     .then(function (r) {
       const w = r.data || { test_balance_cents: 0, test_locked_cents: 0 };
+      session.balanceCents = w.test_balance_cents;
+      document.dispatchEvent(new CustomEvent("rib:balance", { detail: w.test_balance_cents }));
       setText("wallet-chip", formatRcoin(w.test_balance_cents));
       if ($("games-balance")) $("games-balance").innerHTML = centsToRcoin(w.test_balance_cents) + " <small>rcoin</small>";
       setText("wallet-balance", formatRcoin(w.test_balance_cents));
