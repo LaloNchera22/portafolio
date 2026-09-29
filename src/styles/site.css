@@ -2171,3 +2171,59 @@ body[data-auth-scope] .nav {
   .cta-band__actions .btn { width: 100%; justify-content: center; }
   .terminal code { font-size: 12px; }
 }
+
+/* ==========================================================================
+   Micro-interactions (marketing + auth)
+   Each one answers something the visitor did. All of it is switched off by
+   the reduced-motion rule, and no transition animates `all`.
+   ========================================================================== */
+
+@keyframes ui-enter { from { opacity: 0; transform: translateY(6px); } }
+@keyframes ui-check { from { transform: rotate(45deg) scale(.4); opacity: 0; } }
+
+/* FAQ: the answer text settles in as the panel opens. */
+.faq__item.is-open .faq__a p { animation: ui-enter 0.35s var(--ease-out) 0.08s backwards; }
+
+/* Form fields: the label lights up with its field. */
+.field label { transition: color 0.2s var(--ease-out); }
+.field:focus-within label { color: var(--color-surface-cream); }
+
+/* Confirmation after a form hand-off rises in instead of appearing. */
+.form__success.is-visible { animation: ui-enter 0.35s var(--ease-out) backwards; }
+
+/* Checkbox: the tick draws in and the box presses. */
+.checkbox input { transition: border-color 0.2s, background-color 0.2s, transform 0.12s var(--ease-out); }
+.checkbox input:active { transform: scale(0.9); }
+.checkbox input:checked::after { animation: ui-check 0.2s var(--ease-out) backwards; }
+
+/* Mobile menu: links follow the panel in a short cascade. */
+@media (max-width: 640px) {
+  .nav.is-open .nav__links > * { animation: ui-enter 0.4s var(--ease-out) backwards; }
+  .nav.is-open .nav__links > :nth-child(1) { animation-delay: 0.10s; }
+  .nav.is-open .nav__links > :nth-child(2) { animation-delay: 0.14s; }
+  .nav.is-open .nav__links > :nth-child(3) { animation-delay: 0.18s; }
+  .nav.is-open .nav__links > :nth-child(4) { animation-delay: 0.22s; }
+}
+
+/* Code blocks: a quiet copy button that confirms in place. */
+.terminal__copy {
+  margin-left: auto;
+  display: inline-grid;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--color-surface-50);
+  background: none;
+  border: 1px solid var(--color-surface-25);
+  border-radius: var(--radius-full);
+  padding: 4px 12px;
+  min-height: 28px;
+  cursor: pointer;
+  transition: color 0.2s, border-color 0.2s, transform 0.12s var(--ease-out);
+}
+.terminal__copy:hover { color: var(--color-surface-cream); border-color: var(--color-surface-cream); }
+.terminal__copy:active { transform: scale(0.95); }
+.terminal__copy > span { grid-area: 1 / 1; transition: opacity 0.18s, transform 0.18s var(--ease-out), filter 0.18s; }
+.terminal__copy-done { opacity: 0; transform: scale(0.9); filter: blur(2px); color: var(--color-surface-cream); }
+.terminal__copy.is-done .terminal__copy-idle { opacity: 0; transform: scale(0.9); filter: blur(2px); }
+.terminal__copy.is-done .terminal__copy-done { opacity: 1; transform: none; filter: none; }
+@media (pointer: coarse) { .terminal__copy { min-height: 36px; } }

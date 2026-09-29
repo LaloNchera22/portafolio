@@ -149,7 +149,14 @@ function initKeys() {
     const text = $("key-plaintext").textContent || "";
     if (!navigator.clipboard) { $("key-copy").textContent = "Select and copy"; return; }
     navigator.clipboard.writeText(text)
-      .then(function () { $("key-copy").textContent = "Copied"; })
+      .then(function () {
+        // Confirm in place, then return to "Copy" so it can be used again.
+        const btn = $("key-copy");
+        btn.textContent = "Copied";
+        btn.classList.add("is-done");
+        clearTimeout(btn._reset);
+        btn._reset = setTimeout(function () { btn.textContent = "Copy"; btn.classList.remove("is-done"); }, 1800);
+      })
       .catch(function () { $("key-copy").textContent = "Copy failed: select it manually"; });
   });
   form.addEventListener("submit", function (e) {

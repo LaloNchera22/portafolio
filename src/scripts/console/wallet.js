@@ -7,6 +7,7 @@
  * the test RPC while the platform is in test mode.
  * ========================================================================== */
 import { config } from "../lib/config.js";
+import { replayClass, tweenNumber } from "../lib/motion.js";
 import { byId as $, escapeHtml as esc, showMessage } from "../lib/dom.js";
 import {
   centsToRcoin, formatDate, formatRcoin, formatUsd, parseDollarsToCents, parseRcoinToCents, quotePurchase,
@@ -41,15 +42,23 @@ export function refreshWallet() {
         return null;
       }
       const w = r.data;
+      const previous = session.balanceCents;
       session.balanceCents = w.test_balance_cents;
       document.dispatchEvent(new CustomEvent("rib:balance", { detail: w.test_balance_cents }));
-      setText("wallet-chip", formatRcoin(w.test_balance_cents));
       $("wallet-chip").setAttribute("aria-label", "Balance " + formatRcoin(w.test_balance_cents) + ". Open wallet");
-      if ($("games-balance")) $("games-balance").innerHTML = centsToRcoin(w.test_balance_cents) + " <small>rcoin</small>";
-      setText("wallet-balance", formatRcoin(w.test_balance_cents));
+      // A changed balance counts to its new value (and the chip bumps once) so
+      // a win, a refund or a purchase is noticed; the first load just renders.
+      const from = previous == null ? w.test_balance_cents : previous;
+      tweenNumber($("wallet-chip"), from, w.test_balance_cents, function (v) {
+        const cents = Math.round(v);
+        setText("wallet-chip", formatRcoin(cents));
+        if ($("games-balance")) $("games-balance").innerHTML = centsToRcoin(cents) + " <small>rcoin</small>";
+        setText("wallet-balance", formatRcoin(cents));
+        setText("wallet-usd", formatUsd(cents));
+        setText("dev-balance", formatRcoin(cents));
+      });
+      if (previous != null && previous !== w.test_balance_cents) replayClass($("wallet-chip"), "is-bumped");
       setText("wallet-locked", "In play: " + formatRcoin(w.test_locked_cents));
-      setText("wallet-usd", formatUsd(w.test_balance_cents));
-      setText("dev-balance", formatRcoin(w.test_balance_cents));
       return w;
     })
     .catch(function () { return null; });

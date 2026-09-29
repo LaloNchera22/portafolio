@@ -60,7 +60,7 @@
         <p class="games-lead">Every game, two ways: <strong>practice free</strong> against the house bot, or
           <strong>play for rcoin</strong> — both players pay the same entry fee and the winner takes the whole prize.
           No rake on the table; the 5% is charged once when you buy rcoin.</p>
-        <div id="games-root"><p class="muted">Loading games…</p></div>
+        <div id="games-root"><p class="muted is-loading">Loading games…</p></div>
       </section>
 
       <!-- ========================== COMPETE ========================== -->
@@ -118,14 +118,14 @@
           </form>
           <div class="sec">
             <p class="visually-hidden" role="status" id="lobby-status"></p>
-            <div id="challenge-open" aria-busy="true"><p class="muted">Loading…</p></div>
+            <div id="challenge-open" aria-busy="true"><p class="muted is-loading">Loading…</p></div>
             <button type="button" class="btn btn--sm lobby-more" id="lobby-more" hidden>Show more</button>
           </div>
         </div>
 
         <!-- my challenges -->
         <div id="compete-mine" hidden>
-          <div class="sec"><div id="challenge-mine"><p class="muted">Loading…</p></div></div>
+          <div class="sec"><div id="challenge-mine"><p class="muted is-loading">Loading…</p></div></div>
         </div>
 
         <!-- tournaments -->
@@ -159,7 +159,7 @@
             </div>
             <p class="msg" id="tournament-msg" hidden></p>
           </form>
-          <div class="sec"><div id="tournament-list"><p class="muted">Loading…</p></div></div>
+          <div class="sec"><div id="tournament-list"><p class="muted is-loading">Loading…</p></div></div>
         </div>
       </section>
 
@@ -174,7 +174,7 @@
         </div>
         <div class="standing" id="ranking-me" hidden></div>
         <p class="visually-hidden" role="status" id="ranking-status"></p>
-        <div id="ranking-list" aria-busy="true"><p class="muted">Loading…</p></div>
+        <div id="ranking-list" aria-busy="true"><p class="muted is-loading">Loading…</p></div>
         <button type="button" class="btn btn--sm lobby-more" id="ranking-more" hidden>Show more</button>
         <p class="testnote">The ranking counts paid games only, because the server checks every move: prizes won minus entry fees paid. Challenges and tournaments are reported by players, so they don't count. Positions refresh every few minutes, and the weekly board resets every Monday (UTC).</p>
       </section>
@@ -238,7 +238,7 @@
 
         <div class="sec">
           <div class="sec__head"><h2>Activity</h2></div>
-          <div id="wallet-ledger"><p class="muted">Loading…</p></div>
+          <div id="wallet-ledger"><p class="muted is-loading">Loading…</p></div>
         </div>
         <p class="testnote">You're in test mode: buying and withdrawing move a simulated balance so you can try the full flow. In production this will be non-custodial, on-chain on Base. rcoin stays in test mode, with no real money, until legal review.</p>
       </section>
@@ -266,7 +266,7 @@
         </div>
         <div class="sec">
           <div class="sec__head"><h2>Your record</h2><a class="sec__note" data-page="page-ranking" href="#page-ranking">See the ranking</a></div>
-          <div class="statline" id="profile-stats"><p class="muted">Loading…</p></div>
+          <div class="statline" id="profile-stats"><p class="muted is-loading">Loading…</p></div>
         </div>
         <div class="sec danger-zone">
           <div class="sec__head"><h2>Close account</h2></div>
@@ -317,7 +317,7 @@
             </div>
             <p class="msg" id="project-msg" hidden></p>
           </form>
-          <div class="sec"><div id="project-list"><p class="muted">Loading…</p></div></div>
+          <div class="sec"><div id="project-list"><p class="muted is-loading">Loading…</p></div></div>
         </div>
 
         <!-- api keys -->
@@ -348,7 +348,7 @@
             </div>
             <p class="msg" id="key-msg" hidden></p>
           </form>
-          <div class="sec"><div id="key-list"><p class="muted">Loading…</p></div></div>
+          <div class="sec"><div id="key-list"><p class="muted is-loading">Loading…</p></div></div>
         </div>
 
         <!-- payouts -->
@@ -389,7 +389,7 @@
     </nav>
   </div>
 
-  <div id="console-loading" class="muted" role="status" style="min-height:60vh;display:grid;place-content:center;text-align:center;padding:24px;">Loading your console…</div>
+  <div id="console-loading" class="muted is-loading" role="status" style="min-height:60vh;display:grid;place-content:center;text-align:center;padding:24px;">Loading your console…</div>
 
   <script type="module" src="/scripts/entries/console.js"></script>
 </body>

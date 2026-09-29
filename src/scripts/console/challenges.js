@@ -5,6 +5,7 @@
  * ========================================================================== */
 import { byId as $, escapeHtml as esc, setVisible, showMessage } from "../lib/dom.js";
 import { formatRcoin, formatTimeAgo } from "../lib/format.js";
+import { replayClass } from "../lib/motion.js";
 import { STAKE_PRESETS_RCOIN, parseStake, potFor, stepStake } from "../lib/stake.js";
 import { errorText, fetchUsernames, playerLabel, session } from "./context.js";
 import { USERNAME_PATTERN } from "./profile.js";
@@ -277,6 +278,7 @@ function initStakeComposer() {
     b.addEventListener("click", function () {
       input.value = String(stepStake(parseInt(input.value, 10), parseInt(b.getAttribute("data-step"), 10)));
       update();
+      replayClass(input, "is-bumped");
     });
   });
   presets.addEventListener("click", function (e) {
