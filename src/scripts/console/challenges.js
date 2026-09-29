@@ -192,20 +192,45 @@ export function fillNetworkSelect(select, linked) {
   if (have.indexOf(keep) !== -1) select.value = keep;
 }
 
+// Friends are offered as opponents (a <datalist>, filled once per visit).
+let friendsOffered = false;
+function offerFriends() {
+  if (friendsOffered || !session.client) return;
+  friendsOffered = true;
+  session.client.rpc("rib_friends", { p_limit: 100 }).then(function (r) {
+    const list = $("friends-datalist");
+    if (!list || r.error || !Array.isArray(r.data)) { friendsOffered = false; return; }
+    list.innerHTML = r.data.map(function (f) { return '<option value="' + esc(f.username) + '"></option>'; }).join("");
+  }).catch(function () { friendsOffered = false; });
+}
+document.addEventListener("rib:friends-changed", function () { friendsOffered = false; });
+
+function openForm(target) {
+  const form = $("challenge-form");
+  setVisible(form, true);
+  setVisible($("tournament-form"), false);
+  $("challenge-msg").hidden = true;
+  const tab = document.querySelector('#compete-seg [data-seg="friendlies"]');
+  if (tab) tab.click();
+  offerFriends();
+  if (target) $("challenge-target").value = target;
+  $("challenge-game").focus();
+}
+
+/** Open the friendly form addressed to a player (route "friendly/<username>"). */
+export function prepareFriendly(arg) {
+  const parts = String(arg || "").split("/");
+  if (parts[0] !== "friendly" || !USERNAME_PATTERN.test(parts[1] || "")) return;
+  openForm(parts[1]);
+}
+
 export function initChallenges() {
   const form = $("challenge-form");
   initLobbyFilters();
 
   $("challenge-new").addEventListener("click", function () {
-    const open = form.hidden;
-    setVisible(form, open);
-    setVisible($("tournament-form"), false);
-    $("challenge-msg").hidden = true;
-    if (open) {
-      const tab = document.querySelector('#compete-seg [data-seg="friendlies"]');
-      if (tab) tab.click();
-      $("challenge-game").focus();
-    }
+    if (form.hidden) openForm(null);
+    else { setVisible(form, false); $("challenge-msg").hidden = true; }
   });
   $("challenge-cancel").addEventListener("click", function () { setVisible(form, false); $("challenge-msg").hidden = true; });
   form.addEventListener("submit", function (e) {

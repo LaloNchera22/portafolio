@@ -5,7 +5,7 @@
  * bracket advances) or void the match (both are eliminated).
  * ========================================================================== */
 import { byId as $, escapeHtml as esc, showMessage } from "../lib/dom.js";
-import { formatDate, formatRcoin } from "../lib/format.js";
+import { formatDate, formatUSD } from "../lib/format.js";
 import { errorText, session } from "./context.js";
 
 const EVIDENCE_BUCKET = "room-evidence";
@@ -30,7 +30,7 @@ export function loadOps() {
       return '<article class="ops-case" data-case="' + esc(d.id) + '">' +
         "<header><h2>" + esc(d.game) + (d.tournament_name ? " · " + esc(d.tournament_name) + " round " + d.round : " · friendly") + "</h2>" +
         '<span class="row__meta">' + esc(d.room_code || "") + " · disputed " + esc(formatDate(d.disputed_at)) +
-        (d.entry_fee_cents ? " · entry " + formatRcoin(d.entry_fee_cents) + " · deposit " + formatRcoin(d.dispute_deposit_cents) : "") + "</span></header>" +
+        (d.entry_fee_cents ? " · entry " + formatUSD(d.entry_fee_cents) + " · deposit " + formatUSD(d.dispute_deposit_cents) : "") + "</span></header>" +
         "<ul><li>" + esc(claim(d.player_a, d.a_report)) + "</li><li>" + esc(claim(d.player_b, d.b_report)) + "</li></ul>" +
         '<p class="ops-case__reason"><strong>' + esc(name(d.disputed_by)) + ":</strong> " + esc(d.dispute_reason || "") + "</p>" +
         '<div class="ops-case__evidence" data-evidence-for="' + esc(d.id) + '">' + (d.evidence_count ? "Loading captures…" : "No captures.") + "</div>" +

@@ -1,7 +1,7 @@
 /* ============================================================================
  * Runinback — Games, extra pack. 21 more playable games registered onto the
  * games engine (init/legal/apply/result/bot/view per game). Each plays two
- * ways like the core six: free practice vs the house bot, or staked for rcoin.
+ * ways like the core six: free practice vs the house bot, or staked for USD.
  * Loop-prone movement games carry a move-cap draw guard so a match always ends.
  * ========================================================================== */
 import { el } from "../../lib/dom.js";

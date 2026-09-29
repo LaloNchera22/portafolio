@@ -9,9 +9,8 @@
 import { isBackendConfigured } from "../lib/config.js";
 import { byId as $, setVisible } from "../lib/dom.js";
 import { getClient, getSession } from "../lib/supabase-client.js";
-import { fillNetworkSelect, initChallenges, loadChallenges } from "./challenges.js";
+import { fillNetworkSelect, initChallenges, loadChallenges, prepareFriendly } from "./challenges.js";
 import { initContext, session } from "./context.js";
-import { initDeveloperPortal, loadDeveloperMetrics, loadKeys, loadProjects } from "./developer.js";
 import { initRanking, loadProfileRecord, loadRanking } from "./leaderboard.js";
 import { currentRouteArg, goToPage, initAmountChips, initNavigation, initialPage } from "./navigation.js";
 import { initOps, loadOps } from "./ops.js";
@@ -73,7 +72,10 @@ function loadGameAccountSelects() {
 
 const PAGE_LOADERS = {
   "page-games": loadGames,
-  "page-compete": function () { loadTournaments(); loadChallenges(); loadGameAccountSelects(); },
+  "page-compete": function () {
+    loadTournaments(); loadChallenges(); loadGameAccountSelects();
+    if (currentRouteArg()) prepareFriendly(currentRouteArg());
+  },
   "page-room": loadRoom,
   "page-ops": loadOps,
   "page-wallet": function () { refreshWallet(); loadLedger(); if (currentRouteArg()) prepareTopUp(currentRouteArg()); },
@@ -86,7 +88,6 @@ const PAGE_LOADERS = {
     loadGameAccountSelects().then(function () { if (currentRouteArg()) prepareLink(currentRouteArg()); });
   },
   "page-player": function () { loadPlayer(currentRouteArg()); },
-  "page-developer": function () { loadProjects(); loadKeys(); loadDeveloperMetrics(); refreshWallet(); },
 };
 
 function showAccount(user) {
@@ -126,7 +127,6 @@ export function initConsole() {
     initRoom();
     initOps();
     initAccountClosure();
-    initDeveloperPortal();
     initChallenges();
     initTournaments();
     initRanking();

@@ -5,7 +5,7 @@
  * tighten at once, loosen after a wait.
  * ========================================================================== */
 import { byId as $, showMessage } from "../lib/dom.js";
-import { centsToRcoin, formatDate, formatRcoin } from "../lib/format.js";
+import { centsToUSD, formatDate, formatUSD } from "../lib/format.js";
 import { confirmAction } from "./confirm.js";
 import { errorText, session } from "./context.js";
 
@@ -47,16 +47,16 @@ function render(s) {
     const pct = cap > 0 ? Math.min(100, Math.round((spent / cap) * 100)) : 100;
     $("cap-meter-fill").style.width = pct + "%";
     meter.classList.toggle("is-full", spent >= cap);
-    $("cap-meter-text").textContent = formatRcoin(spent) + " of " + formatRcoin(cap) + " used this month · " +
-      formatRcoin(Math.max(0, cap - spent)) + " left";
+    $("cap-meter-text").textContent = formatUSD(spent) + " of " + formatUSD(cap) + " used this month · " +
+      formatUSD(Math.max(0, cap - spent)) + " left";
   }
   const amount = $("cap-amount");
-  if (document.activeElement !== amount) amount.value = cap == null ? "" : String(centsToRcoin(cap));
+  if (document.activeElement !== amount) amount.value = cap == null ? "" : String(centsToUSD(cap));
   $("cap-remove").hidden = cap == null;
   const pending = s.pending_cap;
   $("cap-pending").hidden = !pending;
   if (pending) {
-    $("cap-pending-text").textContent = (pending.cents == null ? "Removing your limit" : "Raising your limit to " + formatRcoin(pending.cents)) +
+    $("cap-pending-text").textContent = (pending.cents == null ? "Removing your limit" : "Raising your limit to " + formatUSD(pending.cents)) +
       " on " + when(pending.at) + ".";
   }
 
@@ -146,7 +146,7 @@ function initLimits() {
     e.preventDefault();
     const text = String($("cap-amount").value).trim();
     if (!/^\d+$/.test(text) || Number(text) > 100000) {
-      showMessage(msg, "Enter whole rcoin from 0 to 100,000, or remove the limit.", false);
+      showMessage(msg, "Enter whole USD from 0 to 100,000, or remove the limit.", false);
       $("cap-amount").focus();
       return;
     }

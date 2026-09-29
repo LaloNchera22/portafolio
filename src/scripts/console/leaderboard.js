@@ -1,10 +1,10 @@
 /* ============================================================================
- * Runinback — global ranking by net rcoin won (weekly and all time).
+ * Runinback — global ranking by net USD won (weekly and all time).
  * Data comes from rib_leaderboard / rib_my_standing (player_stats, maintained
  * incrementally by the database), so the page never scans the ledger.
  * ========================================================================== */
 import { byId as $, escapeHtml as esc, setVisible } from "../lib/dom.js";
-import { centsToRcoin, formatRcoin } from "../lib/format.js";
+import { centsToUSD, formatUSD } from "../lib/format.js";
 import { tweenNumber } from "../lib/motion.js";
 import { session } from "./context.js";
 import { goToPage } from "./navigation.js";
@@ -14,8 +14,8 @@ const PAGE_SIZE = 50;
 const state = { period: "week", offset: 0, request: 0, loading: false };
 
 function signed(cents) {
-  const value = centsToRcoin(cents);
-  return (value > 0 ? "+" : "") + value.toLocaleString("en") + " rcoin";
+  const value = centsToUSD(cents);
+  return (value > 0 ? "+" : "") + value.toLocaleString("en") + " USD";
 }
 
 function record(row) {
@@ -33,7 +33,7 @@ function renderStanding(row, period) {
       '<div class="standing__rank"><span class="standing__k">Your rank</span><span class="standing__n">' + (row.rank ? Number(row.rank).toLocaleString("en") : "—") + "</span></div>" +
       '<dl class="standing__stats">' +
       '<div><dt>Net</dt><dd class="' + (row.net_cents >= 0 ? "pos" : "neg") + '">' + esc(signed(row.net_cents)) + "</dd></div>" +
-      "<div><dt>Won</dt><dd>" + esc(formatRcoin(row.won_cents)) + "</dd></div>" +
+      "<div><dt>Won</dt><dd>" + esc(formatUSD(row.won_cents)) + "</dd></div>" +
       "<div><dt>Record</dt><dd>" + esc(record(row)) + "</dd></div>" +
       "</dl>";
   }
@@ -49,7 +49,7 @@ function rowHtml(row) {
     '<a class="rank__who" href="#page-player/' + encodeURIComponent(row.username) + '" data-player="' + esc(row.username) + '" title="@' + esc(row.username) + '">@' +
       esc(row.username) + (me ? ' <span class="tag">you</span>' : "") + "</a>" +
     '<span class="rank__net ' + (row.net_cents >= 0 ? "pos" : "neg") + '">' + hidden("net ") + esc(signed(row.net_cents)) + "</span>" +
-    '<span class="rank__won">' + esc(formatRcoin(row.won_cents)) + " won</span>" +
+    '<span class="rank__won">' + esc(formatUSD(row.won_cents)) + " won</span>" +
     '<span class="rank__rec">' + hidden("record ") + esc(record(row)) + "</span>" +
     "</li>";
 }
@@ -63,7 +63,7 @@ function podiumHtml(rows) {
       '<a class="podium__who" href="#page-player/' + encodeURIComponent(row.username) + '" data-player="' + esc(row.username) + '">@' +
         esc(row.username) + (me ? ' <span class="tag">you</span>' : "") + "</a>" +
       '<span class="podium__net ' + (row.net_cents >= 0 ? "pos" : "neg") + '" data-net="' + row.net_cents + '">' + esc(signed(row.net_cents)) + "</span>" +
-      '<span class="podium__rec">' + esc(record(row)) + " · " + esc(formatRcoin(row.won_cents)) + " won</span></li>";
+      '<span class="podium__rec">' + esc(record(row)) + " · " + esc(formatUSD(row.won_cents)) + " won</span></li>";
   }).join("") + "</ol>";
 }
 

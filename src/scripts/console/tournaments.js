@@ -7,12 +7,12 @@
  * the pool, split 70/30.
  *
  * What blocks a join is solved in place: a missing game account links from
- * the card and comes back, a short balance offers "Add rcoin" for exactly
+ * the card and comes back, a short balance offers "Add USD" for exactly
  * what's missing.
  * ========================================================================== */
 import { byId as $, escapeHtml as esc, setVisible, showMessage } from "../lib/dom.js";
 import { toast } from "../lib/errors.js";
-import { formatRcoin } from "../lib/format.js";
+import { formatUSD } from "../lib/format.js";
 import { tweenNumber } from "../lib/motion.js";
 import { prizeSplit, roundName, roundsFor } from "../lib/tournament.js";
 import { errorText, session } from "./context.js";
@@ -25,12 +25,12 @@ import { refreshWallet } from "./wallet.js";
 const lobby = { game: "", size: null, request: 0, seats: {}, linked: null };
 const openBrackets = {}; // tournament id -> bracket expanded
 
-function feeText(cents) { return cents ? formatRcoin(cents) : "Free"; }
+function feeText(cents) { return cents ? formatUSD(cents) : "Free"; }
 
 function prizeLine(feeCents, size) {
   if (!feeCents) return '<span class="tcard__free">Free · no prize</span>';
   const s = prizeSplit(feeCents, size);
-  return '<span class="tcard__prize">Champion ' + formatRcoin(s.first) + " · runner-up " + formatRcoin(s.second) + "</span>";
+  return '<span class="tcard__prize">Champion ' + formatUSD(s.first) + " · runner-up " + formatUSD(s.second) + "</span>";
 }
 
 /** Invite link for a tournament (opens it straight in the lobby). */
@@ -78,8 +78,8 @@ function cardAction(t) {
   }
   const short = t.entry_fee_cents && session.balanceCents != null && t.entry_fee_cents > session.balanceCents;
   if (short) {
-    return '<button type="button" class="btn btn--sm" data-topup="' + (t.entry_fee_cents - session.balanceCents) + '" data-for="' + esc(t.id) + '">Add rcoin to join</button>' +
-      '<span class="tcard__note">You need ' + formatRcoin(t.entry_fee_cents) + ", you have " + formatRcoin(session.balanceCents) + ".</span>";
+    return '<button type="button" class="btn btn--sm" data-topup="' + (t.entry_fee_cents - session.balanceCents) + '" data-for="' + esc(t.id) + '">Add USD to join</button>' +
+      '<span class="tcard__note">You need ' + formatUSD(t.entry_fee_cents) + ", you have " + formatUSD(session.balanceCents) + ".</span>";
   }
   return '<button type="button" class="btn btn--cta btn--sm" data-join="' + esc(t.id) + '" data-fee="' + esc(t.entry_fee_cents) + '" data-name="' + esc(t.name) + '">Join · ' + feeText(t.entry_fee_cents) + "</button>";
 }
@@ -175,7 +175,7 @@ function onClick(e) {
   if (b.hasAttribute("data-join")) {
     const fee = parseInt(b.getAttribute("data-fee"), 10) || 0;
     const name = b.getAttribute("data-name") || "this tournament";
-    if (fee && !window.confirm("Join " + name + " for " + formatRcoin(fee) + "? You can leave for a full refund until it fills, and you're refunded if it doesn't fill in 24 hours. When it fills, you'll have 15 minutes to get ready for your first match.")) return;
+    if (fee && !window.confirm("Join " + name + " for " + formatUSD(fee) + "? You can leave for a full refund until it fills, and you're refunded if it doesn't fill in 24 hours. When it fills, you'll have 15 minutes to get ready for your first match.")) return;
     call("rib_tournament_join", { p_tournament_id: b.getAttribute("data-join") }, b, function (t) {
       if (t && t.status === "active") toast(name + " just started. Your first match is ready.", "match");
       else toast("You're in. It starts as soon as it fills.", "ok");
@@ -212,8 +212,8 @@ function myLine(t) {
   }
   if (t.status === "cancelled") return { chip: '<span class="chip">Cancelled</span>', text: "Entry fee refunded" };
   if (t.status === "finished") {
-    if (t.placement === 1) return { chip: '<span class="chip chip--settle">Champion</span>', text: t.prize_cents ? "Won " + formatRcoin(t.prize_cents) : "Won" };
-    if (t.placement === 2) return { chip: '<span class="chip chip--settle">Runner-up</span>', text: t.prize_cents ? "Won " + formatRcoin(t.prize_cents) : "Final" };
+    if (t.placement === 1) return { chip: '<span class="chip chip--settle">Champion</span>', text: t.prize_cents ? "Won " + formatUSD(t.prize_cents) : "Won" };
+    if (t.placement === 2) return { chip: '<span class="chip chip--settle">Runner-up</span>', text: t.prize_cents ? "Won " + formatUSD(t.prize_cents) : "Final" };
     return { chip: '<span class="chip">Finished</span>', text: "Won by @" + (t.winner_username || "player") };
   }
   const round = t.my_round && t.rounds ? roundName(t.my_round, t.rounds) : "Match";
@@ -305,7 +305,7 @@ function bracketHtml(rows, size, fee) {
   const prize = fee ? prizeSplit(fee, size) : null;
   html += '<div class="bracket__col bracket__col--champ"><h4>Champion</h4><div class="bracket__slots"><div class="bracket__champ' + (champ ? " is-set" : "") + '">' +
     '<span class="' + (champ ? "v" : "muted") + '">' + (champ ? "@" + esc(champ) : "TBD") + "</span>" +
-    (prize ? '<span class="k">' + formatRcoin(final && final.walkover ? prize.prizes : prize.first) + "</span>" : "") + "</div></div></div>";
+    (prize ? '<span class="k">' + formatUSD(final && final.walkover ? prize.prizes : prize.first) + "</span>" : "") + "</div></div></div>";
   return html + "</div>";
 }
 
@@ -328,7 +328,7 @@ function updatePrizePreview() {
   }
   ["pool", "first", "second", "platform"].forEach(function (k) {
     const el = box.querySelector('[data-k="' + k + '"]');
-    tweenNumber(el, preview[k], s[k], function (v) { el.textContent = formatRcoin(Math.round(v)); }, 300);
+    tweenNumber(el, preview[k], s[k], function (v) { el.textContent = formatUSD(Math.round(v)); }, 300);
     preview[k] = s[k];
   });
 }

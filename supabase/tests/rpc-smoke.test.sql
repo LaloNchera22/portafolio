@@ -486,6 +486,37 @@ begin
   perform pg_temp.expect(pg_temp.as_user(g, 'select public.rib_close_account()'), 'close_account_blocked', 'cannot close while entered in a tournament');
   perform pg_temp.expect(pg_temp.as_user(g, 'select public.rib_month_entry_spend(''99999999-0000-0000-0000-000000000009'')'), '42501', 'spend helper is server-only');
 
+  -- Social profile: about, friends, blocks, privacy (0025).
+  perform pg_temp.expect(pg_temp.as_user(g, $q$select public.rib_profile_about_update(array['Valorant', 'valorant', ' CS2 '], '{"twitch": "grace_tv", "discord": ""}', 'settle')$q$), 'ok', 'save favorite games and links');
+  perform pg_temp.expect((select array_to_string(favorite_games, ',') || '|' || links::text || '|' || banner from public.profiles where id = g),
+    'Valorant,CS2|{"twitch": "grace_tv"}|settle', 'games are de-duplicated and blank links dropped');
+  perform pg_temp.expect(pg_temp.as_user(g, $q$select public.rib_profile_about_update('{}', '{"x": "javascript:alert(1)"}', 'ink')$q$), 'invalid_link', 'links are handles, never URLs');
+  perform pg_temp.expect(pg_temp.as_user(g, $q$select public.rib_profile_about_update('{}', '{}', 'pink')$q$), 'invalid_banner', 'banner comes from the palette');
+
+  perform pg_temp.expect(pg_temp.scalar_as(g, $q$select public.rib_friend_request('bob')$q$), 'requested', 'send a friend request');
+  perform pg_temp.expect(pg_temp.scalar_as(b, $q$select public.rib_friend_requests() -> 'incoming' -> 0 ->> 'username'$q$), 'Grace_X', 'the request shows up for bob');
+  perform pg_temp.expect(pg_temp.scalar_as(b, $q$select public.rib_friend_request('grace_x')$q$), 'friends', 'asking back makes friends');
+  perform pg_temp.expect(pg_temp.scalar_as(g, $q$select string_agg(username, ',') from public.rib_friends()$q$), 'bob', 'friends list');
+  perform pg_temp.expect(pg_temp.scalar_as(g, $q$select public.rib_public_profile('bob') ->> 'relationship'$q$), 'friends', 'card knows we are friends');
+  perform pg_temp.expect(pg_temp.scalar_as(g, $q$select public.rib_my_profile() ->> 'friend_count'$q$), '1', 'friend count');
+  perform pg_temp.expect(pg_temp.scalar_as(g, $q$select public.rib_friend_request('carol')$q$), 'requested', 'ask carol');
+  perform pg_temp.expect(pg_temp.scalar_as(c, $q$select public.rib_friend_respond('grace_x', false)$q$), 'none', 'carol declines');
+  perform pg_temp.expect(pg_temp.as_user(c, $q$select public.rib_privacy_update('friends', 'nobody', 'friends')$q$), 'ok', 'carol locks down her privacy');
+  perform pg_temp.expect(pg_temp.as_user(g, $q$select public.rib_friend_request('carol')$q$), 'friend_requests_closed', 'requests can be turned off');
+  perform pg_temp.expect(pg_temp.as_user(g, $q$select public.rib_challenge_create('Chess', '1v1', 'carol', null)$q$), 'challenges_closed', 'direct friendlies from friends only');
+  perform pg_temp.expect(pg_temp.scalar_as(g, $q$select (public.rib_public_profile('carol') ->> 'full') || ':' || coalesce(public.rib_public_profile('carol') ->> 'bio', 'hidden')$q$), 'false:hidden', 'a friends-only card shows only the basics');
+  perform pg_temp.expect(pg_temp.as_user(g, $q$select public.rib_privacy_update(null, null, 'friends')$q$), 'ok', 'grace takes friendlies from friends');
+  perform pg_temp.expect(pg_temp.as_user(b, $q$select public.rib_challenge_create('Chess', '1v1', 'grace_x', null)$q$), 'ok', 'a friend can challenge her directly');
+
+  perform pg_temp.expect(pg_temp.scalar_as(g, $q$select public.rib_block('dave')$q$), 'blocked', 'block a player');
+  perform pg_temp.expect(pg_temp.scalar_as(d, $q$select coalesce(public.rib_public_profile('grace_x')::text, 'none')$q$), 'none', 'the blocked player can''t see her card');
+  perform pg_temp.expect(pg_temp.as_user(d, $q$select public.rib_friend_request('grace_x')$q$), 'user_not_found', 'nor send a request');
+  perform pg_temp.expect(pg_temp.as_user(d, $q$select public.rib_challenge_create('Chess', '1v1', 'grace_x', null)$q$), 'user_not_found', 'nor challenge her');
+  perform pg_temp.expect(pg_temp.scalar_as(g, $q$select public.rib_public_profile('dave') ->> 'relationship'$q$), 'blocked', 'she can still open his card to unblock');
+  perform pg_temp.expect(pg_temp.scalar_as(g, $q$select string_agg(username, ',') from public.rib_blocked()$q$), 'dave', 'block list');
+  perform pg_temp.expect(pg_temp.scalar_as(g, $q$select public.rib_unblock('dave')$q$), 'none', 'unblock');
+  perform pg_temp.expect(pg_temp.as_user(g, 'select * from public.friendships'), '42501', 'the social graph is RPC-only');
+
   -- Ledger integrity: every balance equals the sum of its ledger rows.
   perform pg_temp.expect(
     (select count(*)::text from public.wallets w
