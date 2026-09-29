@@ -1,6 +1,6 @@
 /* ============================================================================
  * Runinback — console 1v1 challenges: the public lobby, my challenges, and the
- * new-challenge form with a custom stake. Every balance move runs in SECURITY
+ * new-challenge form with a custom entry fee. Every balance move runs in SECURITY
  * DEFINER RPCs (atomic escrow); the UI only validates to help the player.
  * ========================================================================== */
 import { byId as $, escapeHtml as esc, setVisible, showMessage } from "../lib/dom.js";
@@ -82,7 +82,7 @@ function renderLobby(hasMore) {
   if (!lobby.rows.length) {
     const filtered = lobby.game || lobby.range !== "any";
     box.innerHTML = filtered
-      ? '<div class="empty"><h3>No challenges match</h3><p>Try another game or stake, or post your own challenge.</p></div>'
+      ? '<div class="empty"><h3>No challenges match</h3><p>Try another game or entry fee, or post your own challenge.</p></div>'
       : '<div class="empty"><h3>The lobby is empty</h3><p>Post a challenge and it shows up here for everyone.</p></div>';
     return;
   }
@@ -90,7 +90,7 @@ function renderLobby(hasMore) {
     return '<div class="row row--lobby">' +
       '<div><div class="row__name">' + esc(c.game) + ' <span class="row__mode">' + esc(c.mode) + "</span></div>" +
       '<div class="row__meta">@' + esc(c.creator_username) + " · " + esc(formatTimeAgo(c.created_at)) + "</div></div>" +
-      '<div class="lobby__stake"><span class="lobby__num">' + formatRcoin(c.stake_cents) + '</span><span class="lobby__pot">pot ' + formatRcoin(c.stake_cents * 2) + "</span></div>" +
+      '<div class="lobby__stake"><span class="lobby__num">' + formatRcoin(c.stake_cents) + '</span><span class="lobby__pot">prize ' + formatRcoin(c.stake_cents * 2) + "</span></div>" +
       '<button type="button" class="btn btn--cta btn--sm" data-accept="' + esc(c.id) + '" data-stake="' + esc(c.stake_cents) + '">Accept</button>' +
       "</div>";
   }).join("") + "</div>";
@@ -200,10 +200,10 @@ function callChallengeRpc(fn, args, btn, okText) {
 
 // Results are final once both players agree, so confirm before sending.
 function reportResult(id, winnerId, btn, won) {
-  const text = won ? "Report that you won? If your opponent reports the same, you take the pot."
-    : "Report that you lost? If your opponent reports the same, they take the pot.";
+  const text = won ? "Report that you won? If your opponent reports the same, you take the prize."
+    : "Report that you lost? If your opponent reports the same, they take the prize.";
   if (!window.confirm(text)) return;
-  callChallengeRpc("rib_challenge_report", { p_challenge_id: id, p_winner_id: winnerId }, btn, "Result sent. The pot is paid when both reports match.");
+  callChallengeRpc("rib_challenge_report", { p_challenge_id: id, p_winner_id: winnerId }, btn, "Result sent. The prize is paid when both reports match.");
 }
 
 function acceptChallenge(btn) {
@@ -212,7 +212,7 @@ function acceptChallenge(btn) {
     showMessage($("challenge-msg"), "You need " + formatRcoin(stake) + " to accept. Top up your wallet first.", false);
     return;
   }
-  const ok = window.confirm("Accept for " + formatRcoin(stake) + "? Your stake is held in escrow and the winner takes " + formatRcoin(stake * 2) + ".");
+  const ok = window.confirm("Accept for " + formatRcoin(stake) + "? Your entry fee is held in escrow and the winner takes " + formatRcoin(stake * 2) + ".");
   if (!ok) return;
   callChallengeRpc("rib_challenge_accept", { p_challenge_id: btn.getAttribute("data-accept") }, btn, "Challenge accepted. Play it, then report the result under My challenges.");
 }
@@ -226,8 +226,8 @@ function wireRowActions(box) {
   });
   box.querySelectorAll("[data-void]").forEach(function (b) {
     b.addEventListener("click", function () {
-      if (!window.confirm("Void this challenge? Both stakes go back to their owners and nobody wins.")) return;
-      callChallengeRpc("rib_challenge_void", { p_challenge_id: b.getAttribute("data-void") }, b, "Challenge voided. Your stake is back in your wallet.");
+      if (!window.confirm("Void this challenge? Both entry fees go back to their owners and nobody wins.")) return;
+      callChallengeRpc("rib_challenge_void", { p_challenge_id: b.getAttribute("data-void") }, b, "Challenge voided. Your entry fee is back in your wallet.");
     });
   });
   box.querySelectorAll("[data-won]").forEach(function (b) {
@@ -265,7 +265,7 @@ function initStakeComposer() {
       summary.textContent = "";
     } else {
       const avail = session.balanceCents == null ? "" : " " + formatRcoin(session.balanceCents) + " available.";
-      summary.textContent = "Both players stake " + parsed.rcoin + " rcoin. Winner takes " + potFor(parsed.rcoin) + " rcoin." + avail;
+      summary.textContent = "Both players pay " + parsed.rcoin + " rcoin. Winner takes " + potFor(parsed.rcoin) + " rcoin." + avail;
     }
     save.disabled = !!parsed.error;
     return parsed;

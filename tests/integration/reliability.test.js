@@ -98,7 +98,7 @@ describe("games page", () => {
     custom.value = "0";
     custom.dispatchEvent(new Event("input"));
     expect(create.disabled).toBe(true);
-    expect(document.querySelector(".gplay__pot").textContent).toContain("minimum stake");
+    expect(document.querySelector(".gplay__pot").textContent).toContain("minimum entry fee");
     custom.value = "7";
     custom.dispatchEvent(new Event("input"));
     expect(create.disabled).toBe(false);

@@ -1,7 +1,7 @@
 {
   "name": "Runinback",
   "short_name": "Runinback",
-  "description": "The trustless, skill-based wagering layer for competitive gaming.",
+  "description": "Skill-based competition for video games: 1v1 matches and tournaments where the best player wins the prize.",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#0e100f",

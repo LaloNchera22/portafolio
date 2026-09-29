@@ -239,7 +239,7 @@ ul {
   font-size: var(--text-display);
   font-weight: var(--fw-semibold);
   line-height: 1;
-  letter-spacing: -0.03em;
+  letter-spacing: -0.04em;
   padding-bottom: 0.06em;
 }
 
@@ -345,7 +345,6 @@ ul {
     var(--gradient-shockingly-green) padding-box,
     var(--gradient-shockingly-green) border-box;
   color: var(--color-just-black);
-  box-shadow: 0 10px 30px -12px rgba(255, 255, 255, 0.28);
 }
 
 .btn--ghost {
@@ -536,7 +535,7 @@ ul {
   background: var(--color-just-black);
   border-bottom: 1px solid var(--color-surface-25);
   text-align: center;
-  font-size: 13px;
+  font-size: var(--text-caption);
   line-height: 1.3;
   color: var(--color-surface-50);
   padding: 8px var(--gutter);
@@ -554,7 +553,7 @@ ul {
 
 .hero {
   position: relative;
-  padding-top: clamp(120px, 18vw, 200px);
+  padding-top: clamp(172px, 18vw, 224px);
   padding-bottom: var(--section-gap);
   overflow: hidden;
 }
@@ -658,24 +657,6 @@ ul {
 /* The live canvas grid owns the hero backdrop, so drop the static CSS grid there */
 .hero--live .backdrop::before { display: none; }
 
-/* Original mountain mark as a soft hero backdrop (replaces the drawn SVG) */
-.hero__logo {
-  position: absolute;
-  right: clamp(-30px, 3vw, 60px);
-  top: 50%;
-  transform: translateY(-50%);
-  width: clamp(300px, 40vw, 620px);
-  z-index: 0;
-  opacity: 0.28;
-  pointer-events: none;
-  filter: drop-shadow(0 0 60px rgba(255, 255, 255, 0.10));
-}
-.hero__logo img { width: 100%; height: auto; display: block; }
-
-@media (max-width: 900px) {
-  .hero__logo { opacity: 0.12; width: 82vw; right: -16vw; }
-}
-
 .hero > .shell {
   position: relative;
   z-index: 1;
@@ -690,7 +671,7 @@ ul {
   grid-template-columns: 1fr 1fr;
   gap: clamp(32px, 6vw, 80px);
   align-items: center;
-  padding-block: var(--section-gap);
+  padding-block: clamp(56px, 8vw, 112px);
 }
 .feature + .feature {
   border-top: 1px solid var(--color-surface-25);
@@ -806,35 +787,13 @@ ul {
 .grid--3 { grid-template-columns: repeat(3, 1fr); }
 .grid--2 { grid-template-columns: repeat(2, 1fr); }
 
+/* Cards are hairline ledgers, not panels: a top rule, a title and muted
+   copy. Depth comes from the rule, never from fills, shadows or hover lifts. */
 .card {
   position: relative;
-  background: var(--surface-panel);
-  border: 1px solid var(--color-surface-25);
-  border-radius: var(--radius-lg);
-  padding: var(--spacing-32);
-  overflow: hidden;
-  transition: transform 0.45s var(--ease-out), border-color 0.45s var(--ease-out),
-    background 0.45s var(--ease-out);
+  padding-top: var(--spacing-24);
+  border-top: 1px solid var(--color-surface-25);
 }
-/* Angular accent bar that grows on hover */
-.card::after {
-  content: "";
-  position: absolute;
-  left: 0;
-  top: 0;
-  height: 3px;
-  width: 100%;
-  background: var(--gradient-shockingly-green);
-  transform: scaleX(0);
-  transform-origin: left;
-  transition: transform 0.5s var(--ease-out);
-}
-.card:hover {
-  transform: translateY(-6px);
-  border-color: var(--color-surface-50);
-  background: var(--surface-elevated);
-}
-.card:hover::after { transform: scaleX(1); }
 .card__index {
   font-family: var(--font-mono);
   font-size: var(--text-caption);
@@ -844,34 +803,27 @@ ul {
 .card__title {
   font-size: var(--text-body-lg);
   font-weight: var(--fw-semibold);
+  letter-spacing: -0.01em;
   margin-bottom: var(--spacing-12);
 }
 .card__text {
   color: var(--color-surface-50);
   font-size: var(--text-body-sm);
-  line-height: 1.5;
+  line-height: 1.55;
 }
 .card__icon {
-  width: 48px;
-  height: 48px;
-  border-radius: var(--radius-lg);
-  display: grid;
-  place-items: center;
-  margin-bottom: var(--spacing-20);
-  color: var(--card-accent, var(--color-shockingly-green));
-  background: color-mix(in srgb, var(--card-accent, var(--color-shockingly-green)) 12%, transparent);
-  border: 1px solid color-mix(in srgb, var(--card-accent, var(--color-shockingly-green)) 32%, transparent);
-  transition: transform 0.45s var(--ease-spring);
+  display: block;
+  margin-bottom: var(--spacing-16);
+  color: var(--color-surface-cream);
 }
-.card:hover .card__icon { transform: rotate(-6deg) scale(1.06); }
 .card__icon svg {
-  width: 24px;
-  height: 24px;
+  width: 22px;
+  height: 22px;
   fill: none;
   stroke: currentColor;
-  stroke-width: 1.9;
-  stroke-linecap: round;
-  stroke-linejoin: round;
+  stroke-width: 1.6;
+  stroke-linecap: square;
+  stroke-linejoin: miter;
 }
 
 /* Showcase card */
@@ -978,12 +930,6 @@ ul {
   padding: 14px var(--spacing-20);
   border-bottom: 1px solid var(--color-surface-25);
 }
-.terminal__bar .dot {
-  width: 11px;
-  height: 11px;
-  border-radius: 50%;
-  background: var(--color-surface-25);
-}
 .terminal__file {
   margin-left: 10px;
   font-family: var(--font-mono);
@@ -1002,10 +948,10 @@ ul {
   color: var(--color-surface-cream);
 }
 .tok-kw { color: var(--color-lilac); }
-.tok-fn { color: var(--color-blue); }
+.tok-fn { color: var(--color-surface-cream); }
 .tok-str { color: var(--color-light-green); }
 .tok-com { color: var(--color-surface-50); }
-.tok-num { color: var(--color-orangey); }
+.tok-num { color: var(--color-lilac); }
 
 /* ==========================================================================
    Steps
@@ -1206,7 +1152,7 @@ ul {
   max-width: 420px;
   background: var(--surface-canvas);
   border: 1px solid var(--color-surface-25);
-  border-radius: 18px;
+  border-radius: var(--radius-lg);
   padding: clamp(24px, 4vw, 34px);
   max-height: 92vh;
   overflow-y: auto;
@@ -1300,7 +1246,7 @@ ul {
   max-width: 460px;
   background: var(--surface-canvas);
   border: 1px solid var(--color-surface-25);
-  border-radius: 18px;
+  border-radius: var(--radius-lg);
   padding: clamp(26px, 4vw, 40px);
 }
 /* The video half is decorative and only shows on wide screens. */
@@ -1320,7 +1266,7 @@ ul {
     overflow-y: auto;
     /* `safe center` keeps the top reachable if the form is taller than the viewport */
     align-items: safe center;
-    padding: clamp(76px, 8vh, 100px) clamp(32px, 5vw, 72px) clamp(28px, 4vh, 56px);
+    padding: clamp(104px, 12vh, 128px) clamp(32px, 5vw, 72px) clamp(28px, 4vh, 56px);
   }
   /* Compact the taller sign-up form so a spacious screen needs no scroll. */
   .auth-panel .auth-title { font-size: var(--text-subheading); }
@@ -1376,7 +1322,6 @@ ul {
     width: clamp(200px, 22vw, 320px);
     height: auto;
     z-index: 1;
-    filter: drop-shadow(0 0 40px rgba(0, 0, 0, 0.35));
   }
 }
 @media (min-width: 1024px) and (prefers-reduced-motion: reduce) {
@@ -1497,7 +1442,6 @@ ul {
   background: var(--surface-panel);
   border-top: 1px solid var(--color-surface-25);
   padding-block: clamp(56px, 8vw, 80px);
-  margin-top: var(--section-gap);
 }
 .footer__top {
   display: grid;
@@ -1537,9 +1481,7 @@ ul {
   transform: translateY(-3px);
 }
 .footer__col h4 {
-  font-size: var(--text-caption);
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
+  font-size: var(--text-body-sm);
   color: var(--color-surface-50);
   margin-bottom: var(--spacing-20);
   font-weight: var(--fw-medium);
@@ -1578,8 +1520,8 @@ ul {
    ========================================================================== */
 
 .page-head {
-  padding-top: clamp(140px, 16vw, 200px);
-  padding-bottom: var(--section-gap);
+  padding-top: clamp(172px, 17vw, 224px);
+  padding-bottom: clamp(48px, 7vw, 96px);
   position: relative;
   overflow: hidden;
 }
@@ -1853,9 +1795,11 @@ ul {
     rgba(14, 16, 15, 0.2);
 }
 
-/* Landing: all body copy reads in cream (per request), muted greys included.
-   Scoped to #main so the shared nav/footer keep the muted taxonomy. */
-body.home #main { --color-surface-50: var(--color-surface-cream); }
+/* Landing sections own their vertical rhythm (no inline padding). */
+.section-story,
+.section-tools { padding-top: var(--section-gap); }
+.section-story { padding-bottom: var(--section-gap); }
+.story__title { max-width: 22ch; }
 
 /* Story section — what / why / how */
 .section-story .story-triad {
@@ -1866,11 +1810,6 @@ body.home #main { --color-surface-50: var(--color-surface-cream); }
 .section-story .move {
   padding-top: var(--spacing-24);
   border-top: 1px solid var(--color-surface-25);
-}
-.section-story .move__tag {
-  font-size: var(--text-body-sm);
-  color: var(--color-surface-cream);
-  margin-bottom: var(--spacing-16);
 }
 .section-story .move .h3 { margin-bottom: var(--spacing-12); }
 .section-story .move p { font-size: var(--text-body-sm); line-height: 1.5; }
@@ -1963,14 +1902,15 @@ body.home .is-in .feature__list li:nth-child(3) { transition-delay: 0.46s; }
   padding: var(--spacing-20) var(--spacing-24);
   margin-bottom: var(--spacing-48);
   border: 1px solid var(--color-surface-25);
-  border-left: 2px solid var(--accent-escrow);
+  border-left: 2px solid var(--color-surface-cream);
   border-radius: var(--radius-lg);
   background: var(--surface-panel);
   color: var(--color-surface-cream);
   font-size: var(--text-body-sm);
   line-height: 1.6;
 }
-.legal__draft strong { color: var(--accent-escrow); font-weight: var(--fw-semibold); }
+.legal__draft strong { color: var(--color-surface-cream); font-weight: var(--fw-semibold); }
+.legal__draft { max-width: 68ch; }
 
 .legal__meta {
   font-family: var(--font-mono);
@@ -2031,7 +1971,7 @@ body.home .is-in .feature__list li:nth-child(3) { transition-delay: 0.46s; }
 .legal__body ul,
 .legal__body ol { margin: 0 0 var(--spacing-16) var(--spacing-24); display: grid; gap: var(--spacing-8); max-width: 68ch; }
 .legal__body li { padding-left: var(--spacing-8); }
-.legal__ph { color: var(--accent-escrow); font-style: normal; white-space: nowrap; }
+.legal__ph { color: var(--color-surface-cream); font-style: normal; white-space: nowrap; border-bottom: 1px dashed var(--color-surface-50); }
 
 /* ==========================================================================
    Cookie consent banner — minimal, dependency-free, remembers the choice
@@ -2148,4 +2088,85 @@ body[data-auth-scope] .nav {
   .hero__title { animation-delay: 0.05s; }
   .hero__lead { animation-delay: 0.15s; }
   .hero__actions { animation-delay: 0.25s; }
+}
+
+/* ==========================================================================
+   Legal pages: table of contents and reading rail
+   ========================================================================== */
+
+/* Scoped under .legal__body so the prose h2/link rules don't override it. */
+.legal__body .legal__toc h2 {
+  font-size: var(--text-body-sm);
+  font-weight: var(--fw-medium);
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--color-surface-50);
+  border: 0;
+  padding: 0;
+  margin: 0 0 var(--spacing-16);
+}
+.legal__body .legal__toc a { text-decoration: none; }
+/* The headings already carry their numbers ("1.", "2."). */
+.legal__toc a::before { content: none; }
+.legal__body ul > li { position: relative; }
+.legal__body ul > li::before {
+  content: "";
+  position: absolute;
+  left: calc(-1 * var(--spacing-16));
+  top: 0.8em;
+  width: 8px;
+  border-top: 1px solid var(--color-surface-50);
+}
+
+/* Wide screens: the contents become a sticky right rail beside the prose. */
+@media (min-width: 1100px) {
+  .legal__body {
+    max-width: none;
+    display: grid;
+    grid-template-columns: minmax(0, 68ch) 240px;
+    column-gap: clamp(48px, 6vw, 112px);
+    align-items: start;
+  }
+  .legal__body > * { grid-column: 1; }
+  .legal__body > .legal__toc {
+    grid-column: 2;
+    grid-row: 1 / span 400;
+    position: sticky;
+    top: 120px;
+    margin: 0;
+    padding: 0 0 0 var(--spacing-24);
+    border-bottom: 0;
+    border-left: 1px solid var(--color-surface-25);
+  }
+}
+
+/* ==========================================================================
+   Typography polish
+   ========================================================================== */
+
+.display, .h-lg, .h1, .h2, .h3, .step__title, .card__title, .faq__q, .page-head__title {
+  text-wrap: balance;
+}
+.lead, p, li { text-wrap: pretty; }
+
+/* Inline code in running copy: small, cream, hairline-boxed. */
+.step__text code,
+.lead code {
+  font-family: var(--font-mono);
+  font-size: 0.85em;
+  color: var(--color-surface-cream);
+  padding: 1px 6px;
+  border: 1px solid var(--color-surface-25);
+  border-radius: 4px;
+  white-space: nowrap;
+}
+
+/* Paired actions (dev teaser, CTA bands) stack full-width on phones like the hero. */
+.actions { display: flex; flex-wrap: wrap; gap: var(--spacing-16); }
+@media (max-width: 640px) {
+  .actions,
+  .cta-band__actions { flex-direction: column; align-items: stretch; }
+  .actions .btn,
+  .cta-band__actions .btn { width: 100%; justify-content: center; }
+  .terminal code { font-size: 12px; }
 }

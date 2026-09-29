@@ -3,11 +3,11 @@
  *
  * Two ways to play every game:
  *   • Practice vs the house bot — free, offline, always available.
- *   • Play for rcoin — a staked 1v1 over Supabase Realtime. Both players stake
- *     the same amount, the winner takes the whole pot (no rake: the 5% is
+ *   • Play for rcoin — a paid 1v1 over Supabase Realtime. Both players pay
+ *     the same entry fee, the winner takes the whole prize (no cut: the 5% is
  *     charged once when you buy rcoin, never on the table). Board state syncs
  *     over Realtime; every move is validated by the game-move Edge Function,
- *     and the pot settles automatically when the rules say the game is over,
+ *     and the prize is paid automatically when the rules say the game is over,
  *     on resign, or when a player's turn clock runs out.
  *
  * Game rules live in ./catalog (one module per game: init/legal/apply/result/
@@ -323,7 +323,7 @@ function openGame(gameId) {
   var freeL = el("div", "gplay__optL");
   freeL.appendChild(el("p", "gplay__eyebrow", "Free"));
   freeL.appendChild(el("h3", "gplay__optH", "Practice vs the bot"));
-  freeL.appendChild(el("p", "gplay__optD", "A warm-up against the house bot. No stake, play as many as you like."));
+  freeL.appendChild(el("p", "gplay__optD", "A warm-up against the house bot. No entry fee, play as many as you like."));
   free.appendChild(freeL);
   var pBtn = el("button", "btn btn--cta gplay__act", "Play free");
   pBtn.addEventListener("click", function () { launch(function () { startPractice(gameId); }); });
@@ -333,18 +333,18 @@ function openGame(gameId) {
   // option 2 — staked table
   var coin = el("div", "gplay__opt");
   var coinL = el("div", "gplay__optL");
-  coinL.appendChild(el("p", "gplay__eyebrow", "Staked · winner takes all"));
+  coinL.appendChild(el("p", "gplay__eyebrow", "Entry fee · winner takes all"));
   coinL.appendChild(el("h3", "gplay__optH", "Play for rcoin"));
-  coinL.appendChild(el("p", "gplay__optD", "Both players stake the same. No rake on the table — the whole pot goes to the winner."));
+  coinL.appendChild(el("p", "gplay__optD", "Both players pay the same entry fee. No cut on the table — the whole prize goes to the winner."));
   coin.appendChild(coinL);
 
   var coinR = el("div", "gplay__optR");
-  coinR.appendChild(el("p", "gplay__stakeLbl", "Your stake (rcoin)"));
+  coinR.appendChild(el("p", "gplay__stakeLbl", "Entry fee (rcoin)"));
   // low presets so anyone can join, plus a free-typed custom amount
   var stakeRow = el("div", "gplay__stakes");
   var custom = el("input", "gplay__custom");
   custom.type = "number"; custom.min = "1"; custom.step = "1"; custom.inputMode = "numeric"; custom.placeholder = "Custom";
-  custom.setAttribute("aria-label", "Custom stake in rcoin");
+  custom.setAttribute("aria-label", "Custom entry fee in rcoin");
   var pot = el("p", "gplay__pot");
   // the active stake: a typed custom amount wins, else the selected chip.
   // An invalid custom amount is an error, never a silent fallback.
@@ -354,7 +354,7 @@ function openGame(gameId) {
       return parsed.error ? { error: parsed.error } : { rcoin: parsed.rcoin };
     }
     var on = stakeRow.querySelector("button.on");
-    return on ? { rcoin: parseInt(on.getAttribute("data-r"), 10) } : { error: "Pick a stake." };
+    return on ? { rcoin: parseInt(on.getAttribute("data-r"), 10) } : { error: "Pick an entry fee." };
   }
   function setPot() {
     var s = currentStake();
@@ -383,8 +383,8 @@ function openGame(gameId) {
   coinR.appendChild(cBtn);
   var note = el("p", "gplay__note");
   coinR.appendChild(note);
-  if (!CTX.configured) { cBtn.disabled = true; note.textContent = "Staked tables open once the backend is connected. Practice works now."; }
-  else if (!isStakeable(gameId)) { cBtn.disabled = true; note.textContent = "Staked tables for this game are coming soon. Practice works now."; }
+  if (!CTX.configured) { cBtn.disabled = true; note.textContent = "Paid tables open once the backend is connected. Practice works now."; }
+  else if (!isStakeable(gameId)) { cBtn.disabled = true; note.textContent = "Paid tables for this game are coming soon. Practice works now."; }
   coin.appendChild(coinR);
   panel.appendChild(coin);
 
@@ -455,7 +455,7 @@ function startPractice(gameId) {
     over.hidden = false;
     var won = res.winner === 0, draw2 = res.winner == null;
     over.innerHTML = '<h3 class="' + (draw2 ? "" : (won ? "win" : "lose")) + '">' + (draw2 ? "Draw" : (won ? "You win" : "Bot wins")) + '</h3>' +
-      '<p>Practice round — no rcoin at stake.</p>';
+      '<p>Practice round — no rcoin on the line.</p>';
     var acts = el("div", "gover__acts");
     var again = el("button", "btn btn--cta", "Play again"); again.addEventListener("click", function () { startPractice(gameId); });
     var leave = el("button", "btn", "All games"); leave.addEventListener("click", backToLobby);
@@ -491,12 +491,12 @@ function loadOpenTables() {
       var rows = (r.data) || [];
       if (r.error) { box.innerHTML = '<p class="muted">Couldn\'t load open tables. They\'ll show up when you come back to this page.</p>'; return; }
       if (!rows.length) { box.innerHTML = ""; return; }
-      box.innerHTML = '<div class="sec__head"><h2>Open tables</h2><span class="sec__note">staked, waiting for a player</span></div>';
+      box.innerHTML = '<div class="sec__head"><h2>Open tables</h2><span class="sec__note">paid, waiting for a player</span></div>';
       var panel = el("div", "panel");
       rows.forEach(function (m) {
         var mod = MODULES[m.game]; if (!mod) return;
         var row = el("div", "row row--challenge");
-        row.innerHTML = '<div><div class="row__name">' + esc(mod.name) + ' · ' + rcoin(m.stake_cents) + ' rcoin</div><div class="row__meta">pot ' + rcoin(m.stake_cents * 2) + ' rcoin · winner takes all</div></div>';
+        row.innerHTML = '<div><div class="row__name">' + esc(mod.name) + ' · ' + rcoin(m.stake_cents) + ' rcoin</div><div class="row__meta">prize ' + rcoin(m.stake_cents * 2) + ' rcoin · winner takes all</div></div>';
         var act = el("div", "row__act");
         var join = el("button", "btn btn--cta btn--sm", "Join for " + rcoin(m.stake_cents) + " rcoin");
         join.addEventListener("click", function () { joinOnline(m, join); });
@@ -524,7 +524,7 @@ function loadMyTables() {
       if (r.error) { box.innerHTML = '<p class="muted">Couldn\'t load your tables. Reopen this page to try again.</p>'; return; }
       var rows = (r.data || []).filter(function (m) { return MODULES[m.game]; });
       if (!rows.length) { box.innerHTML = ""; return; }
-      box.innerHTML = '<div class="sec__head"><h2>Your tables</h2><span class="sec__note">staked, in progress</span></div>';
+      box.innerHTML = '<div class="sec__head"><h2>Your tables</h2><span class="sec__note">paid, in progress</span></div>';
       var panel = el("div", "panel");
       rows.forEach(function (m) {
         var mod = MODULES[m.game];
@@ -532,7 +532,7 @@ function loadMyTables() {
         var row = el("div", "row row--challenge");
         var waiting = m.status === "open";
         var yourTurn = !waiting && m.turn_id === CTX.UID;
-        row.innerHTML = '<div><div class="row__name">' + esc(mod.name) + ' · ' + rcoin(m.stake_cents * 2) + ' rcoin pot</div><div class="row__meta">' +
+        row.innerHTML = '<div><div class="row__name">' + esc(mod.name) + ' · ' + rcoin(m.stake_cents * 2) + ' rcoin prize</div><div class="row__meta">' +
           (waiting ? "waiting for a player" : (yourTurn ? "your turn" : "opponent's turn")) + '</div></div>';
         var act = el("div", "row__act");
         var resume = el("button", "btn btn--cta btn--sm", waiting ? "Open" : "Resume");
@@ -556,7 +556,7 @@ function cancelTable(match, btn, after) {
   CTX.client.rpc("rib_game_cancel", { p_match_id: match.id })
     .then(function (r) {
       if (r.error) { btn.disabled = false; notify(r.error, "We couldn't cancel this table. Please try again."); return; }
-      notify(null, "Table cancelled. Your stake is back in your wallet.", "ok");
+      notify(null, "Table cancelled. Your entry fee is back in your wallet.", "ok");
       if (CTX.refreshWallet) CTX.refreshWallet();
       if (after) after();
     })
@@ -637,7 +637,7 @@ function enterOnline(match, mod, seat, waitMsg) {
   var back = el("button", "btn btn--sm", "‹ Leave");
   back.addEventListener("click", backToLobby);
   top.appendChild(back);
-  top.appendChild(el("h2", "gscreen__name", mod.name + " · " + rcoin(match.stake_cents * 2) + " rcoin pot"));
+  top.appendChild(el("h2", "gscreen__name", mod.name + " · " + rcoin(match.stake_cents * 2) + " rcoin prize"));
   var resign = el("button", "btn btn--sm btn--danger", "Resign");
   resign.hidden = true;
   resign.addEventListener("click", function () {
@@ -646,7 +646,7 @@ function enterOnline(match, mod, seat, waitMsg) {
       return cancelTable(online.match, resign, function () { stopOnline(); renderLobby(); });
     }
     if (online.match.status !== "active") return;
-    if (!window.confirm("Resign this match? Your opponent takes the pot.")) return;
+    if (!window.confirm("Resign this match? Your opponent takes the prize.")) return;
     resign.disabled = true;
     sendToServer({ match_id: online.match.id, action: "resign" })
       .then(function (m) { if (m) onlineUpdate(m); })
@@ -714,7 +714,7 @@ function enterOnline(match, mod, seat, waitMsg) {
     if (m.status === "open") { turnbar.textContent = waitMsg || "Waiting for a player to join…"; turnbar.className = "gturn opp"; mod.view(st, onlineApi(board, false)); return; }
     if (m.status !== "active") return finishOnline(m);
     if (mod.result(st)) {
-      turnbar.textContent = "Settling the pot…"; turnbar.className = "gturn";
+      turnbar.textContent = "Paying out the prize…"; turnbar.className = "gturn";
       mod.view(st, onlineApi(board, false));
       return;
     }
@@ -772,15 +772,15 @@ function finishOnline(m) {
   turnbar.textContent = "";
   over.hidden = false;
   if (m.status === "cancelled") {
-    over.innerHTML = '<h3>Match voided</h3><p>Both stakes were refunded to your wallets.</p>';
+    over.innerHTML = '<h3>Match voided</h3><p>Both entry fees were refunded to your wallets.</p>';
   } else if (m.status === "disputed") {
-    over.innerHTML = '<h3>Result in dispute</h3><p>The pot is held until it\'s resolved.</p>';
+    over.innerHTML = '<h3>Result in dispute</h3><p>The prize is held until it\'s resolved.</p>';
   } else if (m.is_draw) {
-    over.innerHTML = '<h3>Draw</h3><p>Both stakes were refunded to your wallets.</p>';
+    over.innerHTML = '<h3>Draw</h3><p>Both entry fees were refunded to your wallets.</p>';
   } else {
     var won = m.winner_id === CTX.UID;
     over.innerHTML = '<h3 class="' + (won ? "win" : "lose") + '">' + (won ? "You win" : "You lose") + '</h3>' +
-      '<p>' + (won ? "You took the pot: +" + rcoin(m.stake_cents * 2) + " rcoin (net +" + rcoin(m.stake_cents) + ")." : "The pot went to your opponent (−" + rcoin(m.stake_cents) + " rcoin).") + '</p>';
+      '<p>' + (won ? "You won the prize: +" + rcoin(m.stake_cents * 2) + " rcoin (net +" + rcoin(m.stake_cents) + ")." : "The prize went to your opponent (−" + rcoin(m.stake_cents) + " rcoin).") + '</p>';
   }
   var acts = el("div", "gover__acts");
   var leave = el("button", "btn btn--cta", "Back to games"); leave.addEventListener("click", backToLobby);

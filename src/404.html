@@ -17,6 +17,10 @@
 <body>
   <a class="skip-link" href="#main">Skip to content</a>
   <header class="nav is-scrolled" data-nav>
+    <!-- Announcement (inside the fixed header so it never overlaps the menu) -->
+    <div class="announce">
+      Test mode: play with simulated rcoin, no real money yet — <a href="signup.html">create a free account →</a>
+    </div>
     <div class="shell nav__inner">
       <a href="index.html" class="brand" aria-label="Runinback home">
         <img class="brand__icon" src="/logo-icon.png" width="34" height="24" alt="" />
@@ -26,7 +30,10 @@
         <a href="how-it-works.html" class="nav__link">How it works</a>
         <a href="developers.html" class="nav__link">Developers</a>
         <a href="contact.html" class="nav__link">Contact</a>
-        <a href="developers.html" class="btn btn--cta btn--sm">Get API access</a>
+        <span class="nav__account" id="nav-account">
+          <a class="nav__link nav__auth" href="login.html">Log in</a>
+          <a class="btn btn--cta btn--sm" href="signup.html">Sign up</a>
+        </span>
       </nav>
       <button class="nav__toggle" data-nav-toggle aria-label="Toggle menu" aria-expanded="false">
         <span></span>

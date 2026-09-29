@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
   <title>Developers — Runinback SDK, docs &amp; waitlist</title>
-  <meta name="description" content="Integrate skill-based wagering with the Runinback SDK. Quickstart, API reference and the developer preview waitlist — escrow and settlement in under 10 lines." />
+  <meta name="description" content="Add skill-based competitions to your game with the Runinback API: quickstart, REST endpoints and the SDK preview waitlist." />
   <meta name="author" content="Runinback" />
   <meta name="robots" content="index, follow" />
   <meta name="theme-color" content="#0e100f" />
@@ -14,18 +14,18 @@
   <meta property="og:type" content="website" />
   <meta property="og:site_name" content="Runinback" />
   <meta property="og:title" content="Runinback for Developers — SDK, docs &amp; waitlist" />
-  <meta property="og:description" content="Add match escrow and automated settlement to your game in under 10 lines of code." />
+  <meta property="og:description" content="Add match escrow and automated settlement to your game with the Runinback API." />
   <meta property="og:url" content="https://runinback.com/developers.html" />
   <meta property="og:image" content="https://runinback.com/og-image.png" />
   <meta property="og:image:type" content="image/png" />
   <meta property="og:image:width" content="1200" />
   <meta property="og:image:height" content="630" />
-  <meta property="og:image:alt" content="Runinback — the wagering layer for competitive gaming" />
+  <meta property="og:image:alt" content="Runinback — competitive gaming where skill pays" />
   <meta name="twitter:card" content="summary_large_image" />
   <meta name="twitter:title" content="Runinback for Developers" />
   <meta name="twitter:description" content="SDK, docs and developer preview waitlist." />
   <meta name="twitter:image" content="https://runinback.com/og-image.png" />
-  <meta name="twitter:image:alt" content="Runinback — the wagering layer for competitive gaming" />
+  <meta name="twitter:image:alt" content="Runinback — competitive gaming where skill pays" />
   <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png" />
   <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16.png" />
   <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
@@ -37,6 +37,10 @@
   <a class="skip-link" href="#main">Skip to content</a>
 
   <header class="nav" data-nav>
+    <!-- Announcement (inside the fixed header so it never overlaps the menu) -->
+    <div class="announce">
+      Test mode: play with simulated rcoin, no real money yet — <a href="signup.html">create a free account →</a>
+    </div>
     <div class="shell nav__inner">
       <a href="index.html" class="brand" aria-label="Runinback home">
         <img class="brand__icon" src="/logo-icon.png" width="34" height="24" alt="" />
@@ -62,17 +66,15 @@
     <section class="page-head">
       <div class="backdrop" aria-hidden="true"></div>
       <div class="shell">
-        <p class="eyebrow" data-reveal><span style="color:var(--accent-sdk)">Developer experience</span></p>
+        <p class="eyebrow" data-reveal>Developer experience</p>
         <h1 class="h-lg page-head__title" data-reveal>Monetize competition, not your roadmap.</h1>
-        <p class="lead" data-reveal>Install the SDK, create a match, settle the result. Runinback handles wallets, escrow and payouts so you can stay focused on the game.</p>
+        <p class="lead" data-reveal>Issue a test key, call the API, read games and the verified ranking. Runinback handles wallets, escrow and payouts so you can stay focused on the game.</p>
         <div class="hero__actions mt-32" data-reveal>
-          <a href="#waitlist" class="btn btn--cta">Join developer waitlist <span class="arrow">→</span></a>
+          <a href="signup.html" class="btn btn--cta">Get a test key <span class="arrow">→</span></a>
           <a href="#quickstart" class="btn btn--ghost">Read the quickstart</a>
         </div>
       </div>
     </section>
-
-    <div class="shell"><hr class="hairline" /></div>
 
     <!-- Quickstart -->
     <section class="section" id="quickstart">
@@ -87,12 +89,13 @@
             <div data-reveal>
               <div class="step__num">01 · Key</div>
               <h3 class="h3 mt-16">Issue a test key</h3>
-              <p class="lead muted mt-16">Create an account, open the console, go to <strong>Dev › API keys</strong> and issue a test key. You'll see it in full once; store it as a server secret, never in a browser or app bundle.</p>
+              <p class="step__text mt-16">Create an account, open the console, go to <strong>Dev › API keys</strong> and issue a test key. You'll see it in full once; store it as a server secret, never in a browser or app bundle.</p>
             </div>
             <div class="terminal" data-reveal>
-              <div class="terminal__bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="terminal__file">.env</span></div>
+              <div class="terminal__bar"><span class="terminal__file">.env</span></div>
               <pre><code>RIB_KEY=<span class="tok-str">rib_test_…</span>
-RIB_API=<span class="tok-str">https://&lt;project&gt;.supabase.co/functions/v1/api</span></code></pre>
+RIB_API=<span class="tok-str">https://&lt;project&gt;.supabase.co</span>\
+<span class="tok-str">/functions/v1/api</span></code></pre>
             </div>
           </div>
 
@@ -100,14 +103,15 @@ RIB_API=<span class="tok-str">https://&lt;project&gt;.supabase.co/functions/v1/a
             <div data-reveal>
               <div class="step__num">02 · Call</div>
               <h3 class="h3 mt-16">Check your key</h3>
-              <p class="lead muted mt-16">Every request sends the key as a bearer token. <code>/v1/status</code> returns the project and environment the key belongs to.</p>
+              <p class="step__text mt-16">Every request sends the key as a bearer token. <code>/v1/status</code> returns the project and environment the key belongs to.</p>
             </div>
             <div class="terminal" data-reveal>
-              <div class="terminal__bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="terminal__file">terminal</span></div>
+              <div class="terminal__bar"><span class="terminal__file">terminal</span></div>
               <pre><code>curl <span class="tok-str">"$RIB_API/v1/status"</span> \
   -H <span class="tok-str">"Authorization: Bearer $RIB_KEY"</span>
 
-<span class="tok-com"># {"ok":true,"environment":"test","project":{"name":"My game"},"mode":"test"}</span></code></pre>
+<span class="tok-com"># {"ok": true, "environment": "test",</span>
+<span class="tok-com">#  "project": {"name": "My game"}}</span></code></pre>
             </div>
           </div>
 
@@ -115,13 +119,15 @@ RIB_API=<span class="tok-str">https://&lt;project&gt;.supabase.co/functions/v1/a
             <div data-reveal>
               <div class="step__num">03 · Build</div>
               <h3 class="h3 mt-16">Read games and rankings</h3>
-              <p class="lead muted mt-16"><code>GET /v1/games</code> lists the games that can be played for stakes. <code>GET /v1/leaderboard?period=week|all&amp;limit=20</code> returns the verified ranking. Limit: 120 requests per minute per key. Match creation and settlement endpoints, and a typed SDK, are coming next.</p>
+              <p class="step__text mt-16"><code>GET /v1/games</code> lists the games available for paid matches. <code>GET /v1/leaderboard</code> returns the verified ranking (<code>period=week|all</code>, <code>limit</code> up to 20). Limit: 120 requests per minute per key. Match creation and settlement endpoints, and a typed SDK, are coming next.</p>
             </div>
             <div class="terminal" data-reveal>
-              <div class="terminal__bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="terminal__file">server.js</span></div>
-              <pre><code><span class="tok-kw">const</span> res = <span class="tok-kw">await</span> <span class="tok-fn">fetch</span>(<span class="tok-str">`${process.env.RIB_API}/v1/leaderboard?period=week`</span>, {
-  headers: { Authorization: <span class="tok-str">`Bearer ${process.env.RIB_KEY}`</span> }
-});
+              <div class="terminal__bar"><span class="terminal__file">server.js</span></div>
+              <pre><code><span class="tok-kw">const</span> { RIB_API, RIB_KEY } = process.env;
+<span class="tok-kw">const</span> res = <span class="tok-kw">await</span> <span class="tok-fn">fetch</span>(
+  <span class="tok-str">`${RIB_API}/v1/leaderboard?period=week`</span>,
+  { headers: { Authorization: <span class="tok-str">`Bearer ${RIB_KEY}`</span> } }
+);
 <span class="tok-kw">const</span> { data } = <span class="tok-kw">await</span> res.<span class="tok-fn">json</span>();</code></pre>
             </div>
           </div>
@@ -134,38 +140,32 @@ RIB_API=<span class="tok-str">https://&lt;project&gt;.supabase.co/functions/v1/a
       <div class="shell">
         <div class="section-head" data-reveal>
           <p class="eyebrow">What's in the box</p>
-          <h2 class="h1">A complete wagering toolkit.</h2>
+          <h2 class="h1">A complete competition toolkit.</h2>
         </div>
         <div class="grid grid--3">
-          <div class="card" data-reveal style="--card-accent:var(--accent-sdk)">
-            <div class="card__icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2 3 7v10l9 5 9-5V7Z"/><path d="M3 7l9 5 9-5M12 12v10"/></svg></div>
-            <h3 class="card__title">Drop-in SDK</h3>
-            <p class="card__text">First-class TypeScript, framework-agnostic client and server helpers, and a hosted challenge overlay.</p>
+          <div class="card" data-reveal>
+            <h3 class="card__title">REST API</h3>
+            <p class="card__text">Key status, playable games and the verified ranking over HTTPS today, at 120 requests per minute per key.</p>
           </div>
-          <div class="card" data-reveal style="--card-accent:var(--accent-match)">
-            <div class="card__icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7 0l3-3a5 5 0 0 0-7-7l-1 1"/><path d="M14 11a5 5 0 0 0-7 0l-3 3a5 5 0 0 0 7 7l1-1"/></svg></div>
-            <h3 class="card__title">Webhooks &amp; events</h3>
-            <p class="card__text">Subscribe to match lifecycle events — created, funded, started, settled, refunded — with signed payloads.</p>
+          <div class="card" data-reveal>
+            <h3 class="card__title">SDK preview</h3>
+            <p class="card__text">A typed TypeScript client and a hosted challenge overlay, in preview with early partners.</p>
           </div>
-          <div class="card" data-reveal style="--card-accent:var(--accent-settle)">
-            <div class="card__icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 3h6M10 3v6l-5 9a2 2 0 0 0 2 3h10a2 2 0 0 0 2-3l-5-9V3"/><path d="M7.5 15h9"/></svg></div>
-            <h3 class="card__title">Sandbox &amp; credits</h3>
-            <p class="card__text">Test the full escrow-to-payout loop on devnet with free sandbox credits before going live.</p>
+          <div class="card" data-reveal>
+            <h3 class="card__title">Test mode</h3>
+            <p class="card__text">Run the full entry-to-payout loop with simulated rcoin before any real money is involved.</p>
           </div>
-          <div class="card" data-reveal style="--card-accent:var(--accent-brand)">
-            <div class="card__icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20V11M10 20V5M16 20v-7M22 20H2"/></svg></div>
-            <h3 class="card__title">Dashboard</h3>
-            <p class="card__text">Monitor matches, volume and payouts in real time, and manage keys and webhooks in one place.</p>
+          <div class="card" data-reveal>
+            <h3 class="card__title">Developer console</h3>
+            <p class="card__text">Create projects, issue and revoke keys, and keep test and live environments apart.</p>
           </div>
-          <div class="card" data-reveal style="--card-accent:var(--accent-escrow)">
-            <div class="card__icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l7 3v6c0 4-3 7-7 8-4-1-7-4-7-8V6Z"/><path d="M9 12l2 2 4-4"/></svg></div>
+          <div class="card" data-reveal>
+            <h3 class="card__title">Webhooks, next</h3>
+            <p class="card__text">Signed match lifecycle events — created, funded, settled, refunded — are next on the roadmap.</p>
+          </div>
+          <div class="card" data-reveal>
             <h3 class="card__title">Audit before launch</h3>
-            <p class="card__text">Escrow contracts will be independently audited before real-money launch, with a public transaction proof for every pot.</p>
-          </div>
-          <div class="card" data-reveal style="--card-accent:var(--accent-sdk)">
-            <div class="card__icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v10H9l-4 4V5Z"/><path d="M8 9h8M8 12h5"/></svg></div>
-            <h3 class="card__title">Integration support</h3>
-            <p class="card__text">Preview partners get a shared channel with our engineers to ship the first integration fast.</p>
+            <p class="card__text">Escrow contracts will be independently audited before real-money launch, with a public transaction proof for every prize.</p>
           </div>
         </div>
       </div>
@@ -178,10 +178,10 @@ RIB_API=<span class="tok-str">https://&lt;project&gt;.supabase.co/functions/v1/a
           <div data-reveal>
             <p class="eyebrow">Developer preview</p>
             <h2 class="h1 mt-16">Join the waitlist.</h2>
-            <p class="lead muted mt-24">Tell us about your game and we'll get you early SDK access, sandbox credits and a direct line for integration help. No spam — just your access details.</p>
+            <p class="lead muted mt-24">Tell us about your game and we'll get you early SDK access, test credits and a direct line for integration help. No spam — just your access details.</p>
             <ul class="feature__list mt-32">
-              <li>Early access to the v1.0 SDK</li>
-              <li>Free devnet sandbox credits</li>
+              <li>Early access to the typed SDK preview</li>
+              <li>Test-mode rcoin to run full matches</li>
               <li>Priority integration support</li>
             </ul>
           </div>
@@ -232,49 +232,37 @@ RIB_API=<span class="tok-str">https://&lt;project&gt;.supabase.co/functions/v1/a
       <div class="footer__top">
         <div class="footer__brand">
           <a href="index.html" class="brand" aria-label="Runinback home"><img class="brand__lockup" src="/logo-lockup.png" width="180" height="30" alt="Runinback" /></a>
-          <p class="footer__tagline">The trustless wagering layer for competitive gaming. Reset. Replay. Redeem.</p>
-          <div class="footer__social">
-            <a href="#" aria-label="Runinback on X"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M18.9 1.6h3.4l-7.5 8.6L23.5 22h-6.8l-5.3-7-6.1 7H1.9l8-9.2L1 1.6h7l4.8 6.4ZM17.7 20h1.9L7.1 3.5H5.1Z"/></svg></a>
-            <a href="#" aria-label="Runinback on Discord"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M20.3 4.6A19 19 0 0 0 15.6 3l-.3.5c1.6.4 2.3.9 3.1 1.5a13 13 0 0 0-10.8 0C8.4 4.4 9.2 3.9 10.7 3.5L10.4 3A19 19 0 0 0 5.7 4.6C2.7 9 1.9 13.4 2.3 17.7a19 19 0 0 0 5.8 2.9l.7-1.1c-.7-.3-1.3-.6-1.9-1l.5-.3a13.6 13.6 0 0 0 11.6 0l.5.3c-.6.4-1.2.7-1.9 1l.7 1.1a19 19 0 0 0 5.8-2.9c.5-5-.8-9.4-3.4-13.1ZM9.2 15.1c-.9 0-1.7-.9-1.7-1.9s.8-1.9 1.7-1.9 1.7.9 1.7 1.9-.7 1.9-1.7 1.9Zm5.6 0c-.9 0-1.7-.9-1.7-1.9s.8-1.9 1.7-1.9 1.7.9 1.7 1.9-.7 1.9-1.7 1.9Z"/></svg></a>
-            <a href="#" aria-label="Runinback on GitHub"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 1.5A10.5 10.5 0 0 0 8.7 22c.5.1.7-.2.7-.5v-1.8c-2.9.6-3.5-1.4-3.5-1.4-.5-1.2-1.2-1.5-1.2-1.5-.9-.6.1-.6.1-.6 1 .1 1.6 1 1.6 1 .9 1.6 2.4 1.1 3 .9.1-.7.4-1.1.6-1.4-2.3-.3-4.7-1.1-4.7-5a4 4 0 0 1 1-2.7c-.1-.3-.5-1.4.1-2.8 0 0 .8-.3 2.7 1a9.3 9.3 0 0 1 4.9 0c1.9-1.3 2.7-1 2.7-1 .6 1.4.2 2.5.1 2.8a4 4 0 0 1 1 2.7c0 3.9-2.4 4.7-4.7 5 .4.3.7.9.7 1.9v2.7c0 .3.2.6.7.5A10.5 10.5 0 0 0 12 1.5Z"/></svg></a>
-          </div>
+          <p class="footer__tagline">Skill-based competition for video games. Reset. Replay. Redeem.</p>
         </div>
         <div class="footer__col">
-          <h4>Product</h4>
+          <h4>Play</h4>
           <ul>
             <li><a href="how-it-works.html">How it works</a></li>
-            <li><a href="developers.html">Developers</a></li>
-            <li><a href="developers.html">Pricing</a></li>
+            <li><a href="signup.html">Create an account</a></li>
+            <li><a href="login.html">Log in</a></li>
           </ul>
         </div>
         <div class="footer__col">
           <h4>Developers</h4>
           <ul>
-            <li><a href="developers.html">Documentation</a></li>
-            <li><a href="developers.html">SDK reference</a></li>
-            <li><a href="#waitlist">Sandbox</a></li>
-            <li><a href="developers.html">Status</a></li>
+            <li><a href="developers.html">Overview</a></li>
+            <li><a href="developers.html#quickstart">Quickstart</a></li>
+            <li><a href="developers.html#waitlist">SDK preview</a></li>
           </ul>
         </div>
         <div class="footer__col">
           <h4>Company</h4>
           <ul>
             <li><a href="contact.html">Contact</a></li>
-            <li><a href="#">Careers</a></li>
-            <li><a href="privacy.html">Privacy</a></li>
             <li><a href="terms.html">Terms</a></li>
+            <li><a href="privacy.html">Privacy</a></li>
             <li><a href="cookies.html">Cookies</a></li>
           </ul>
         </div>
       </div>
       <div class="footer__bottom">
         <span>© <span data-year>2026</span> Runinback. All rights reserved.</span>
-        <nav aria-label="Legal">
-          <a href="privacy.html">Privacy</a>
-          <a href="terms.html">Terms</a>
-          <a href="cookies.html">Cookies</a>
-          <a href="contact.html">Contact</a>
-        </nav>
+        <span>Test mode: simulated rcoin, no real money.</span>
       </div>
     </div>
   </footer>

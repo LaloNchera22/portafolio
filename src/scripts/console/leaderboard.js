@@ -23,7 +23,7 @@ function renderStanding(row, period) {
   const box = $("ranking-me");
   if (!row) {
     box.innerHTML = '<p class="standing__empty">You\'re not on the ' + (period === "week" ? "weekly" : "all-time") +
-      " board yet. Win a staked game, a challenge or a tournament to get ranked.</p>";
+      " board yet. Win a paid game, a challenge or a tournament to get ranked.</p>";
   } else {
     box.innerHTML =
       '<div class="standing__rank"><span class="standing__k">Your rank</span><span class="standing__n">' + (row.rank ? Number(row.rank).toLocaleString("en") : "—") + "</span></div>" +
@@ -121,7 +121,7 @@ export function loadProfileRecord() {
     if (r.error) { box.innerHTML = '<p class="muted">Couldn\'t load your record. Try again in a moment.</p>'; return; }
     const row = r.data && r.data[0];
     if (!row) {
-      box.innerHTML = '<p class="muted">No ranked results yet. Win or lose a staked game and your record shows up here.</p>';
+      box.innerHTML = '<p class="muted">No ranked results yet. Win or lose a paid game and your record shows up here.</p>';
       return;
     }
     box.innerHTML =
