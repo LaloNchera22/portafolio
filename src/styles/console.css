@@ -516,6 +516,10 @@ html.gmodal-open { overflow: hidden; }
 .capp .ops-case__reason { margin: 0; font-size: 14px; line-height: 1.55; }
 .capp .ops-case__evidence { display: flex; flex-wrap: wrap; gap: 8px; color: var(--c-dim); font-size: 13px; }
 .capp .ops-case__evidence img { width: 180px; aspect-ratio: 16 / 10; object-fit: cover; border-radius: 8px; }
+.capp .ops-case__evidence figure { margin: 0; display: grid; gap: 4px; }
+.capp .ops-case__evidence figcaption { font-size: 12px; color: var(--c-dim); }
+.capp .ops-case__who { color: var(--c-cream); font-weight: 600; }
+.capp .ops-case__at { font-variant-numeric: tabular-nums; font-size: 12px; }
 .capp .ops-case__chat summary { cursor: pointer; font-size: 14px; }
 .capp .ops-case__chat ol { margin: 8px 0 0; padding-left: 18px; font-size: 13.5px; color: var(--c-dim); display: grid; gap: 4px; }
 .capp .game-account-form { margin-top: 12px; }
@@ -606,7 +610,7 @@ html.gmodal-open { overflow: hidden; }
 .rib-toast__act:hover { border-color: var(--c-cream, #fffce1); }
 
 /* ---- live strip (every page) ------------------------------------------- */
-.capp .live-rooms { margin: 14px 0 0; }
+.capp .live-rooms { margin: 0 0 26px; }
 .capp .live-room { border-color: var(--c-hairline); position: relative; overflow: hidden; }
 .capp .live-room.is-urgent { border-color: rgba(0,186,226,.55); }
 .capp .live-room.is-urgent::after { content: ""; position: absolute; left: 0; right: 0; top: 0; height: 1px; background: var(--c-match); transform-origin: left; animation: c-sweep 700ms cubic-bezier(.52,.01,0,1) backwards; }
@@ -703,4 +707,41 @@ html.gmodal-open { overflow: hidden; }
   .capp .room-players__vs { display: none; }
   .capp .room-player__rec { display: none; }
   .capp .room-player__name { font-size: 14px; }
+}
+
+/* ---- Ranking podium ------------------------------------------------------ */
+.capp .podium { list-style: none; margin: 0 0 20px; padding: 0; display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; align-items: end; }
+.capp .podium li { background: var(--c-panel); border-radius: 14px 14px 4px 4px; border-top: 1px solid var(--c-hairline); padding: 16px; display: grid; gap: 4px; min-width: 0;
+  animation: c-enter 360ms cubic-bezier(.52,.01,0,1) backwards; }
+.capp .podium .p1 { order: 2; padding-top: 44px; border-top-color: var(--c-settle); animation-delay: 120ms; }
+.capp .podium .p2 { order: 1; padding-top: 28px; animation-delay: 60ms; }
+.capp .podium .p3 { order: 3; }
+.capp .podium li.is-me { outline: 1px solid rgba(0,186,226,.45); outline-offset: -1px; }
+.capp .podium__pos { font-size: clamp(34px, 6vw, 56px); font-weight: 600; letter-spacing: -.04em; line-height: 1; color: var(--c-dim); }
+.capp .podium .p1 .podium__pos { color: var(--c-settle); }
+.capp .podium__who { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.capp .podium__net { font-size: 18px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.capp .podium__rec { font-size: 12.5px; color: var(--c-dim); }
+.capp .standing .btn { margin-top: 10px; }
+@media (max-width: 560px) {
+  .capp .podium { gap: 6px; }
+  .capp .podium li { padding: 12px 10px; }
+  .capp .podium .p1 { padding-top: 30px; }
+  .capp .podium .p2 { padding-top: 20px; }
+  .capp .podium__net { font-size: 15px; }
+  .capp .podium__rec { display: none; }
+}
+
+/* ---- Play: how tournaments work ------------------------------------------ */
+.capp .onboard { position: relative; margin: 0 0 28px; border: 1px solid var(--c-hairline); border-radius: 16px; padding: 18px 52px 18px 18px; }
+.capp .onboard ol { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; counter-reset: step; }
+.capp .onboard li { counter-increment: step; display: grid; gap: 4px; padding-left: 38px; position: relative; font-size: 13.5px; }
+.capp .onboard li::before { content: counter(step); position: absolute; left: 0; top: -2px; width: 26px; height: 26px; border-radius: 50%; border: 1px solid var(--c-match); color: var(--c-match); display: grid; place-items: center; font-size: 13px; font-weight: 600; }
+.capp .onboard li:last-child::before { border-color: var(--c-settle); color: var(--c-settle); }
+.capp .onboard li span { color: var(--c-dim); line-height: 1.5; text-wrap: pretty; }
+.capp .onboard__x { position: absolute; top: 8px; right: 8px; width: 40px; height: 40px; border: 0; border-radius: 50%; background: transparent; color: var(--c-dim); font-size: 20px; cursor: pointer; transition: color .15s, background-color .15s; }
+.capp .onboard__x:hover { color: var(--c-cream); background: var(--c-panel); }
+.capp .onboard__x:focus-visible { outline: 2px solid var(--c-cream); outline-offset: 2px; }
+@media (max-width: 720px) {
+  .capp .onboard ol { grid-template-columns: 1fr; gap: 14px; }
 }

@@ -21,6 +21,21 @@ import { initRoom, loadRoom, openRoom } from "./room.js";
 import { initTournaments, loadTournaments } from "./tournaments.js";
 import { handleCheckoutReturn, initWallet, loadLedger, prepareTopUp, refreshWallet, updatePurchaseQuote } from "./wallet.js";
 
+// Three steps from "just signed up" to "playing for a prize", on the Play
+// page until the player hides them. Remembered per browser only.
+const ONBOARD_KEY = "rib:onboard-hidden";
+function initOnboarding() {
+  const box = $("onboard");
+  if (!box) return;
+  let hidden = false;
+  try { hidden = window.localStorage.getItem(ONBOARD_KEY) === "1"; } catch (e) { /* storage blocked */ }
+  setVisible(box, !hidden);
+  $("onboard-dismiss").addEventListener("click", function () {
+    setVisible(box, false);
+    try { window.localStorage.setItem(ONBOARD_KEY, "1"); } catch (e) { /* storage blocked */ }
+  });
+}
+
 function redirectToLanding() {
   window.location.replace("index.html");
 }
@@ -100,6 +115,7 @@ export function initConsole() {
     initTournaments();
     initRanking();
     initWallet();
+    initOnboarding();
 
     refreshWallet();
     loadProfile();

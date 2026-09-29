@@ -92,15 +92,15 @@ describe("withdrawals", () => {
     $("withdraw-amount").value = "0.6";
     $("withdraw-submit").click();
     expect(withdrawCalls()).toHaveLength(0);
-    expect($("wallet-msg").textContent).toBe("Enter whole rcoin, no decimals.");
-    expect($("wallet-msg").getAttribute("role")).toBe("alert");
+    expect($("withdraw-msg").textContent).toBe("Enter whole rcoin, no decimals.");
+    expect($("withdraw-msg").getAttribute("role")).toBe("alert");
   });
 
   it("rejects more than the available balance", () => {
     $("withdraw-amount").value = "500";
     $("withdraw-submit").click();
     expect(withdrawCalls()).toHaveLength(0);
-    expect($("wallet-msg").textContent).toContain("available");
+    expect($("withdraw-msg").textContent).toContain("available");
   });
 
   it("sends a valid whole amount in cents", () => {

@@ -5,7 +5,10 @@
  * ========================================================================== */
 import { byId as $, escapeHtml as esc, setVisible } from "../lib/dom.js";
 import { centsToRcoin, formatRcoin } from "../lib/format.js";
+import { tweenNumber } from "../lib/motion.js";
 import { session } from "./context.js";
+import { goToPage } from "./navigation.js";
+import { peakArt } from "./room.js";
 
 const PAGE_SIZE = 50;
 const state = { period: "week", offset: 0, request: 0, loading: false };
@@ -23,7 +26,8 @@ function renderStanding(row, period) {
   const box = $("ranking-me");
   if (!row) {
     box.innerHTML = '<p class="standing__empty">You\'re not on the ' + (period === "week" ? "weekly" : "all-time") +
-      " board yet. Play a tournament to get ranked.</p>";
+      " board yet. Play a tournament to get ranked.</p>" +
+      '<button type="button" class="btn btn--cta btn--sm" data-go-compete>Find a tournament</button>';
   } else {
     box.innerHTML =
       '<div class="standing__rank"><span class="standing__k">Your rank</span><span class="standing__n">' + (row.rank ? Number(row.rank).toLocaleString("en") : "—") + "</span></div>" +
@@ -49,6 +53,25 @@ function rowHtml(row) {
     "</li>";
 }
 
+// Top three stand on a podium; their net counts up on a fresh load.
+function podiumHtml(rows) {
+  const cls = ["p1", "p2", "p3"];
+  return '<ol class="podium" aria-label="Top 3">' + rows.slice(0, 3).map(function (row, i) {
+    const me = row.user_id === session.uid;
+    return '<li class="' + cls[i] + (me ? " is-me" : "") + '"><span class="podium__pos">' + row.rank + "</span>" +
+      '<span class="podium__who">@' + esc(row.username) + (me ? ' <span class="tag">you</span>' : "") + "</span>" +
+      '<span class="podium__net ' + (row.net_cents >= 0 ? "pos" : "neg") + '" data-net="' + row.net_cents + '">' + esc(signed(row.net_cents)) + "</span>" +
+      '<span class="podium__rec">' + esc(record(row)) + " · " + esc(formatRcoin(row.won_cents)) + " won</span></li>";
+  }).join("") + "</ol>";
+}
+
+function countPodium(list) {
+  list.querySelectorAll(".podium__net").forEach(function (el) {
+    const to = parseInt(el.getAttribute("data-net"), 10) || 0;
+    tweenNumber(el, 0, to, function (v) { el.textContent = signed(Math.round(v)); }, 600);
+  });
+}
+
 function loadPage(append) {
   if (!append) state.offset = 0;
   const period = state.period;
@@ -70,17 +93,23 @@ function loadPage(append) {
     }
     const rows = r.data || [];
     if (!append && !rows.length) {
-      list.innerHTML = '<div class="empty"><h3>No results yet</h3><p>' +
-        (period === "week" ? "Nobody has settled a match this week. Be the first on the board." : "Settled matches will appear here.") + "</p></div>";
+      list.innerHTML = '<div class="empty">' + peakArt("settle") + "<h3>No results yet</h3><p>" +
+        (period === "week" ? "Nobody has played a tournament this week. Be the first on the board." : "Tournament results will appear here.") + "</p>" +
+        '<p><button type="button" class="btn btn--cta btn--sm" data-go-compete>Find a tournament</button></p></div>';
       setVisible($("ranking-more"), false);
       return;
     }
-    const html = rows.map(rowHtml).join("");
-    if (append) list.querySelector("ol").insertAdjacentHTML("beforeend", html);
-    else list.innerHTML = '<ol class="ranking" role="list" aria-label="' + (period === "week" ? "This week's ranking" : "All-time ranking") + '">' + html + "</ol>";
+    const withPodium = !append && rows.length >= 3;
+    const html = (withPodium ? rows.slice(3) : rows).map(rowHtml).join("");
+    if (append) list.querySelector("ol.ranking").insertAdjacentHTML("beforeend", html);
+    else {
+      list.innerHTML = (withPodium ? podiumHtml(rows) : "") +
+        '<ol class="ranking" role="list" aria-label="' + (period === "week" ? "This week's ranking" : "All-time ranking") + '">' + html + "</ol>";
+      if (withPodium) countPodium(list);
+    }
     state.offset = rows.length > 0 ? Number(rows[rows.length - 1].rank) : state.offset;
     setVisible($("ranking-more"), rows.length === PAGE_SIZE);
-    $("ranking-status").textContent = (period === "week" ? "This week's ranking, " : "All-time ranking, ") + list.querySelectorAll("li").length + " players shown";
+    $("ranking-status").textContent = (period === "week" ? "This week's ranking, " : "All-time ranking, ") + list.querySelectorAll(".podium li, .ranking li").length + " players shown";
   }).catch(function () {
     if (request !== state.request) return;
     state.loading = false;
@@ -90,6 +119,10 @@ function loadPage(append) {
     $("ranking-status").textContent = "Couldn't load the ranking.";
   });
 }
+
+document.addEventListener("click", function (e) {
+  if (e.target.closest("[data-go-compete]")) goToPage("page-compete");
+});
 
 export function loadRanking() {
   loadPage(false);

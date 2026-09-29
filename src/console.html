@@ -62,6 +62,14 @@
         <p class="games-lead">Every game, two ways: <strong>practice free</strong> against the house bot, or
           <strong>play online</strong> against another player, also free. Playing for a prize happens in
           <a href="#page-compete" data-page="page-compete">tournaments</a>.</p>
+        <aside class="onboard" id="onboard" hidden aria-label="How tournaments work">
+          <ol>
+            <li><strong>Link your game account</strong><span>Riot ID, Epic, Steam or console, in Profile.</span></li>
+            <li><strong>Join a 4 or 8 player tournament</strong><span>It starts the moment the last seat fills.</span></li>
+            <li><strong>Win your matches</strong><span>The champion takes 70% of the prize pool, the runner-up 30%.</span></li>
+          </ol>
+          <button type="button" class="onboard__x" id="onboard-dismiss" aria-label="Hide these steps">×</button>
+        </aside>
         <div id="games-root"><p class="muted is-loading">Loading games…</p></div>
       </section>
 
@@ -200,7 +208,7 @@
           <div class="hero-bal__main">
             <span class="lbl">Available balance</span>
             <span class="num" id="wallet-balance">0 rcoin</span>
-            <span class="sub" id="wallet-locked">In play: 0 rcoin</span>
+            <span class="sub" id="wallet-locked" hidden></span>
           </div>
           <div class="hero-bal__stats">
             <div><span class="n" id="wallet-usd">$0.00</span><span class="k">value at withdrawal</span></div>
@@ -219,7 +227,7 @@
             </div>
             <div class="buy-brk">
               <div class="row"><span>You pay</span><span id="buy-pay">$100.00</span></div>
-              <div class="row"><span>Entry commission (5%)</span><span id="buy-fee">$5.00</span></div>
+              <div class="row"><span>Purchase fee (5%)</span><span id="buy-fee">$5.00</span></div>
               <div class="row tot"><span>You receive</span><span id="buy-receive">95 rcoin</span></div>
             </div>
             <div class="paymethod" id="pay-method" hidden>
@@ -241,10 +249,11 @@
               <select id="withdraw-destination"><option>USDT (Base network)</option><option>USD (bank transfer)</option></select>
             </div>
             <div class="buy-brk">
-              <div class="row"><span>Exit commission</span><span style="color:var(--c-good)">$0.00</span></div>
+              <div class="row"><span>Withdrawal fee</span><span style="color:var(--c-good)">$0.00</span></div>
               <div class="row tot"><span>You receive</span><span id="withdraw-receive">$0.00</span></div>
             </div>
             <button type="button" class="btn btn--wide" id="withdraw-submit">Withdraw</button>
+            <p class="msg" id="withdraw-msg" hidden></p>
             <p class="hint">No fee on the way out. 1 rcoin = $1.</p>
           </div>
         </div>
@@ -314,7 +323,7 @@
       <!-- ============================= OPS ============================= -->
       <section class="page" id="page-ops" hidden>
         <div class="head"><div><p class="eyebrow">Runinback team</p><h1>Dispute queue.</h1></div></div>
-        <p class="muted sec__lead">Review both players' reports, the room chat and the evidence, then award the prize or refund both. A rejected dispute's deposit goes to the other player.</p>
+        <p class="muted sec__lead">Oldest first. Read both reports, the room chat and the captures, then award the match to one player (the bracket advances) or void it (both are out). A rejected dispute's deposit goes to the other player.</p>
         <div id="ops-root"><p class="muted is-loading">Loading…</p></div>
       </section>
 

@@ -177,12 +177,12 @@ describe("tournaments", () => {
 });
 
 describe("ranking", () => {
-  it("renders the board with the top three emphasized and my row highlighted", () => {
+  it("puts the top three on a podium and highlights me", () => {
     const list = $("ranking-list");
-    expect(list.querySelectorAll(".rank")).toHaveLength(3);
-    expect(list.querySelectorAll(".rank--top")).toHaveLength(2);
-    expect(list.querySelector(".rank--me")).not.toBeNull();
-    expect(list.querySelector("ol").getAttribute("role")).toBe("list");
+    expect([...list.querySelectorAll(".podium li")].map((li) => li.className.split(" ")[0])).toEqual(["p1", "p2", "p3"]);
+    expect(list.querySelectorAll(".ranking .rank")).toHaveLength(0);
+    expect(list.querySelector(".podium .is-me")).not.toBeNull();
+    expect(list.querySelector("ol.ranking").getAttribute("role")).toBe("list");
   });
 
   it("pins my standing and shows my record on the profile", () => {

@@ -42,25 +42,41 @@ export function loadOps() {
           '<button type="button" class="btn btn--sm btn--danger" data-void>Void match</button>' +
         '</div><p class="msg" hidden></p></article>';
     }).join("");
-    rows.forEach(function (d) { loadCaseDetails(d.id); });
+    rows.forEach(function (d) { loadCaseDetails(d); });
     root.querySelectorAll(".ops-case").forEach(wireCase);
   });
 }
 
-function loadCaseDetails(id) {
+// Oldest dispute first (the RPC orders by disputed_at). Captures and chat
+// lines carry who posted them so the reviewer can tell the players apart.
+function loadCaseDetails(d) {
+  const id = d.id;
+  const who = function (uid) {
+    if (uid === d.player_a) return "@" + (d.a_username || "player A");
+    if (uid === d.player_b) return "@" + (d.b_username || "player B");
+    return "Runinback";
+  };
+  const time = function (iso) {
+    try { return new Date(iso).toLocaleTimeString("en", { hour: "2-digit", minute: "2-digit" }); } catch (e) { return ""; }
+  };
   session.client.from("room_evidence").select("storage_path, user_id, source").eq("room_id", id).then(function (r) {
     const box = document.querySelector('[data-evidence-for="' + id + '"]');
     const rows = Array.isArray(r && r.data) ? r.data : [];
     if (!box || !rows.length) return;
     session.client.storage.from(EVIDENCE_BUCKET).createSignedUrls(rows.map(function (e) { return e.storage_path; }), 900).then(function (s) {
-      box.innerHTML = (s.data || []).map(function (item) {
-        return item && item.signedUrl ? '<a href="' + esc(item.signedUrl) + '" target="_blank" rel="noopener"><img src="' + esc(item.signedUrl) + '" alt="Capture" /></a>' : "";
+      box.innerHTML = (s.data || []).map(function (item, i) {
+        if (!item || !item.signedUrl) return "";
+        const label = who(rows[i].user_id) + " · " + (rows[i].source || "capture");
+        return '<figure><a href="' + esc(item.signedUrl) + '" target="_blank" rel="noopener"><img src="' + esc(item.signedUrl) + '" alt="Capture from ' + esc(label) + '" /></a>' +
+          "<figcaption>" + esc(label) + "</figcaption></figure>";
       }).join("");
     });
   });
-  session.client.from("room_messages").select("user_id, body").eq("room_id", id).order("id").limit(200).then(function (r) {
+  session.client.from("room_messages").select("user_id, body, created_at").eq("room_id", id).order("id").limit(200).then(function (r) {
     const list = document.querySelector('[data-chat-for="' + id + '"] ol');
-    if (list) list.innerHTML = ((r && r.data) || []).map(function (m) { return "<li>" + esc(m.body) + "</li>"; }).join("") || "<li>No messages.</li>";
+    if (list) list.innerHTML = ((r && r.data) || []).map(function (m) {
+      return '<li><span class="ops-case__who">' + esc(who(m.user_id)) + '</span> <span class="ops-case__at">' + esc(time(m.created_at)) + "</span> " + esc(m.body) + "</li>";
+    }).join("") || "<li>No messages.</li>";
   });
 }
 
