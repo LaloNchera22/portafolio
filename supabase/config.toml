@@ -14,12 +14,6 @@ double_confirm_changes = true
 # Changing the password needs a recent sign-in (the console re-checks the
 # current password right before it asks, which counts).
 secure_password_change = true
-
-# The API-key minter is called with a user JWT; the platform verifies it too
-# (defense in depth) before our own getUser() check runs.
-[functions.issue-api-key]
-verify_jwt = true
-
 # steam-auth is the Steam login ENTRY point — it runs before any session exists,
 # so it must be public. It does its own verification against Steam.
 [functions.steam-auth]
@@ -34,43 +28,6 @@ verify_jwt = true
 # authentication is the Stripe signature check inside the function — it credits
 # nothing until that passes.
 [functions.stripe-webhook]
-verify_jwt = false
-
-# crypto-checkout creates a Coinbase Commerce charge for the signed-in buyer. It
-# needs a user JWT (the platform verifies it, then the function calls getUser()).
-[functions.crypto-checkout]
-verify_jwt = true
-
-# crypto-webhook is called by COINBASE, not by a user, so it must be public. Its
-# authentication is the HMAC signature check inside the function — it credits
-# nothing until that passes.
-[functions.crypto-webhook]
-verify_jwt = false
-
-# OAuth providers (Google, GitHub, Apple) are enabled + given their client
-# id/secret in the Supabase dashboard (Authentication → Providers). These blocks
-# are only for local `supabase start`; hosted uses the dashboard settings.
-# [auth.external.google]
-#   enabled = true
-#   client_id = "env(GOOGLE_CLIENT_ID)"
-#   secret = "env(GOOGLE_SECRET)"
-# [auth.external.github]
-#   enabled = true
-#   client_id = "env(GITHUB_CLIENT_ID)"
-#   secret = "env(GITHUB_SECRET)"
-# [auth.external.apple]
-#   enabled = true
-#   client_id = "env(APPLE_CLIENT_ID)"
-#   secret = "env(APPLE_SECRET)"
-
-# game-move validates and commits every staked move server-side. It needs a
-# user JWT (the platform verifies it, then the function calls getUser()).
-[functions.game-move]
-verify_jwt = true
-
-# Public developer API. Authenticated by API key inside the function, not by
-# a user JWT.
-[functions.api]
 verify_jwt = false
 
 # Closes the caller's account (user JWT required).

@@ -347,8 +347,6 @@ export function initTournaments() {
   $("tournament-new").addEventListener("click", function () {
     const open = form.hidden;
     setVisible(form, open);
-    setVisible($("challenge-form"), false);
-    $("challenge-msg").hidden = true;
     if (open) {
       const tab = document.querySelector('#compete-seg [data-seg="tournaments"]');
       if (tab) tab.click();
@@ -362,17 +360,17 @@ export function initTournaments() {
     const game = ($("tournament-game").value || "").trim();
     const fee = selectedChipAmount("tournament-fee");
     const size = selectedChipAmount("tournament-size");
-    if (!name) { showMessage($("challenge-msg"), "Give the tournament a name.", false); $("tournament-name").focus(); return; }
-    if (!game) { showMessage($("challenge-msg"), "Name the game you'll play.", false); $("tournament-game").focus(); return; }
+    if (!name) { showMessage($("tournament-msg"), "Give the tournament a name.", false); $("tournament-name").focus(); return; }
+    if (!game) { showMessage($("tournament-msg"), "Name the game you'll play.", false); $("tournament-game").focus(); return; }
     const btn = $("tournament-save");
     btn.disabled = true;
     session.client.rpc("rib_tournament_create", {
       p_name: name, p_game: game, p_entry_fee_cents: isFinite(fee) ? fee : 0, p_size: isFinite(size) ? size : 4,
       p_network: $("tournament-network").value || null,
     }).then(function (r) {
-      if (r.error) { showMessage($("challenge-msg"), errorText(r.error, "Couldn't create the tournament."), false); return; }
+      if (r.error) { showMessage($("tournament-msg"), errorText(r.error, "Couldn't create the tournament."), false); return; }
       setVisible(form, false);
-      $("challenge-msg").hidden = true;
+      $("tournament-msg").hidden = true;
       $("tournament-name").value = "";
       $("tournament-game").value = "";
       const id = r.data && r.data.id;
@@ -381,7 +379,7 @@ export function initTournaments() {
       loadTournaments();
       refreshWallet();
     })
-      .catch(function () { showMessage($("challenge-msg"), "Network error. Check your connection and try again.", false); })
+      .catch(function () { showMessage($("tournament-msg"), "Network error. Check your connection and try again.", false); })
       .finally(function () { btn.disabled = false; });
   });
 

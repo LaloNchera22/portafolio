@@ -7,14 +7,14 @@
  * on-chain on Base (contracts + audit, Phase 3+).
  * ========================================================================== */
 import { isBackendConfigured } from "../lib/config.js";
-import { byId as $, setVisible } from "../lib/dom.js";
+import { byId as $, setVisible, escapeHtml as esc } from "../lib/dom.js";
 import { getClient, getSession } from "../lib/supabase-client.js";
-import { fillNetworkSelect, initChallenges, loadChallenges, prepareFriendly } from "./challenges.js";
 import { initContext, session } from "./context.js";
 import { initRanking, loadProfileRecord, loadRanking } from "./leaderboard.js";
 import { currentRouteArg, goToPage, initAmountChips, initNavigation, initialPage } from "./navigation.js";
 import { initOps, loadOps } from "./ops.js";
 import { initPlayer, loadPlayer } from "./player.js";
+import { NETWORKS } from "./networks.js";
 import {
   initAccountClosure, initGameAccounts, initProfile, loadGameAccounts, loadProfile, prepareLink, setGameAccountsListener, showProfileSection,
 } from "./profile.js";
@@ -44,19 +44,13 @@ function redirectToLanding() {
   window.location.replace("index.html");
 }
 
-// The games engine (27 games) is its own chunk, fetched when Play opens.
-let gamesEngine = null;
-function loadGames() {
-  if (!$("games-root")) return;
-  gamesEngine = gamesEngine || import("../games/engine.js");
-  gamesEngine
-    .then(function (engine) {
-      engine.initGames({ client: session.client, UID: session.uid, refreshWallet: refreshWallet, configured: true });
-    })
-    .catch(function () {
-      gamesEngine = null; // let the next visit retry
-      $("games-root").innerHTML = '<p class="muted">Couldn\'t load the games. Check your connection and open Play again.</p>';
-    });
+function fillNetworkSelect(select, linked) {
+  if (!select) return;
+  const keep = select.value;
+  const have = (linked || []).map(function (a) { return a.network; });
+  select.innerHTML = '<option value="">Not required</option>' + NETWORKS.filter(function (n) { return have.indexOf(n.id) !== -1; })
+    .map(function (n) { return '<option value="' + n.id + '">' + esc(n.label) + "</option>"; }).join("");
+  if (have.indexOf(keep) !== -1) select.value = keep;
 }
 
 // Tournament and friendly forms offer only the game accounts this player
@@ -64,17 +58,14 @@ function loadGames() {
 function fillAccountSelects(rows) {
   if (!rows) return;
   fillNetworkSelect($("tournament-network"), rows);
-  fillNetworkSelect($("challenge-network"), rows);
 }
 function loadGameAccountSelects() {
   return loadGameAccounts().then(fillAccountSelects);
 }
 
 const PAGE_LOADERS = {
-  "page-games": loadGames,
   "page-compete": function () {
-    loadTournaments(); loadChallenges(); loadGameAccountSelects();
-    if (currentRouteArg()) prepareFriendly(currentRouteArg());
+    loadTournaments(); loadGameAccountSelects();
   },
   "page-room": loadRoom,
   "page-ops": loadOps,
@@ -127,7 +118,6 @@ export function initConsole() {
     initRoom();
     initOps();
     initAccountClosure();
-    initChallenges();
     initTournaments();
     initRanking();
     initWallet();
@@ -136,10 +126,9 @@ export function initConsole() {
     refreshWallet();
     loadProfile();
     // Honor a deep link (#page-wallet) and give the first page a history state.
-    const start = initialPage() || "page-games";
+    const start = initialPage() || "page-compete";
     try { window.history.replaceState({ page: start, arg: currentRouteArg() }, "", window.location.href); } catch (e) { /* ignore */ }
-    if (start === "page-games") loadGames();
-    else goToPage(start, { fromHistory: true, arg: currentRouteArg() });
+    goToPage(start, { fromHistory: true, arg: currentRouteArg() });
     // Live matches on every page; a returning player with a match that needs
     // them right now lands in that room instead of the games list.
     const deepLinked = !!initialPage();
