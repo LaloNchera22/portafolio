@@ -78,9 +78,9 @@ function loadPage(append) {
     const html = rows.map(rowHtml).join("");
     if (append) list.querySelector("ol").insertAdjacentHTML("beforeend", html);
     else list.innerHTML = '<ol class="ranking" role="list" aria-label="' + (period === "week" ? "This week's ranking" : "All-time ranking") + '">' + html + "</ol>";
-    state.offset += rows.length;
+    state.offset = rows.length > 0 ? Number(rows[rows.length - 1].rank) : state.offset;
     setVisible($("ranking-more"), rows.length === PAGE_SIZE);
-    $("ranking-status").textContent = (period === "week" ? "This week's ranking, " : "All-time ranking, ") + state.offset + " players shown";
+    $("ranking-status").textContent = (period === "week" ? "This week's ranking, " : "All-time ranking, ") + list.querySelectorAll("li").length + " players shown";
   });
 }
 

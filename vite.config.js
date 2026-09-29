@@ -53,6 +53,15 @@ export default defineConfig(({ mode }) => {
       sourcemap: "hidden",
       rolldownOptions: {
         input: pages,
+        output: {
+          manualChunks: (id) => {
+            if (id.includes('node_modules/@supabase/supabase-js')) {
+              return 'supabase';
+            } else if (id.includes('node_modules')) {
+              return 'vendor';
+            }
+          },
+        },
       },
     },
     server: {
