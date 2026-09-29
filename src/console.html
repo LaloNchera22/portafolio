@@ -58,7 +58,7 @@
           </div>
         </div>
         <p class="games-lead">Every game, two ways: <strong>practice free</strong> against the house bot, or
-          <strong>play for rcoin</strong> — both players stake the same and the winner takes the whole pot.
+          <strong>play for rcoin</strong> — both players pay the same entry fee and the winner takes the whole prize.
           No rake on the table; the 5% is charged once when you buy rcoin.</p>
         <div id="games-root"><p class="muted">Loading games…</p></div>
       </section>
@@ -66,7 +66,7 @@
       <!-- ========================== COMPETE ========================== -->
       <section class="page" id="page-compete" hidden>
         <div class="head">
-          <div><p class="eyebrow">Stake · Escrow · Winner takes all</p><h1>Compete.</h1></div>
+          <div><p class="eyebrow">Entry fee · Escrow · Winner takes all</p><h1>Compete.</h1></div>
           <div class="head__r"><button type="button" class="btn btn--cta btn--sm" id="challenge-new">New challenge</button></div>
         </div>
         <div class="seg" id="compete-seg" role="group" aria-label="Compete">
@@ -83,15 +83,15 @@
             <div class="field"><label for="challenge-mode">Format</label><input id="challenge-mode" type="text" maxlength="40" placeholder="1v1" value="1v1" /></div>
           </div>
           <fieldset class="stake" id="challenge-stake">
-            <legend>Your stake</legend>
+            <legend>Entry fee</legend>
             <div class="stake__dial">
-              <button type="button" class="stake__step" data-step="-1" aria-label="Minus: lower the stake by 1 rcoin"><span aria-hidden="true">−</span></button>
+              <button type="button" class="stake__step" data-step="-1" aria-label="Minus: lower the entry fee by 1 rcoin"><span aria-hidden="true">−</span></button>
               <div class="stake__value">
-                <label for="challenge-stake-input" class="visually-hidden">Stake in rcoin</label>
+                <label for="challenge-stake-input" class="visually-hidden">Entry fee in rcoin</label>
                 <input id="challenge-stake-input" type="text" inputmode="numeric" pattern="[0-9]*" value="10" maxlength="4" autocomplete="off" aria-describedby="challenge-stake-help challenge-stake-error" />
                 <span class="stake__unit" aria-hidden="true">rcoin</span>
               </div>
-              <button type="button" class="stake__step" data-step="1" aria-label="Plus: raise the stake by 1 rcoin"><span aria-hidden="true">+</span></button>
+              <button type="button" class="stake__step" data-step="1" aria-label="Plus: raise the entry fee by 1 rcoin"><span aria-hidden="true">+</span></button>
             </div>
             <div class="chips stake__presets" data-stake-presets></div>
             <p class="stake__summary" id="challenge-stake-help"></p>
@@ -109,8 +109,8 @@
         <div id="compete-lobby">
           <form class="lobby-filters" id="lobby-filters">
             <input type="search" id="lobby-game" placeholder="Search a game" aria-label="Search a game" maxlength="40" autocomplete="off" />
-            <div class="chips" data-lobby-range role="group" aria-label="Stake">
-              <button type="button" data-range="any" class="on" aria-pressed="true">Any stake</button>
+            <div class="chips" data-lobby-range role="group" aria-label="Entry fee">
+              <button type="button" data-range="any" class="on" aria-pressed="true">Any entry fee</button>
               <button type="button" data-range="low" aria-pressed="false">Up to 5</button>
               <button type="button" data-range="mid" aria-pressed="false">5 to 25</button>
               <button type="button" data-range="high" aria-pressed="false">25 and up</button>
@@ -176,7 +176,7 @@
         <p class="visually-hidden" role="status" id="ranking-status"></p>
         <div id="ranking-list" aria-busy="true"><p class="muted">Loading…</p></div>
         <button type="button" class="btn btn--sm lobby-more" id="ranking-more" hidden>Show more</button>
-        <p class="testnote">The ranking counts staked games only, because the server checks every move: pots won minus stakes lost. Challenges and tournaments are reported by players, so they don't count. Positions refresh every few minutes, and the weekly board resets every Monday (UTC).</p>
+        <p class="testnote">The ranking counts paid games only, because the server checks every move: prizes won minus entry fees paid. Challenges and tournaments are reported by players, so they don't count. Positions refresh every few minutes, and the weekly board resets every Monday (UTC).</p>
       </section>
 
       <!-- =========================== WALLET =========================== -->
@@ -285,7 +285,7 @@
 
         <div class="devwelcome">
           <h2>Welcome to the dev portal</h2>
-          <p>Build on Runinback from your server with the public API: read the stakeable games and the verified ranking today; match creation and settlement endpoints come next. Create a project, issue a test key, and follow the <a href="developers.html#quickstart">quickstart</a>. Payouts are planned to settle non-custodially on Base.</p>
+          <p>Build on Runinback from your server with the public API: read the games available for paid matches and the verified ranking today; match creation and settlement endpoints come next. Create a project, issue a test key, and follow the <a href="developers.html#quickstart">quickstart</a>. Payouts are planned to settle non-custodially on Base.</p>
         </div>
 
         <div class="statline" id="dev-metrics">

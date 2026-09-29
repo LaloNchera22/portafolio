@@ -13,11 +13,11 @@ export const STAKE_PRESETS_RCOIN = Object.freeze([1, 5, 10, 25, 50]);
  */
 export function parseStake(value, availableCents) {
   const text = String(value == null ? "" : value).trim();
-  if (text === "") return { error: "Enter a stake." };
+  if (text === "") return { error: "Enter an entry fee." };
   if (!/^\d+$/.test(text)) return { error: "Use whole rcoin, no decimals." };
   const rcoin = parseInt(text, 10);
-  if (rcoin < STAKE_MIN_RCOIN) return { error: "The minimum stake is " + STAKE_MIN_RCOIN + " rcoin." };
-  if (rcoin > STAKE_MAX_RCOIN) return { error: "The maximum stake is " + STAKE_MAX_RCOIN.toLocaleString("en") + " rcoin." };
+  if (rcoin < STAKE_MIN_RCOIN) return { error: "The minimum entry fee is " + STAKE_MIN_RCOIN + " rcoin." };
+  if (rcoin > STAKE_MAX_RCOIN) return { error: "The maximum entry fee is " + STAKE_MAX_RCOIN.toLocaleString("en") + " rcoin." };
   const cents = rcoin * 100;
   if (typeof availableCents === "number" && cents > availableCents) {
     return { error: "You have " + Math.floor(availableCents / 100) + " rcoin available.", rcoin: rcoin, cents: cents, short: true };

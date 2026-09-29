@@ -1,8 +1,14 @@
 # Runinback
 
-The trustless, skill-based wagering layer for competitive gaming: casual
-multiplayer games, 1v1 challenges and tournaments with escrowed stakes in
-**rcoin** (1 rcoin = 1 USD; 5% fee on the way in, none on the way out).
+A skill-based competition platform for video games: casual multiplayer
+games, 1v1 challenges and tournaments where players pay a fixed entry fee in
+**rcoin** (1 rcoin = 1 USD; 5% fee on the way in, none on the way out) and
+the best player wins the prize, held in escrow until the result is verified.
+
+> **Vocabulary.** Runinback is competition, not betting. User-facing copy says
+> *entry fee*, *prize* and *paid match/table*, never wager, bet, stake or pot.
+> Some internal identifiers (`stake_cents`, `STAKEABLE_RULES`, the API's
+> `stakeable` field) keep their original names for compatibility.
 
 > **Test mode.** Balances are an off-chain test ledger. Real funds will be
 > non-custodial on Base after contracts are audited and legal review clears rcoin.

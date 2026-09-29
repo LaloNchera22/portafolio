@@ -17,7 +17,7 @@ export function isStakeable(gameId) {
 
 /** Teasers from the upcoming line-up (hidden from the lobby, kept for help copy). */
 export const COMING_SOON_GAMES = Object.freeze([
-  { id: "chess", name: "Chess", tag: "soon", icon: "♞", blurb: "The classic. Ranked matches and stakes.", soon: true },
+  { id: "chess", name: "Chess", tag: "soon", icon: "♞", blurb: "The classic. Ranked and paid matches.", soon: true },
   { id: "ludo", name: "Ludo", tag: "soon", icon: "⚁", blurb: "Race all four tokens home. 2 to 4 players.", soon: true },
   { id: "backgammon", name: "Backgammon", tag: "soon", icon: "⛃", blurb: "Roll, race and bear off before your rival.", soon: true },
   { id: "spades", name: "Spades", tag: "soon", icon: "♠", blurb: "Bid your tricks and hit your target as a team.", soon: true },

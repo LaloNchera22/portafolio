@@ -80,7 +80,7 @@ describe("challenge lobby", () => {
     const lobby = $("challenge-open");
     expect(lobby.querySelectorAll(".row--lobby")).toHaveLength(2);
     expect(lobby.textContent).toContain("@neo");
-    expect(lobby.textContent).toContain("pot 20 rcoin");
+    expect(lobby.textContent).toContain("prize 20 rcoin");
     expect($("lobby-status").textContent).toBe("2 open challenges");
   });
 
@@ -121,7 +121,7 @@ describe("custom stake composer", () => {
     expect($("challenge-stake-input").getAttribute("aria-invalid")).toBe("true");
     expect($("challenge-save").disabled).toBe(true);
     type("1500");
-    expect($("challenge-stake-error").textContent).toContain("maximum stake is 1,000");
+    expect($("challenge-stake-error").textContent).toContain("maximum entry fee is 1,000");
   });
 
   it("rejects decimals instead of silently rewriting them", () => {

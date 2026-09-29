@@ -1,7 +1,7 @@
 # Runinback — Design System
 
 A dark-canvas, typographic design language for **Runinback**, the trustless
-skill-based wagering layer for competitive gaming. Inspired by the GSAP visual
+skill-based competition platform for video games. Inspired by the GSAP visual
 system: a near-black stage, warm cream type, ghost-pill controls, oversized
 display headlines, and a discipline-based color taxonomy.
 
@@ -69,7 +69,7 @@ theming and the draw-on-load animation.
 | Context | Where | Composition | Rendered size |
 |---------|-------|-------------|---------------|
 | **Wordmark lockup** | Nav + footer, every page (`.brand` + `.brand__mark`) | Mark (viewBox `0 0 44 36`, peak stroke 5.2 + spark 4.2) followed by the "Runinback" wordmark in Inter Tight 20px | Mark `30 × 25px` |
-| **Hero background video** | Landing hero only (`.hero__video` + `.hero__scrim`) | A looping background clip (`video_de_segundos_donde_rec.mp4`), blurred and darkened by a scrim so white type stays legible; JS plays only seconds 0–7 on loop, muted, and pauses under reduced motion | cover, full-bleed |
+| **Hero background video** | Landing hero only (`.hero__video` + `.hero__scrim`) | A 7-second looping clip (`public/media/hero-loop-v2.mp4`, 640×360), blurred and darkened by a scrim so white type stays legible; native `loop`, muted, plays only while on screen and never under reduced motion | cover, full-bleed |
 | **Favicon** | `<link rel="icon">`, all pages | Mark on a `#0e100f` rounded square (rx 7), green stroke, viewBox `0 0 32 32` | `32px` |
 | **PWA / app icon** | `site.webmanifest` | Solid green rounded square (rx 128), no interior mark, for maskable app tiles | `512px` (`sizes: any`) |
 

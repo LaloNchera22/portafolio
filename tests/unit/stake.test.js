@@ -9,12 +9,12 @@ describe("parseStake", () => {
     expect(parseStake(String(STAKE_MAX_RCOIN))).toEqual({ rcoin: 1000, cents: 100000 });
   });
 
-  it("explains what is wrong with an invalid stake", () => {
-    expect(parseStake("").error).toBe("Enter a stake.");
+  it("explains what is wrong with an invalid entry fee", () => {
+    expect(parseStake("").error).toBe("Enter an entry fee.");
     expect(parseStake("2.5").error).toBe("Use whole rcoin, no decimals.");
     expect(parseStake("-3").error).toBe("Use whole rcoin, no decimals.");
-    expect(parseStake("0").error).toBe("The minimum stake is 1 rcoin.");
-    expect(parseStake("1001").error).toBe("The maximum stake is 1,000 rcoin.");
+    expect(parseStake("0").error).toBe("The minimum entry fee is 1 rcoin.");
+    expect(parseStake("1001").error).toBe("The maximum entry fee is 1,000 rcoin.");
   });
 
   it("flags a stake above the available balance but keeps the amount", () => {

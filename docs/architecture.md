@@ -6,7 +6,7 @@
 Browser (Vite-bundled ES modules)
   ├─ supabase-js ──► PostgREST ──► Postgres (RLS: read own rows)
   │                     └─ rpc('rib_*') ──► SECURITY DEFINER RPCs ──► rib_apply (single balance writer)
-  ├─ Realtime (postgres_changes on game_matches) for live staked games
+  ├─ Realtime (postgres_changes on game_matches) for live paid games
   └─ functions.invoke ──► Edge Functions (Deno)
                             ├─ stripe-checkout / crypto-checkout  → hosted checkout
                             ├─ stripe-webhook / crypto-webhook    → signature check → rib_credit_* (service role)
@@ -35,7 +35,7 @@ Vercel serves dist/ with CSP + HSTS; hashed assets are cached immutably.
 - **Stable error codes.** RPCs raise English messages with a `hint` code; the
   client maps hints to copy (`lib/errors.js`), so wording and language can change
   without breaking the UI.
-- **Chain: Base.** Stakes and payouts are designed to settle in USDC on Base,
+- **Chain: Base.** Entry fees and prizes are designed to settle in USDC on Base,
   matching the Coinbase Commerce rail already in use; today everything runs
   in test mode on the off-chain ledger.
 - **Pure game rules.** Each game exposes `init/legal/apply/result/bot`

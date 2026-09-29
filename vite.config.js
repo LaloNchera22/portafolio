@@ -25,6 +25,30 @@ const pages = Object.fromEntries(
 
 const isTruthy = (value) => /^(1|true|yes|on)$/i.test(String(value || ""));
 
+// Fonts are hashed by the bundler, so their <link rel="preload"> tags can
+// only be written after the build: preload the display (600) and body (400)
+// faces so first paint doesn't swap fonts under the hero headline.
+const PRELOADED_FONTS = /inter-tight-latin-(400|600)-normal-[^/]*\.woff2$/;
+function preloadFonts() {
+  return {
+    name: "runinback:preload-fonts",
+    apply: "build",
+    transformIndexHtml: {
+      order: "post",
+      handler(_html, ctx) {
+        if (!ctx.bundle) return [];
+        return Object.keys(ctx.bundle)
+          .filter((file) => PRELOADED_FONTS.test(file))
+          .map((file) => ({
+            tag: "link",
+            attrs: { rel: "preload", as: "font", type: "font/woff2", crossorigin: "", href: "/" + file },
+            injectTo: "head-prepend",
+          }));
+      },
+    },
+  };
+}
+
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, rootDir, "");
   const publicConfig = {
@@ -38,6 +62,7 @@ export default defineConfig(({ mode }) => {
     root: srcDir,
     publicDir: resolve(rootDir, "public"),
     appType: "mpa",
+    plugins: [preloadFonts()],
     envDir: rootDir,
     resolve: {
       alias: { "@game-rules": gameRulesDir },

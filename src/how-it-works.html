@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
   <title>How it works — Runinback trustless match engine</title>
-  <meta name="description" content="See how Runinback pairs players, escrows the pot on-chain, verifies the winner with an oracle and settles automatically — a fully trustless wagering loop." />
+  <meta name="description" content="See how Runinback pairs players, holds entry fees in escrow, verifies the winner and pays the prize automatically." />
   <meta name="author" content="Runinback" />
   <meta name="robots" content="index, follow" />
   <meta name="theme-color" content="#0e100f" />
@@ -14,18 +14,18 @@
   <meta property="og:type" content="website" />
   <meta property="og:site_name" content="Runinback" />
   <meta property="og:title" content="How Runinback works — the trustless match engine" />
-  <meta property="og:description" content="Pairing, escrow, verification and automatic settlement — the full skill-based wagering loop explained." />
+  <meta property="og:description" content="Pairing, escrow, verification and automatic payout: how a skill-based match on Runinback works." />
   <meta property="og:url" content="https://runinback.com/how-it-works.html" />
   <meta property="og:image" content="https://runinback.com/og-image.png" />
   <meta property="og:image:type" content="image/png" />
   <meta property="og:image:width" content="1200" />
   <meta property="og:image:height" content="630" />
-  <meta property="og:image:alt" content="Runinback — the wagering layer for competitive gaming" />
+  <meta property="og:image:alt" content="Runinback — competitive gaming where skill pays" />
   <meta name="twitter:card" content="summary_large_image" />
   <meta name="twitter:title" content="How Runinback works" />
-  <meta name="twitter:description" content="The trustless wagering loop: pairing, escrow, verification, settlement." />
+  <meta name="twitter:description" content="How a skill-based match works: pairing, escrow, verification, payout." />
   <meta name="twitter:image" content="https://runinback.com/og-image.png" />
-  <meta name="twitter:image:alt" content="Runinback — the wagering layer for competitive gaming" />
+  <meta name="twitter:image:alt" content="Runinback — competitive gaming where skill pays" />
   <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png" />
   <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16.png" />
   <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
@@ -36,11 +36,11 @@
   {
     "@context": "https://schema.org",
     "@type": "HowTo",
-    "name": "How a Runinback wagered match works",
+    "name": "How a Runinback match works",
     "image": "https://runinback.com/og-image.png",
     "step": [
-      { "@type": "HowToStep", "name": "Matchmaking", "text": "Players connect wallets and agree the stake." },
-      { "@type": "HowToStep", "name": "Escrow", "text": "The pot is locked in an on-chain program when the match starts." },
+      { "@type": "HowToStep", "name": "Matchmaking", "text": "Players pick a game, agree the rules and pay the same entry fee." },
+      { "@type": "HowToStep", "name": "Escrow", "text": "Both entry fees are held in escrow when the match starts." },
       { "@type": "HowToStep", "name": "Verification", "text": "The game server submits a signed result the oracle validates." },
       { "@type": "HowToStep", "name": "Settlement", "text": "The verified winner is paid out automatically in about a second." }
     ]
@@ -52,6 +52,10 @@
   <a class="skip-link" href="#main">Skip to content</a>
 
   <header class="nav" data-nav>
+    <!-- Announcement (inside the fixed header so it never overlaps the menu) -->
+    <div class="announce">
+      Test mode: play with simulated rcoin, no real money yet — <a href="signup.html">create a free account →</a>
+    </div>
     <div class="shell nav__inner">
       <a href="index.html" class="brand" aria-label="Runinback home">
         <img class="brand__icon" src="/logo-icon.png" width="34" height="24" alt="" />
@@ -79,42 +83,40 @@
       <div class="shell">
         <p class="eyebrow" data-reveal>The engine</p>
         <h1 class="h-lg page-head__title" data-reveal>A trustless loop from pairing to payout.</h1>
-        <p class="lead" data-reveal>No manual payouts and no treasury on your side. Runinback runs every wagered match through the same verifiable four-step path, designed to settle on-chain on Base.</p>
+        <p class="lead" data-reveal>No manual payouts and no treasury on your side. Runinback runs every paid match through the same verifiable four-step path, designed to settle on-chain on Base.</p>
       </div>
     </section>
-
-    <div class="shell"><hr class="hairline" /></div>
 
     <!-- Steps -->
     <section class="section">
       <div class="shell">
         <div class="steps">
-          <div class="step" data-reveal>
+          <div class="step" id="matchmaking" data-reveal>
             <div class="step__num">01</div>
             <div>
-              <h2 class="step__title"><span class="label--match" style="color:var(--accent-match)">Matchmaking</span> — pair &amp; agree</h2>
-              <p class="step__text">Both players connect a wallet (any Base wallet or an embedded account) and confirm the stake, currency and match rules through a drop-in challenge overlay. Anti-collusion heuristics run before a match is ever created.</p>
+              <h2 class="step__title"><span style="color:var(--accent-match)">Matchmaking</span> — pair &amp; agree</h2>
+              <p class="step__text">Both players connect a wallet (any Base wallet or an embedded account) and confirm the game, rules and entry fee through a challenge overlay. Anti-collusion heuristics run before a match is ever created.</p>
             </div>
           </div>
-          <div class="step" data-reveal>
+          <div class="step" id="escrow" data-reveal>
             <div class="step__num">02</div>
             <div>
-              <h2 class="step__title"><span style="color:var(--accent-escrow)">Smart Escrow</span> — lock the pot</h2>
-              <p class="step__text">When the match starts, each stake is transferred into an on-chain escrow program. The funds are provably locked on-chain — neither player, nor your game, nor Runinback can move them until a verified result arrives.</p>
+              <h2 class="step__title"><span style="color:var(--accent-escrow)">Escrow</span> — hold the entry fees</h2>
+              <p class="step__text">When the match starts, both entry fees move into an escrow contract. The funds are provably locked on-chain — neither player, nor your game, nor Runinback can move them until a verified result arrives.</p>
             </div>
           </div>
-          <div class="step" data-reveal>
+          <div class="step" id="verification" data-reveal>
             <div class="step__num">03</div>
             <div>
-              <h2 class="step__title"><span style="color:var(--accent-sdk)">Verification</span> — prove the result</h2>
+              <h2 class="step__title"><span>Verification</span> — prove the result</h2>
               <p class="step__text">Your game server submits a signed result. The Runinback oracle validates the signature and opens a short dispute window backed by cryptographic evidence, so a bad actor can't fake an outcome.</p>
             </div>
           </div>
-          <div class="step" data-reveal>
+          <div class="step" id="settlement" data-reveal>
             <div class="step__num">04</div>
             <div>
               <h2 class="step__title"><span style="color:var(--accent-settle)">Settlement</span> — pay the winner</h2>
-              <p class="step__text">Once verified, the escrow releases the full pot to the winner automatically — typically in about a second. If a match is voided, funds are refunded to both players along the same trustless path.</p>
+              <p class="step__text">Once verified, the escrow releases the full prize to the winner automatically — typically in about a second. If a match is voided, funds are refunded to both players along the same trustless path.</p>
             </div>
           </div>
         </div>
@@ -129,17 +131,17 @@
           <h2 class="h1">You keep the players. We remove the risk.</h2>
         </div>
         <div class="grid grid--3">
-          <div class="card" data-reveal style="--card-accent:var(--accent-brand)">
+          <div class="card" data-reveal>
             <div class="card__icon"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg></div>
-            <h3 class="card__title">You never touch player funds</h3>
+            <h3 class="card__title">Non-custodial by design</h3>
             <p class="card__text">You never touch player funds, so you avoid money-transmitter exposure and the operational weight of a payments stack.</p>
           </div>
-          <div class="card" data-reveal style="--card-accent:var(--accent-match)">
+          <div class="card" data-reveal>
             <div class="card__icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h12v18l-3-2-3 2-3-2-3 2Z"/><path d="M9 8h6M9 12h5"/></svg></div>
             <h3 class="card__title">Verifiable on-chain</h3>
-            <p class="card__text">Every locked pot and payout is a public, auditable transaction. Players can confirm the stake is real before they ever queue up.</p>
+            <p class="card__text">Every held prize and payout is a public, auditable transaction. Players can confirm the prize is real before they ever queue up.</p>
           </div>
-          <div class="card" data-reveal style="--card-accent:var(--accent-settle)">
+          <div class="card" data-reveal>
             <div class="card__icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M13 2L4 14h6l-1 8 9-12h-6Z"/></svg></div>
             <h3 class="card__title">Instant &amp; automatic</h3>
             <p class="card__text">No support tickets, no batch payouts. The oracle settles the moment a result is verified, paid out on Base.</p>
@@ -158,7 +160,7 @@
         <div data-reveal>
           <div class="faq__item" data-faq>
             <button class="faq__q">Do you ever hold player money? <span class="faq__icon" aria-hidden="true"></span></button>
-            <div class="faq__a"><p>In production, stakes are designed to sit in an on-chain escrow contract on Base that neither player nor Runinback can move until the result is verified. Today the platform runs in test mode: rcoin balances are simulated, have no cash value and are recorded in Runinback's own ledger.</p></div>
+            <div class="faq__a"><p>In production, entry fees are designed to sit in an on-chain escrow contract on Base that neither player nor Runinback can move until the result is verified. Today the platform runs in test mode: rcoin balances are simulated, have no cash value and are recorded in Runinback's own ledger.</p></div>
           </div>
           <div class="faq__item" data-faq>
             <button class="faq__q">What stops someone from faking a win? <span class="faq__icon" aria-hidden="true"></span></button>
@@ -166,11 +168,11 @@
           </div>
           <div class="faq__item" data-faq>
             <button class="faq__q">Which chains and currencies are supported? <span class="faq__icon" aria-hidden="true"></span></button>
-            <div class="faq__a"><p>Runinback is built for Base: stakes and payouts will settle in USDC on Base. Today the platform runs in test mode with simulated rcoin (1 rcoin = $1), and card or crypto top-ups are in test mode until legal review clears real-money play.</p></div>
+            <div class="faq__a"><p>Runinback is built for Base: entry fees and prizes will settle in USDC on Base. Today the platform runs in test mode with simulated rcoin (1 rcoin = $1), and card or crypto top-ups are in test mode until legal review clears real-money play.</p></div>
           </div>
           <div class="faq__item" data-faq>
             <button class="faq__q">What happens if a match is interrupted? <span class="faq__icon" aria-hidden="true"></span></button>
-            <div class="faq__a"><p>If a match is voided or times out without a valid result, the escrow follows its refund path and returns each stake to the original player automatically.</p></div>
+            <div class="faq__a"><p>If a match is voided or times out without a valid result, the escrow follows its refund path and returns each entry fee to the original player automatically.</p></div>
           </div>
         </div>
       </div>
@@ -179,11 +181,12 @@
     <!-- CTA -->
     <section class="section">
       <div class="shell cta-band" data-reveal>
+        <p class="eyebrow">Get started</p>
         <h2 class="display">See it in your game.</h2>
-        <p class="lead muted mx-auto">Grab the SDK and wire up a sandbox match in minutes.</p>
+        <p class="lead muted mx-auto">Create a free test account, get an API key from the console and run a test match in minutes.</p>
         <div class="cta-band__actions">
-          <a href="developers.html" class="btn btn--cta">Get API access <span class="arrow">→</span></a>
-          <a href="contact.html" class="btn btn--ghost">Talk to us</a>
+          <a href="signup.html" class="btn btn--cta">Create your account <span class="arrow">→</span></a>
+          <a href="developers.html" class="btn btn--ghost">Read the quickstart</a>
         </div>
       </div>
     </section>
@@ -194,49 +197,37 @@
       <div class="footer__top">
         <div class="footer__brand">
           <a href="index.html" class="brand" aria-label="Runinback home"><img class="brand__lockup" src="/logo-lockup.png" width="180" height="30" alt="Runinback" /></a>
-          <p class="footer__tagline">The trustless wagering layer for competitive gaming. Reset. Replay. Redeem.</p>
-          <div class="footer__social">
-            <a href="#" aria-label="Runinback on X"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M18.9 1.6h3.4l-7.5 8.6L23.5 22h-6.8l-5.3-7-6.1 7H1.9l8-9.2L1 1.6h7l4.8 6.4ZM17.7 20h1.9L7.1 3.5H5.1Z"/></svg></a>
-            <a href="#" aria-label="Runinback on Discord"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M20.3 4.6A19 19 0 0 0 15.6 3l-.3.5c1.6.4 2.3.9 3.1 1.5a13 13 0 0 0-10.8 0C8.4 4.4 9.2 3.9 10.7 3.5L10.4 3A19 19 0 0 0 5.7 4.6C2.7 9 1.9 13.4 2.3 17.7a19 19 0 0 0 5.8 2.9l.7-1.1c-.7-.3-1.3-.6-1.9-1l.5-.3a13.6 13.6 0 0 0 11.6 0l.5.3c-.6.4-1.2.7-1.9 1l.7 1.1a19 19 0 0 0 5.8-2.9c.5-5-.8-9.4-3.4-13.1ZM9.2 15.1c-.9 0-1.7-.9-1.7-1.9s.8-1.9 1.7-1.9 1.7.9 1.7 1.9-.7 1.9-1.7 1.9Zm5.6 0c-.9 0-1.7-.9-1.7-1.9s.8-1.9 1.7-1.9 1.7.9 1.7 1.9-.7 1.9-1.7 1.9Z"/></svg></a>
-            <a href="#" aria-label="Runinback on GitHub"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 1.5A10.5 10.5 0 0 0 8.7 22c.5.1.7-.2.7-.5v-1.8c-2.9.6-3.5-1.4-3.5-1.4-.5-1.2-1.2-1.5-1.2-1.5-.9-.6.1-.6.1-.6 1 .1 1.6 1 1.6 1 .9 1.6 2.4 1.1 3 .9.1-.7.4-1.1.6-1.4-2.3-.3-4.7-1.1-4.7-5a4 4 0 0 1 1-2.7c-.1-.3-.5-1.4.1-2.8 0 0 .8-.3 2.7 1a9.3 9.3 0 0 1 4.9 0c1.9-1.3 2.7-1 2.7-1 .6 1.4.2 2.5.1 2.8a4 4 0 0 1 1 2.7c0 3.9-2.4 4.7-4.7 5 .4.3.7.9.7 1.9v2.7c0 .3.2.6.7.5A10.5 10.5 0 0 0 12 1.5Z"/></svg></a>
-          </div>
+          <p class="footer__tagline">Skill-based competition for video games. Reset. Replay. Redeem.</p>
         </div>
         <div class="footer__col">
-          <h4>Product</h4>
+          <h4>Play</h4>
           <ul>
             <li><a href="how-it-works.html">How it works</a></li>
-            <li><a href="developers.html">Developers</a></li>
-            <li><a href="developers.html">Pricing</a></li>
+            <li><a href="signup.html">Create an account</a></li>
+            <li><a href="login.html">Log in</a></li>
           </ul>
         </div>
         <div class="footer__col">
           <h4>Developers</h4>
           <ul>
-            <li><a href="developers.html">Documentation</a></li>
-            <li><a href="developers.html">SDK reference</a></li>
-            <li><a href="developers.html">Sandbox</a></li>
-            <li><a href="developers.html">Status</a></li>
+            <li><a href="developers.html">Overview</a></li>
+            <li><a href="developers.html#quickstart">Quickstart</a></li>
+            <li><a href="developers.html#waitlist">SDK preview</a></li>
           </ul>
         </div>
         <div class="footer__col">
           <h4>Company</h4>
           <ul>
             <li><a href="contact.html">Contact</a></li>
-            <li><a href="#">Careers</a></li>
-            <li><a href="privacy.html">Privacy</a></li>
             <li><a href="terms.html">Terms</a></li>
+            <li><a href="privacy.html">Privacy</a></li>
             <li><a href="cookies.html">Cookies</a></li>
           </ul>
         </div>
       </div>
       <div class="footer__bottom">
         <span>© <span data-year>2026</span> Runinback. All rights reserved.</span>
-        <nav aria-label="Legal">
-          <a href="privacy.html">Privacy</a>
-          <a href="terms.html">Terms</a>
-          <a href="cookies.html">Cookies</a>
-          <a href="contact.html">Contact</a>
-        </nav>
+        <span>Test mode: simulated rcoin, no real money.</span>
       </div>
     </div>
   </footer>
