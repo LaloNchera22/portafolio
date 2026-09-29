@@ -281,10 +281,11 @@ begin
   perform pg_temp.expect(pg_temp.as_user(b, 'select public.rib_withdraw_test(100)'), 'wallet_frozen', 'frozen wallet cannot withdraw');
   perform pg_temp.expect(pg_temp.as_user(b, 'select public.rib_tournament_create(''Frozen cup'', ''chess'', 100, 4, null)'), 'wallet_frozen', 'frozen wallet cannot pay an entry fee');
 
-  -- Server-authoritative staked games (0012).
-  perform pg_temp.expect(pg_temp.as_user(a, 'select public.rib_game_create(''eights'', 100, ''{}'')'), 'unknown_game', 'crazy eights not stakeable');
+  -- Server-authoritative games (0012), free friendlies since 0022.
+  perform pg_temp.expect(pg_temp.as_user(a, 'select public.rib_game_create(''eights'', 100, ''{}'')'), 'unknown_game', 'crazy eights is not a server-verified game');
   perform pg_temp.expect(pg_temp.as_user(a, 'select public.rib_game_create(''tictactoe'', 100, ''{}'')'), 'ok', 'alice opens a table');
   select id into v_match from public.game_matches where host_id = a and status = 'open' order by created_at desc limit 1;
+  perform pg_temp.expect((select stake_cents::text from public.game_matches where id = v_match), '0', 'tables are free even if a fee is sent');
   perform pg_temp.expect(pg_temp.as_user(c, format('select public.rib_game_join(%L, null)', v_match)), 'ok', 'carol joins the table');
   perform pg_temp.expect(pg_temp.as_user(a, format('select public.rib_game_move(%L, ''{}'', null)', v_match)), '42501', 'client cannot write the board');
   perform pg_temp.expect(pg_temp.as_user(a, format('select public.rib_game_report(%L, %L)', v_match, a)), '42501', 'client cannot report results');
@@ -301,9 +302,8 @@ begin
     perform pg_temp.expect(v_hint, 'stale_move', 'stale move rejected');
   end;
   perform public.rib_game_commit_move(v_match, 1, '{"turn":0}', null, true, a);
-  perform pg_temp.expect((select status || ':' || (winner_id = a)::text from public.game_matches where id = v_match), 'settled:true', 'server settles the pot');
-  perform pg_temp.expect((pg_temp.balance(a) - v_before_a)::text, '200', 'winner receives the pot');
-  perform pg_temp.expect((pg_temp.balance(c) - v_before_c)::text, '0', 'loser stake already spent');
+  perform pg_temp.expect((select status || ':' || (winner_id = a)::text from public.game_matches where id = v_match), 'settled:true', 'the server settles the game');
+  perform pg_temp.expect((pg_temp.balance(a) - v_before_a)::text || '/' || (pg_temp.balance(c) - v_before_c)::text, '0/0', 'a free table moves no money');
 
   -- Abuse limits and identity (0013).
   for i in 1..3 loop
@@ -326,22 +326,17 @@ begin
   perform pg_temp.expect(pg_temp.as_user(a, 'select role from public.profiles limit 1'), '42501', 'role column not readable by players');
   perform pg_temp.expect(pg_temp.as_user(a, 'select id, username, display_name from public.profiles limit 1'), 'ok', 'handles readable by players');
 
-  -- Leaderboard (0014-0018). Only server-validated staked games count:
-  --   alice won the 100 tictactoe table (+100, 1-0); carol lost it (-100, 0-1).
-  --   Challenges and tournament prizes are self-reported and don't rank.
+  -- Leaderboard (0022): tournaments rank. Net rcoin = prizes minus entry fees;
+  --   the record counts confirmed tournament matches (walkovers don't).
+  --   Cup (4 x 10 rcoin): the champion nets +15.20; bob paid 10 and lost.
   perform public.refresh_player_rankings();
-  perform pg_temp.expect(
-    (select string_agg(username || ':' || net_cents || ':' || wins || '-' || losses, ',' order by rank)
-       from public.rib_leaderboard('all', 10, 0)),
-    'alice:100:1-0,carol:-100:0-1', 'all-time leaderboard ranks verified results by net');
-  perform pg_temp.expect(
-    (select string_agg(username, ',') from public.rib_leaderboard('all', 1, 1)), 'carol', 'second page continues after rank 1');
-  perform pg_temp.expect(
-    (select count(*)::text from public.rib_leaderboard('week', 10, 0)), '2', 'weekly board has this week''s players');
-  perform set_config('request.jwt.claim.sub', c::text, true);
-  perform pg_temp.expect((select rank::text from public.rib_my_standing('all')), '2', 'my standing shows my rank');
-  update public.player_rankings set rank_all = 0 where user_id = c;
-  perform pg_temp.expect((select rank::text from public.rib_my_standing('all')), '2', 'standing falls back to a live rank before the next refresh');
+  perform pg_temp.expect((select net_cents::text from public.player_stats where user_id = v_opp), '1520', 'the champion ranks by net tournament winnings');
+  perform pg_temp.expect((select net_cents::text from public.player_stats where user_id = b), '-1000', 'entry fees count against the player');
+  perform pg_temp.expect((select (wins >= 2)::text from public.player_stats where user_id = v_opp), 'true', 'confirmed tournament matches build the record');
+  perform pg_temp.expect((select username from public.rib_leaderboard('all', 1, 0)), (select username from public.profiles where id = v_opp), 'the biggest net winner tops the board');
+  perform pg_temp.expect((select count(*)::text from public.rib_leaderboard('week', 50, 0)), (select count(*)::text from public.rib_leaderboard('all', 50, 0)), 'this week''s board has the same players');
+  perform set_config('request.jwt.claim.sub', v_opp::text, true);
+  perform pg_temp.expect((select rank::text from public.rib_my_standing('all')), '1', 'my standing shows my rank');
   perform pg_temp.expect(pg_temp.as_user(a, 'select * from public.player_rankings'), '42501', 'ranking snapshot not readable by clients');
   perform pg_temp.expect(pg_temp.as_user(a, 'select public.refresh_player_rankings()'), '42501', 'ranking refresh not callable by clients');
   perform pg_temp.expect(pg_temp.as_user(a, 'select * from public.player_stats'), '42501', 'raw stats not readable by clients');
@@ -387,8 +382,8 @@ begin
   perform pg_temp.expect(pg_temp.as_user(a, format('select public.rib_game_claim_timeout(%L)', v_match)), 'not_timed_out', 'the late player cannot claim');
   v_before_c := pg_temp.balance(c);
   perform pg_temp.expect(pg_temp.as_user(c, format('select public.rib_game_claim_timeout(%L)', v_match)), 'ok', 'the waiting player claims on time');
-  perform pg_temp.expect((select status || ':' || (winner_id = c)::text from public.game_matches where id = v_match), 'settled:true', 'claim settles the pot');
-  perform pg_temp.expect((pg_temp.balance(c) - v_before_c)::text, '200', 'the waiting player takes the pot');
+  perform pg_temp.expect((select status || ':' || (winner_id = c)::text from public.game_matches where id = v_match), 'settled:true', 'the claim settles the game');
+  perform pg_temp.expect((pg_temp.balance(c) - v_before_c)::text, '0', 'a free game lost on time moves no money');
   -- The background job does the same for unclaimed matches.
   perform pg_temp.as_user(c, 'select public.rib_game_create(''tictactoe'', 100, ''{}'')');
   select id into v_match from public.game_matches where host_id = c and status = 'open' order by created_at desc limit 1;

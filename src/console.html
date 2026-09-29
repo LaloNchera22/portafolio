@@ -52,15 +52,14 @@
       <!-- ============================ PLAY ============================ -->
       <section class="page" id="page-games">
         <div class="head">
-          <div><p class="eyebrow">Play · Win · Cash out</p><h1>Games.</h1></div>
+          <div><p class="eyebrow">Practice · Friendlies · Free</p><h1>Games.</h1></div>
           <div class="head__r">
-            <span class="head__bal"><span class="k">Balance</span><span class="v" id="games-balance">0 <small>rcoin</small></span></span>
-            <button type="button" class="btn btn--sm" data-page="page-wallet">Buy rcoin</button>
+            <button type="button" class="btn btn--cta btn--sm" data-page="page-compete">Find a tournament</button>
           </div>
         </div>
         <p class="games-lead">Every game, two ways: <strong>practice free</strong> against the house bot, or
-          <strong>play for rcoin</strong> — both players pay the same entry fee and the winner takes the whole prize.
-          No rake on the table; the 5% is charged once when you buy rcoin.</p>
+          <strong>play online</strong> against another player, also free. Playing for a prize happens in
+          <a href="#page-compete" data-page="page-compete">tournaments</a>.</p>
         <div id="games-root"><p class="muted is-loading">Loading games…</p></div>
       </section>
 
@@ -179,7 +178,7 @@
       <!-- ========================== RANKING ========================== -->
       <section class="page" id="page-ranking" hidden>
         <div class="head">
-          <div><p class="eyebrow">Net rcoin won</p><h1>Ranking.</h1></div>
+          <div><p class="eyebrow">Tournament winnings</p><h1>Ranking.</h1></div>
           <div class="seg seg--inline" id="ranking-period" role="group" aria-label="Ranking period">
             <button type="button" data-period="week" aria-pressed="true">This week</button>
             <button type="button" data-period="all" aria-pressed="false">All time</button>
@@ -189,7 +188,7 @@
         <p class="visually-hidden" role="status" id="ranking-status"></p>
         <div id="ranking-list" aria-busy="true"><p class="muted is-loading">Loading…</p></div>
         <button type="button" class="btn btn--sm lobby-more" id="ranking-more" hidden>Show more</button>
-        <p class="testnote">The ranking counts paid games only, because the server checks every move: prizes won minus entry fees paid. Challenges and tournaments are reported by players, so they don't count. Positions refresh every few minutes, and the weekly board resets every Monday (UTC).</p>
+        <p class="testnote">The ranking counts tournaments: net rcoin is prizes won minus entry fees paid, and the record counts confirmed tournament matches (walkovers don't). Friendlies and practice don't count. Positions refresh every few minutes, and the weekly board resets every Monday (UTC).</p>
       </section>
 
       <!-- =========================== WALLET =========================== -->
