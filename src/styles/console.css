@@ -18,6 +18,7 @@
   --c-match: #00bae2;   /* matchmaking: the challenge lobby */
   --c-escrow: #ff8709;  /* escrow: stakes */
   --c-settle: #fec5fb;  /* settlement: winnings, ranking */
+  --c-control: #77786e; /* outline of a control: 3:1+ on the canvas (the hairline is for dividers) */
   --c-font: "Inter Tight", ui-sans-serif, system-ui, -apple-system, sans-serif;
   --c-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
 }
@@ -39,10 +40,10 @@
 /* account avatar + menu */
 .capp .acct-avatar { width: 32px; height: 32px; border-radius: 50%; border: 1px solid var(--c-hairline); background: var(--c-elevated); color: var(--c-cream); font-family: var(--c-font); font-size: 13px; font-weight: 600; cursor: pointer; display: grid; place-content: center; flex: 0 0 auto; transition: border-color .2s; }
 .capp .acct-avatar:hover { border-color: var(--c-cream); }
-.capp .acct-menu { position: fixed; top: calc(52px + env(safe-area-inset-top, 0px)); right: clamp(16px, 4vw, 40px); z-index: 60; background: var(--c-panel); border: 1px solid var(--c-hairline); border-radius: 14px; padding: 6px; min-width: 216px; box-shadow: 0 18px 40px rgba(0,0,0,.5); }
+.capp .acct-menu { position: fixed; top: calc(52px + env(safe-area-inset-top, 0px)); right: clamp(16px, 4vw, 40px); z-index: 60; background: var(--c-panel); border: 1px solid var(--c-hairline); border-radius: 14px; padding: 6px; min-width: 216px; }
 .capp .acct-menu__id { padding: 10px 12px 12px; border-bottom: 1px solid var(--c-hairline); margin-bottom: 6px; }
 .capp .acct-menu__id .nm { font-size: 14px; font-weight: 600; }
-.capp .acct-menu__id .n { font-family: var(--c-mono); font-size: 11px; color: var(--c-dim); }
+.capp .acct-menu__id .n { font-family: var(--c-mono); font-size: 12px; color: var(--c-dim); }
 .capp .acct-menu a, .capp .acct-menu__out { display: flex; align-items: center; gap: 10px; width: 100%; text-align: left; padding: 9px 12px; border-radius: 9px; font-family: var(--c-font); font-size: 14px; color: var(--c-cream); text-decoration: none; cursor: pointer; background: none; border: 0; }
 .capp .acct-menu a:hover, .capp .acct-menu__out:hover { background: var(--c-elevated); }
 .capp .acct-menu .chev { color: var(--c-dim); font-size: 12px; margin-left: auto; }
@@ -50,7 +51,7 @@
 
 /* bottom nav (mobile) */
 .capp__bnav { position: fixed; left: 0; right: 0; bottom: 0; z-index: 40; display: flex; background: rgba(14,16,15,.94); backdrop-filter: blur(12px); border-top: 1px solid var(--c-hairline); padding-bottom: env(safe-area-inset-bottom, 0px); }
-.capp__bnav a { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 9px 0 8px; font-size: 10.5px; color: var(--c-dim); text-decoration: none; cursor: pointer; }
+.capp__bnav a { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 9px 0 8px; font-size: 12px; color: var(--c-dim); text-decoration: none; cursor: pointer; }
 .capp__bnav a svg { width: 22px; height: 22px; stroke: currentColor; fill: none; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
 .capp__bnav a[aria-current="page"] { color: var(--c-cream); }
 
@@ -78,12 +79,12 @@
 
 /* buy/withdraw breakdown */
 .capp .buy-brk { font-size: 12.5px; color: var(--c-dim); line-height: 1.7; }
-.capp .buy-brk .row { display: flex; justify-content: space-between; gap: 12px; font-variant-numeric: tabular-nums; }
+.capp .buy-brk .row { display: flex; justify-content: space-between; gap: 12px; padding: 0; border-radius: 0; font-variant-numeric: tabular-nums; }
 .capp .buy-brk .row.tot { color: var(--c-cream); border-top: 1px solid var(--c-hairline); margin-top: 6px; padding-top: 6px; font-weight: 500; }
 .capp .wallet-deposit .hint { font-size: 12.5px; color: var(--c-dim); line-height: 1.6; }
 .capp .wallet-deposit .hint strong { color: var(--c-cream); font-weight: 600; }
 
-.capp .btn { display: inline-flex; align-items: center; gap: .45em; font-family: var(--c-font); font-size: 14px; font-weight: 600; color: var(--c-cream); background: transparent; cursor: pointer; border: 1px solid var(--c-hairline); border-radius: 100px; padding: 9px 18px; transition: background .3s, color .3s, border-color .3s; white-space: nowrap; }
+.capp .btn { display: inline-flex; align-items: center; gap: .45em; font-family: var(--c-font); font-size: 14px; font-weight: 600; color: var(--c-cream); background: transparent; cursor: pointer; border: 1px solid var(--c-control); border-radius: 100px; padding: 9px 18px; transition: background .3s, color .3s, border-color .3s; white-space: nowrap; }
 .capp .btn:hover { background: var(--c-cream); color: var(--c-canvas); border-color: var(--c-cream); }
 .capp .btn:disabled { opacity: .55; cursor: default; }
 .capp .btn--cta { border: 1.5px solid transparent; background: linear-gradient(var(--c-canvas), var(--c-canvas)) padding-box, var(--c-grad) border-box; }
@@ -106,7 +107,7 @@
 .capp .row__name { font-size: 15px; font-weight: 500; }
 .capp .row__meta { font-size: 13px; color: var(--c-dim); margin-top: 3px; font-family: var(--c-mono); }
 .capp .row__end { justify-self: end; display: flex; align-items: center; gap: 14px; }
-.capp .tag { font-family: var(--c-mono); font-size: 11.5px; color: var(--c-dim); border: 1px solid var(--c-hairline); border-radius: 100px; padding: 3px 10px; white-space: nowrap; }
+.capp .tag { font-family: var(--c-mono); font-size: 12px; color: var(--c-dim); border: 1px solid var(--c-hairline); border-radius: 100px; padding: 3px 10px; white-space: nowrap; }
 .capp .tag.live { color: var(--c-good); border-color: rgba(53,208,127,.4); }
 .capp .tag.revoked { color: var(--c-bad); border-color: rgba(255,91,91,.4); }
 .capp code { font-family: var(--c-mono); font-size: 13.5px; color: var(--c-cream); word-break: break-all; }
@@ -116,6 +117,7 @@
 .capp .field label { display: block; font-size: 13px; color: var(--c-dim); margin-bottom: 7px; }
 .capp .field input, .capp .field select { width: 100%; font-family: var(--c-font); font-size: 15px; color: var(--c-cream); background: var(--c-canvas); border: 1px solid var(--c-hairline); border-radius: 10px; padding: 11px 13px; }
 .capp .field input:focus, .capp .field select:focus { outline: none; border-color: var(--c-cream); }
+.capp .field input:focus-visible, .capp .field select:focus-visible { outline: 2px solid var(--c-cream); outline-offset: 2px; }
 .capp .field--row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
 .capp .card-box { background: var(--c-panel); border-radius: 14px; padding: 22px; max-width: 520px; }
 
@@ -133,7 +135,7 @@
 
 /* toasts — transient notices where an inline slot doesn't fit (game board) */
 .rib-toasts { position: fixed; left: 50%; bottom: 22px; transform: translateX(-50%); z-index: 1000; display: flex; flex-direction: column; gap: 8px; width: calc(100% - 32px); max-width: 380px; pointer-events: none; }
-.rib-toast { pointer-events: auto; font-size: 13.5px; line-height: 1.4; border-radius: 12px; padding: 12px 15px; color: var(--c-cream, #fffce1); background: var(--c-elevated, #202220); border: 1px solid var(--c-hairline, #42433d); box-shadow: 0 8px 28px rgba(0,0,0,.35); opacity: 0; transform: translateY(8px); transition: opacity .22s ease, transform .22s ease; }
+.rib-toast { pointer-events: auto; font-size: 13.5px; line-height: 1.4; border-radius: 12px; padding: 12px 15px; color: var(--c-cream, #fffce1); background: var(--c-elevated, #202220); border: 1px solid var(--c-hairline, #42433d); opacity: 0; transform: translateY(8px); transition: opacity .22s ease, transform .22s ease; }
 .rib-toast.is-in { opacity: 1; transform: translateY(0); }
 .rib-toast--err { border-left: 3px solid var(--c-bad, #ff5b5b); }
 .rib-toast--ok { border-left: 3px solid var(--c-good, #35d07f); }
@@ -146,7 +148,7 @@
 .capp .keybox code { flex: 1 1 240px; }
 
 /* wallet chip in the top bar */
-.capp .wallet-chip { font-family: var(--c-mono); font-size: 13px; color: var(--c-cream); background: transparent; border: 1px solid var(--c-hairline); border-radius: 100px; padding: 5px 12px; white-space: nowrap; cursor: pointer; transition: border-color .2s; font-variant-numeric: tabular-nums; }
+.capp .wallet-chip { font-family: var(--c-mono); font-size: 13px; color: var(--c-cream); background: transparent; border: 1px solid var(--c-control); border-radius: 100px; padding: 5px 12px; white-space: nowrap; cursor: pointer; transition: border-color .2s; font-variant-numeric: tabular-nums; }
 .capp .wallet-chip:hover { border-color: var(--c-cream); }
 
 /* hero balance (resumen) + wallet cards */
@@ -167,7 +169,7 @@
 
 /* amount chips */
 .capp .chips { display: flex; gap: 8px; flex-wrap: wrap; }
-.capp .chips button { font-family: var(--c-font); font-size: 14px; font-weight: 500; color: var(--c-cream); background: var(--c-canvas); border: 1px solid var(--c-hairline); border-radius: 100px; padding: 9px 16px; cursor: pointer; transition: border-color .2s, color .2s; }
+.capp .chips button { font-family: var(--c-font); font-size: 14px; font-weight: 500; color: var(--c-cream); background: var(--c-canvas); border: 1px solid var(--c-control); border-radius: 100px; padding: 9px 16px; cursor: pointer; transition: border-color .2s, color .2s; }
 .capp .chips button:hover { border-color: var(--c-cream); }
 .capp .chips button.on { color: var(--c-canvas); background: var(--c-cream); border-color: var(--c-cream); }
 
@@ -183,7 +185,7 @@
 .capp .wallet-card .sub { font-size: 13px; color: var(--c-dim); font-variant-numeric: tabular-nums; }
 .capp .wallet-deposit { display: flex; flex-direction: column; gap: 14px; }
 .capp .field-lbl { font-size: 13px; color: var(--c-dim); display: flex; align-items: center; gap: 8px; }
-.capp .pill { font-family: var(--c-mono); font-size: 10px; letter-spacing: .08em; text-transform: uppercase; color: var(--c-dim); border: 1px solid var(--c-hairline); border-radius: 100px; padding: 2px 8px; }
+.capp .pill { font-family: var(--c-mono); font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--c-dim); border: 1px solid var(--c-hairline); border-radius: 100px; padding: 2px 8px; }
 .capp .btn--wide { width: 100%; justify-content: center; }
 .capp .withdraw-row { display: flex; gap: 10px; }
 .capp .withdraw-row input { flex: 1; font-family: var(--c-font); font-size: 15px; color: var(--c-cream); background: var(--c-canvas); border: 1px solid var(--c-hairline); border-radius: 10px; padding: 11px 13px; }
@@ -204,7 +206,7 @@
 .capp .tcard__top { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
 .capp .tcard__name { font-size: 16px; font-weight: 600; }
 .capp .tcard__pool { text-align: right; display: flex; flex-direction: column; }
-.capp .tcard__pool .k { font-size: 11px; color: var(--c-dim); }
+.capp .tcard__pool .k { font-size: 12px; color: var(--c-dim); }
 .capp .tcard__pool .v { font-size: 20px; font-weight: 600; font-variant-numeric: tabular-nums; }
 .capp .tcard__mid { display: flex; justify-content: space-between; font-size: 13px; color: var(--c-dim); font-variant-numeric: tabular-nums; }
 .capp .tcard__act { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; min-height: 32px; }
@@ -259,7 +261,7 @@
 
 /* ---- challenge lobby -------------------------------------------------------- */
 .capp .lobby-filters { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; margin-bottom: 6px; }
-.capp .lobby-filters input[type="search"] { flex: 1 1 220px; font-family: var(--c-font); font-size: 15px; color: var(--c-cream); background: var(--c-canvas); border: 1px solid var(--c-hairline); border-radius: 100px; padding: 9px 16px; }
+.capp .lobby-filters input[type="search"] { flex: 1 1 220px; font-family: var(--c-font); font-size: 15px; color: var(--c-cream); background: var(--c-canvas); border: 1px solid var(--c-control); border-radius: 100px; padding: 9px 16px; }
 .capp .lobby-filters input[type="search"]:focus { outline: 2px solid var(--c-match); outline-offset: 2px; border-color: var(--c-match); }
 .capp .field input:focus-visible, .capp .field select:focus-visible, .capp .withdraw-row input:focus-visible { outline: 2px solid var(--c-cream); outline-offset: 2px; }
 .capp .devnav a:focus-visible, .capp .capp__bnav a:focus-visible, .capp .acct-menu a:focus-visible { outline: 2px solid var(--c-cream); outline-offset: 2px; }
@@ -290,7 +292,8 @@
 .capp .rank__who { font-size: 15px; font-weight: 500; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .capp .rank__net { font-size: 15px; font-weight: 600; text-align: right; white-space: nowrap; }
 .capp .rank__won, .capp .rank__rec { font-size: 13px; color: var(--c-dim); text-align: right; white-space: nowrap; }
-.capp .rank--me { background: var(--c-elevated); border-radius: 10px; border-bottom-color: transparent; padding-left: 10px; padding-right: 10px; }
+/* The highlight bleeds past the column edges so its text stays aligned with the other rows. */
+.capp .rank--me { background: var(--c-elevated); border-radius: 10px; border-bottom-color: transparent; margin-inline: -6px; padding-inline: 10px; }
 .capp .pos { color: var(--c-good); }
 .capp .neg { color: var(--c-bad); }
 .capp a.sec__note { cursor: pointer; text-decoration: underline; text-underline-offset: 3px; }
@@ -305,7 +308,12 @@
   .capp .standing { align-items: flex-start; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .capp .stake__step, .capp .btn, .capp .chips button { transition: none; }
+  .capp *, .capp *::before, .capp *::after, .rib-toast {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
 }
 
 @media (max-width: 719px) {
@@ -325,3 +333,27 @@
 .capp .keybox__curl { margin: 6px 0 0; padding: 12px; background: var(--c-canvas); border: 1px solid var(--c-hairline); border-radius: 10px; overflow-x: auto; font-size: 12.5px; }
 .capp .danger-zone { border-top: 1px solid var(--c-hairline); padding-top: 26px; }
 .capp .danger-zone p { font-size: 13.5px; max-width: 64ch; line-height: 1.55; margin: 0 0 14px; }
+
+/* Display numerals: tabular figures leave a visible gap after a narrow "1"
+   at this size ("1 20"); proportional figures read as one number. */
+.capp .head__bal .v, .capp .hero-bal__main .num, .capp .hero-bal__stats .n,
+.capp .wallet-card .num, .capp .tcard__pool .v, .capp .statline .n,
+.capp .stake__value input, .capp .lobby__num, .capp .standing__n { font-variant-numeric: normal; }
+
+/* A game modal locks the page behind it. */
+html.gmodal-open { overflow: hidden; }
+
+/* The lobby intro belongs to the lobby, not above a board. */
+.capp #page-games.is-playing .games-lead { display: none; }
+
+@media (max-width: 719px) {
+  /* toasts sit above the fixed bottom nav */
+  .rib-toasts { bottom: calc(76px + env(safe-area-inset-bottom, 0px)); }
+}
+
+/* Touch screens: every control is at least 44px tall/wide. */
+@media (pointer: coarse) {
+  .capp .btn, .capp .btn--sm, .capp .wallet-chip, .capp .chips button { min-height: 44px; }
+  .capp .acct-avatar { width: 44px; height: 44px; }
+  .capp .acct-menu { top: calc(60px + env(safe-area-inset-top, 0px)); }
+}

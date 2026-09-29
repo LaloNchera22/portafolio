@@ -24,14 +24,14 @@
           <img class="brand__word" src="/logo-word.png" width="56" height="13" alt="" />
         </a>
         <nav class="capp__tabs only-desktop" aria-label="Main">
-          <a href="#" data-page="page-games" aria-current="page">Play</a>
-          <a href="#" data-page="page-compete">Compete</a>
-          <a href="#" data-page="page-ranking">Ranking</a>
-          <a href="#" data-page="page-wallet">Wallet</a>
+          <a href="#page-games" data-page="page-games" aria-current="page">Play</a>
+          <a href="#page-compete" data-page="page-compete">Compete</a>
+          <a href="#page-ranking" data-page="page-ranking">Ranking</a>
+          <a href="#page-wallet" data-page="page-wallet">Wallet</a>
         </nav>
         <div class="capp__end">
-          <button type="button" class="wallet-chip" id="wallet-chip" data-page="page-wallet" title="Available balance (test mode)">0 rcoin</button>
-          <button type="button" class="acct-avatar" id="acct-avatar" aria-haspopup="true" aria-controls="acct-menu" aria-expanded="false" title="Account">P</button>
+          <button type="button" class="wallet-chip" id="wallet-chip" data-page="page-wallet" title="Available balance (test mode)" aria-label="Balance loading. Open wallet">0 rcoin</button>
+          <button type="button" class="acct-avatar" id="acct-avatar" aria-haspopup="true" aria-controls="acct-menu" aria-expanded="false" title="Account" aria-label="Account menu">P</button>
         </div>
       </div>
     </header>
@@ -42,8 +42,8 @@
         <div class="nm" id="acct-name">@player</div>
         <div class="n" id="acct-email">—</div>
       </div>
-      <a href="#" role="menuitem" data-page="page-profile">Profile <span class="chev">›</span></a>
-      <a href="#" role="menuitem" id="switch-to-developer">Switch to developer <span class="chev">Dev ›</span></a>
+      <a href="#page-profile" role="menuitem" data-page="page-profile">Profile <span class="chev">›</span></a>
+      <a href="#page-developer" role="menuitem" id="switch-to-developer">Switch to developer <span class="chev">Dev ›</span></a>
       <button type="button" role="menuitem" class="acct-menu__out" data-auth-signout>Log out</button>
     </div>
 
@@ -265,7 +265,7 @@
           </form>
         </div>
         <div class="sec">
-          <div class="sec__head"><h2>Your record</h2><a class="sec__note" data-page="page-ranking" href="#">See the ranking</a></div>
+          <div class="sec__head"><h2>Your record</h2><a class="sec__note" data-page="page-ranking" href="#page-ranking">See the ranking</a></div>
           <div class="statline" id="profile-stats"><p class="muted">Loading…</p></div>
         </div>
         <div class="sec danger-zone">
@@ -309,7 +309,7 @@
           <form id="project-form" class="card-box" hidden>
             <div class="field"><label for="project-name">Project name</label><input id="project-name" type="text" maxlength="80" placeholder="My game" /></div>
             <div class="field"><label for="project-env">Environment</label>
-              <select id="project-env"><option value="test">Test</option><option value="live">Live</option></select>
+              <select id="project-env"><option value="test">Test</option><option value="live" disabled>Live (after launch)</option></select>
             </div>
             <div class="head__r">
               <button type="submit" class="btn btn--cta" id="project-save">Create</button>
@@ -376,15 +376,15 @@
 
     <!-- bottom nav (mobile) -->
     <nav class="capp__bnav only-mobile" aria-label="Main">
-      <a href="#" data-page="page-games" aria-current="page">
+      <a href="#page-games" data-page="page-games" aria-current="page">
         <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="M8 12h4M10 10v4"/><circle cx="16" cy="11" r="1"/><circle cx="17.5" cy="13.5" r="1"/></svg><span>Play</span></a>
-      <a href="#" data-page="page-compete">
+      <a href="#page-compete" data-page="page-compete">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 21h8M12 17v4M6 4h12v5a6 6 0 0 1-12 0zM6 6H3v2a3 3 0 0 0 3 3M18 6h3v2a3 3 0 0 1-3 3"/></svg><span>Compete</span></a>
-      <a href="#" data-page="page-ranking">
+      <a href="#page-ranking" data-page="page-ranking">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20V11h4v9M10 20V5h4v15M16 20v-6h4v6"/></svg><span>Ranking</span></a>
-      <a href="#" data-page="page-wallet">
+      <a href="#page-wallet" data-page="page-wallet">
         <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="6" width="18" height="13" rx="2.5"/><path d="M3 10h18"/><circle cx="16.5" cy="14" r="1.2"/></svg><span>Wallet</span></a>
-      <a href="#" data-page="page-developer">
+      <a href="#page-developer" data-page="page-developer">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 8l-4 4 4 4M15 8l4 4-4 4"/></svg><span>Dev</span></a>
     </nav>
   </div>

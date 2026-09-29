@@ -12,9 +12,21 @@ export function closeAccountMenu() {
   if (avatar) avatar.setAttribute("aria-expanded", "false");
 }
 
-/** Show one console page, sync every nav surface, and run its loader. */
-export function goToPage(id) {
-  if (!id) return;
+function isPage(id) {
+  const el = id && byId(id);
+  return !!(el && el.classList.contains("page"));
+}
+
+/**
+ * Show one console page, sync every nav surface, and run its loader. Each
+ * switch is a history entry so Back/Forward move between console pages and
+ * the hash deep-links a page.
+ */
+export function goToPage(id, options) {
+  if (!isPage(id)) return;
+  if (!(options && options.fromHistory) && location.hash !== "#" + id) {
+    history.pushState({ page: id }, "", "#" + id);
+  }
   document.querySelectorAll(".capp .page").forEach(function (p) { p.hidden = p.id !== id; });
   // reflect the active destination on every nav surface (top tabs + bottom nav)
   document.querySelectorAll(".capp__tabs a[data-page], .capp__bnav a[data-page]").forEach(function (a) {
@@ -26,7 +38,7 @@ export function goToPage(id) {
   window.scrollTo(0, 0);
 }
 
-function wireSegment(buttonsSelector, attr, panels, currentAttr) {
+function wireSegment(buttonsSelector, attr, panels, currentAttr, onSwitch) {
   const buttons = document.querySelectorAll(buttonsSelector);
   buttons.forEach(function (b) {
     b.addEventListener("click", function (e) {
@@ -38,6 +50,7 @@ function wireSegment(buttonsSelector, attr, panels, currentAttr) {
         else x.removeAttribute("aria-current");
       });
       Object.keys(panels).forEach(function (key) { setVisible(byId(panels[key]), key === which); });
+      if (onSwitch) onSwitch(which);
     });
   });
 }
@@ -48,6 +61,11 @@ export function initNavigation(loaders) {
 
   document.querySelectorAll("[data-page]").forEach(function (a) {
     a.addEventListener("click", function (e) { e.preventDefault(); goToPage(a.getAttribute("data-page")); });
+  });
+
+  window.addEventListener("popstate", function (e) {
+    const id = (e.state && e.state.page) || location.hash.slice(1) || "page-games";
+    goToPage(id, { fromHistory: true });
   });
 
   const avatar = byId("acct-avatar");
@@ -67,9 +85,16 @@ export function initNavigation(loaders) {
   if (toPlayer) toPlayer.addEventListener("click", function () { goToPage("page-games"); });
 
   wireSegment("#compete-seg button[data-seg]", "data-seg",
-    { lobby: "compete-lobby", mine: "compete-mine", tournaments: "compete-tournaments" }, "aria-pressed");
+    { lobby: "compete-lobby", mine: "compete-mine", tournaments: "compete-tournaments" }, "aria-pressed",
+    function () { const msg = byId("challenge-msg"); if (msg) msg.hidden = true; });
   wireSegment("#dev-nav a[data-dev]", "data-dev",
     { projects: "dev-projects", keys: "dev-keys", payouts: "dev-payouts" }, "aria-current");
+}
+
+/** The page named by the URL hash on load, if it is a console page. */
+export function initialPage() {
+  const id = location.hash.slice(1);
+  return isPage(id) ? id : null;
 }
 
 /** Wire every [data-chips] group: one selected chip at a time. */

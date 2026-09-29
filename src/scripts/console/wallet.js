@@ -37,13 +37,14 @@ export function refreshWallet() {
     .then(function (r) {
       // Never show a made-up zero: on failure keep the last known balance.
       if (r.error || !r.data) {
-        if (session.balanceCents == null) setText("wallet-chip", "— rcoin");
+        if (session.balanceCents == null) { setText("wallet-chip", "— rcoin"); $("wallet-chip").setAttribute("aria-label", "Balance unavailable. Open wallet"); }
         return null;
       }
       const w = r.data;
       session.balanceCents = w.test_balance_cents;
       document.dispatchEvent(new CustomEvent("rib:balance", { detail: w.test_balance_cents }));
       setText("wallet-chip", formatRcoin(w.test_balance_cents));
+      $("wallet-chip").setAttribute("aria-label", "Balance " + formatRcoin(w.test_balance_cents) + ". Open wallet");
       if ($("games-balance")) $("games-balance").innerHTML = centsToRcoin(w.test_balance_cents) + " <small>rcoin</small>";
       setText("wallet-balance", formatRcoin(w.test_balance_cents));
       setText("wallet-locked", "In play: " + formatRcoin(w.test_locked_cents));
@@ -74,13 +75,16 @@ export function loadLedger() {
 }
 
 export function updatePurchaseQuote() {
-  const quote = quotePurchase(parseDollarsToCents($("buy-amount").value));
+  const pay = parseDollarsToCents($("buy-amount").value);
+  const quote = quotePurchase(pay);
   const receive = centsToRcoin(quote.receiveCents);
+  const tooLow = !isFinite(pay) || pay < MIN_PURCHASE_CENTS;
   setText("buy-pay", formatUsd(quote.payCents));
   setText("buy-fee", formatUsd(quote.feeCents));
   setText("buy-receive", receive + " rcoin");
-  setText("buy-submit", "Buy " + receive + " rcoin");
-  $("buy-submit").disabled = quote.receiveCents <= 0;
+  // Say why the button is disabled instead of offering "Buy 0 rcoin".
+  setText("buy-submit", tooLow ? "Enter at least $1" : "Buy " + receive + " rcoin");
+  $("buy-submit").disabled = tooLow || quote.receiveCents <= 0;
 }
 
 function updateWithdrawQuote() {
@@ -131,8 +135,14 @@ function startCheckout(functionName, payCents, btn) {
 }
 
 function withdraw(amountInput, msgNode, btn, onDone) {
-  const amount = parseRcoinToCents(amountInput.value);
-  if (!isFinite(amount) || amount < MIN_WITHDRAW_CENTS) { showMessage(msgNode, "Minimum 1 rcoin.", false); return; }
+  const text = String(amountInput.value).trim();
+  if (!/^\d+$/.test(text)) { showMessage(msgNode, "Enter whole rcoin, no decimals.", false); return; }
+  const amount = parseRcoinToCents(text);
+  if (amount < MIN_WITHDRAW_CENTS) { showMessage(msgNode, "Minimum 1 rcoin.", false); return; }
+  if (session.balanceCents != null && amount > session.balanceCents) {
+    showMessage(msgNode, "You have " + formatRcoin(session.balanceCents) + " available.", false);
+    return;
+  }
   btn.disabled = true;
   session.client.rpc("rib_withdraw_test", { p_amount_cents: amount })
     .then(function (r) {

@@ -35,6 +35,25 @@ COMING_SOON_GAMES.forEach(function (g) { CATALOG.push(g); });
  * ========================================================================= */
 var CTX = null;   // { client, UID, refreshWallet, configured }
 var host = null;  // container element for the games page
+var lastOpenedGame = null; // the lobby card to refocus when leaving a game
+var botTimer = null;       // pending practice-bot move, cleared on leave
+var openModals = 0;        // stacked pop-ups; the page scroll is locked while > 0
+
+// The lobby intro only makes sense in the lobby, not above a board.
+function setPlaying(on) {
+  var page = host && host.closest && host.closest(".page");
+  if (page) page.classList.toggle("is-playing", on);
+}
+
+// Back to the lobby from a game: land focus on the card that opened it
+// (not <body>) and keep it on screen.
+function backToLobby() {
+  stopOnline();
+  renderLobby();
+  var card = lastOpenedGame && host.querySelector('.gcard[data-game="' + lastOpenedGame + '"]');
+  if (card) { card.focus({ preventScroll: true }); if (card.scrollIntoView) card.scrollIntoView({ block: "center" }); }
+  else window.scrollTo(0, 0);
+}
 
 function h(id) { return document.getElementById(id); }
 
@@ -51,9 +70,11 @@ function mountModal(backdrop, panel, labelEl) {
   }
   panel.tabIndex = -1;
   var closed = false;
+  if (++openModals === 1) document.documentElement.classList.add("gmodal-open");
   function close(restoreFocus) {
     if (closed) return;
     closed = true;
+    if (--openModals === 0) document.documentElement.classList.remove("gmodal-open");
     if (backdrop.parentNode) backdrop.parentNode.removeChild(backdrop);
     if (restoreFocus !== false && opener && opener.focus && document.contains(opener)) opener.focus();
   }
@@ -78,6 +99,8 @@ function mountModal(backdrop, panel, labelEl) {
 // Board cells are buttons drawn by each game's view. Give unlabelled ones a
 // spoken name ("Square 5, X" / "Square 5, empty") and keep keyboard focus on
 // the same square across re-renders, so a move doesn't drop focus to <body>.
+// Symbols that mean something on a board but read out badly on their own.
+var GLYPH_NAMES = { "☠": "poison", "✳": "hit", "·": "miss" };
 function boardFocusIndex(board) {
   return Array.prototype.indexOf.call(board.querySelectorAll("button"), document.activeElement);
 }
@@ -87,7 +110,7 @@ function afterBoardRender(board, focusIndex) {
     if (b.type !== "button") b.type = "button";
     if (b.hasAttribute("aria-label")) return;
     var text = (b.textContent || "").trim();
-    b.setAttribute("aria-label", "Square " + (i + 1) + ", " + (text || "empty") + (b.disabled ? "" : ", available"));
+    b.setAttribute("aria-label", "Square " + (i + 1) + ", " + (GLYPH_NAMES[text] || text || "empty") + (b.disabled ? "" : ", available"));
   });
   if (focusIndex >= 0) {
     var target = buttons[focusIndex] && !buttons[focusIndex].disabled ? buttons[focusIndex] : board.querySelector("button:not([disabled])");
@@ -185,6 +208,8 @@ var lobbyFilter = "all";
 
 function renderLobby() {
   stopOnline();
+  clearTimeout(botTimer);
+  setPlaying(false);
   host.innerHTML = "";
   // The intro copy is the static .games-lead in console.html, above this
   // root — don't re-append it here or it shows twice.
@@ -227,6 +252,7 @@ function renderLobby() {
       var card = el("button", "gcard");
       card.type = "button";
       card.setAttribute("aria-label", "Open " + g.name);
+      card.setAttribute("data-game", g.id);
       card.innerHTML =
         '<span class="gcard__ic">' + esc(g.icon) + '</span>' +
         '<span class="gcard__n">' + esc(g.name) + '</span>' +
@@ -263,6 +289,7 @@ function renderLobby() {
  * game's own sub-page (the board). Depth comes from geometry, not shadows.
  * ------------------------------------------------------------------------ */
 function openGame(gameId) {
+  lastOpenedGame = gameId;
   var mod = MODULES[gameId];
   var help = getHelp(gameId);
 
@@ -370,10 +397,12 @@ function startPractice(gameId) {
   var mod = MODULES[gameId];
   var state = mod.init();
   var api = makeApi(mod, function () { return state; }, { online: false });
+  clearTimeout(botTimer);
+  setPlaying(true);
   host.innerHTML = "";
   var top = el("div", "gscreen__top");
   var back = el("button", "btn btn--sm", "‹ Leave");
-  back.addEventListener("click", renderLobby);
+  back.addEventListener("click", backToLobby);
   top.appendChild(back);
   top.appendChild(el("h2", "gscreen__name", mod.name + " · practice"));
   top.appendChild(helpButton(gameId));
@@ -399,7 +428,7 @@ function startPractice(gameId) {
     if (res) return finishPractice(res);
     turnbar.textContent = state.turn === 0 ? "Your turn." : "Bot is thinking…";
     turnbar.className = "gturn " + (state.turn === 0 ? "you" : "opp");
-    if (state.turn === 1) setTimeout(botStep, 620);
+    if (state.turn === 1) botTimer = setTimeout(botStep, 620);
   }
   function apiFor(boardEl) { api.board = boardEl; api.rerender = draw; return api; }
   function move(m) {
@@ -414,7 +443,7 @@ function startPractice(gameId) {
     state = mod.apply(state, m);
     // some games (mancala) can grant the same seat another turn
     var res2 = mod.result(state);
-    if (!res2 && state.turn === 1) { draw(); return setTimeout(botStep, 620); }
+    if (!res2 && state.turn === 1) { draw(); botTimer = setTimeout(botStep, 620); return; }
     draw();
   }
   api._move = move;
@@ -429,7 +458,7 @@ function startPractice(gameId) {
       '<p>Practice round — no rcoin at stake.</p>';
     var acts = el("div", "gover__acts");
     var again = el("button", "btn btn--cta", "Play again"); again.addEventListener("click", function () { startPractice(gameId); });
-    var leave = el("button", "btn", "All games"); leave.addEventListener("click", renderLobby);
+    var leave = el("button", "btn", "All games"); leave.addEventListener("click", backToLobby);
     acts.appendChild(again); acts.appendChild(leave); over.appendChild(acts);
     again.focus();
   }
@@ -601,10 +630,12 @@ function clockText(deadline) {
 function enterOnline(match, mod, seat, waitMsg) {
   stopOnline();
   online = { match: match, mod: mod, seat: seat, state: authoritativeState(match, mod), channel: null, pending: false };
+  lastOpenedGame = mod.id || lastOpenedGame;
+  setPlaying(true);
   host.innerHTML = "";
   var top = el("div", "gscreen__top");
   var back = el("button", "btn btn--sm", "‹ Leave");
-  back.addEventListener("click", function () { stopOnline(); renderLobby(); });
+  back.addEventListener("click", backToLobby);
   top.appendChild(back);
   top.appendChild(el("h2", "gscreen__name", mod.name + " · " + rcoin(match.stake_cents * 2) + " rcoin pot"));
   var resign = el("button", "btn btn--sm btn--danger", "Resign");
@@ -752,7 +783,7 @@ function finishOnline(m) {
       '<p>' + (won ? "You took the pot: +" + rcoin(m.stake_cents * 2) + " rcoin (net +" + rcoin(m.stake_cents) + ")." : "The pot went to your opponent (−" + rcoin(m.stake_cents) + " rcoin).") + '</p>';
   }
   var acts = el("div", "gover__acts");
-  var leave = el("button", "btn btn--cta", "Back to games"); leave.addEventListener("click", function () { stopOnline(); renderLobby(); });
+  var leave = el("button", "btn btn--cta", "Back to games"); leave.addEventListener("click", backToLobby);
   acts.appendChild(leave); over.appendChild(acts);
   leave.focus();
   if (CTX.refreshWallet) CTX.refreshWallet();

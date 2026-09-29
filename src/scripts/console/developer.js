@@ -25,7 +25,9 @@ export function loadProjects() {
       const rows = r.data || [];
       fillProjectSelect(rows);
       if (!rows.length) {
-        list.innerHTML = '<div class="empty"><h3>No projects yet</h3><p>Create one to group your API keys by game or environment.</p></div>';
+        list.innerHTML = '<div class="empty"><h3>No projects yet</h3><p>Create one to group your API keys by game or environment.</p>' +
+          '<p><button type="button" class="btn btn--cta btn--sm" data-empty-project>Create a project</button></p></div>';
+        list.querySelector("[data-empty-project]").addEventListener("click", function () { $("project-new").click(); });
         return;
       }
       rows.forEach(function (p) { projectNames[p.id] = p.name; });

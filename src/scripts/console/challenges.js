@@ -7,6 +7,7 @@ import { byId as $, escapeHtml as esc, setVisible, showMessage } from "../lib/do
 import { formatRcoin, formatTimeAgo } from "../lib/format.js";
 import { STAKE_PRESETS_RCOIN, parseStake, potFor, stepStake } from "../lib/stake.js";
 import { errorText, fetchUsernames, playerLabel, session } from "./context.js";
+import { USERNAME_PATTERN } from "./profile.js";
 import { refreshWallet } from "./wallet.js";
 
 const STATUS_LABELS = {
@@ -270,10 +271,8 @@ function initStakeComposer() {
     return parsed;
   }
 
-  input.addEventListener("input", function () {
-    input.value = input.value.replace(/[^0-9]/g, "");
-    update();
-  });
+  // Validate what was typed (stripping characters would turn "1.5" into 15).
+  input.addEventListener("input", update);
   document.querySelectorAll("#challenge-stake [data-step]").forEach(function (b) {
     b.addEventListener("click", function () {
       input.value = String(stepStake(parseInt(input.value, 10), parseInt(b.getAttribute("data-step"), 10)));
@@ -311,6 +310,7 @@ export function initChallenges() {
     const stake = readStake();
     if (!game) { showMessage($("challenge-msg"), "Name the game you'll play.", false); $("challenge-game").focus(); return; }
     if (stake.error) { showMessage($("challenge-msg"), stake.error, false); $("challenge-stake-input").focus(); return; }
+    if (target && !USERNAME_PATTERN.test(target)) { showMessage($("challenge-msg"), "Opponent: 3–24 characters, letters, numbers or underscore.", false); $("challenge-target").focus(); return; }
     const btn = $("challenge-save");
     btn.disabled = true;
     session.client.rpc("rib_challenge_create", { p_game: game, p_mode: mode, p_stake_cents: stake.cents, p_target_username: target || null })

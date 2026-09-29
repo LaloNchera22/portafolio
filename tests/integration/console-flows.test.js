@@ -124,9 +124,14 @@ describe("custom stake composer", () => {
     expect($("challenge-stake-error").textContent).toContain("maximum stake is 1,000");
   });
 
-  it("strips non-digits and supports stepper and presets", () => {
-    type("abc");
-    expect($("challenge-stake-input").value).toBe("");
+  it("rejects decimals instead of silently rewriting them", () => {
+    type("1.5");
+    expect($("challenge-stake-input").value).toBe("1.5");
+    expect($("challenge-stake-error").textContent).toBe("Error: Use whole rcoin, no decimals.");
+    expect($("challenge-save").disabled).toBe(true);
+  });
+
+  it("supports stepper and presets", () => {
     type("5");
     document.querySelector('#challenge-stake [data-step="1"]').click();
     expect($("challenge-stake-input").value).toBe("6");

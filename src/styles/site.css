@@ -16,7 +16,7 @@
   /* --- Colors ------------------------------------------------------------ */
   --color-just-black: #0e100f;
   --color-surface-cream: #fffce1;
-  --color-surface-50: #7c7c6f;
+  --color-surface-50: #8a8a7c; /* 5.3:1 on the canvas (was #7c7c6f, 4.3:1) */
   --color-surface-25: #42433d;
   --color-off-black: #191919;
 
@@ -112,6 +112,8 @@
 html {
   scroll-behavior: smooth;
   -webkit-text-size-adjust: 100%;
+  /* Sideways entrance offsets must never widen the page on phones. */
+  overflow-x: clip;
 }
 
 body {
@@ -1133,6 +1135,13 @@ ul {
   outline: none;
   border-color: var(--color-shockingly-green);
 }
+/* Keyboard focus keeps a real ring, not just a 1px border change. */
+.field input:focus-visible,
+.field textarea:focus-visible,
+.field select:focus-visible {
+  outline: 2px solid var(--color-surface-cream);
+  outline-offset: 2px;
+}
 .field textarea {
   resize: vertical;
   min-height: 130px;
@@ -2087,4 +2096,51 @@ body.home .is-in .feature__list li:nth-child(3) { transition-delay: 0.46s; }
 @media (prefers-reduced-motion: reduce) {
   .cookie-consent { transition: opacity 0.01s linear, visibility 0s; }
   .cookie-consent.is-in { transition: opacity 0.01s linear; }
+}
+
+/* ==========================================================================
+   Progressive enhancement, layout safety and touch targets
+   ========================================================================== */
+
+/* Reveal states hide content until JS marks it visible. Without the `js`
+   flag (public/js-flag.js) nothing is ever hidden. */
+html:not(.js) [data-reveal],
+html:not(.js) [data-rise],
+html:not(.js) [data-clip],
+html:not(.js) body.home .feature__list li {
+  opacity: 1;
+  transform: none;
+  clip-path: none;
+}
+
+/* Phones: rise vertically only; horizontal offsets read as jitter there. */
+@media (max-width: 720px) and (prefers-reduced-motion: no-preference) {
+  [data-rise="left"],
+  [data-rise="right"],
+  [data-reveal="left"],
+  [data-reveal="right"] { transform: translateY(24px); }
+}
+
+/* Auth pages scroll inside a panel, so the nav never gets .is-scrolled:
+   keep it solid so the form doesn't slide under a transparent bar. */
+body[data-auth-scope] .nav {
+  background: var(--surface-canvas);
+  border-bottom-color: var(--color-surface-25);
+}
+
+/* Wide screens: the cookie notice sits in a corner instead of over CTAs. */
+@media (min-width: 900px) {
+  .cookie-consent {
+    left: auto;
+    right: var(--gutter);
+    transform: translateY(calc(100% + 40px));
+    width: min(440px, calc(100vw - 2 * var(--gutter)));
+  }
+  .cookie-consent.is-in { transform: none; }
+}
+
+@media (pointer: coarse) {
+  .btn,
+  .nav__toggle,
+  .footer__social a { min-height: 44px; }
 }

@@ -13,7 +13,7 @@ import { initChallenges, loadChallenges } from "./challenges.js";
 import { initContext, session } from "./context.js";
 import { initDeveloperPortal, loadDeveloperMetrics, loadKeys, loadProjects } from "./developer.js";
 import { initRanking, loadProfileRecord, loadRanking } from "./leaderboard.js";
-import { goToPage, initAmountChips, initNavigation } from "./navigation.js";
+import { goToPage, initAmountChips, initNavigation, initialPage } from "./navigation.js";
 import { initAccountClosure, initProfile, loadProfile } from "./profile.js";
 import { initTournaments, loadTournaments } from "./tournaments.js";
 import { handleCheckoutReturn, initWallet, loadLedger, refreshWallet, updatePurchaseQuote } from "./wallet.js";
@@ -84,7 +84,11 @@ export function initConsole() {
 
     refreshWallet();
     loadProfile();
-    loadGames();
+    // Honor a deep link (#page-wallet) and give the first page a history state.
+    const start = initialPage() || "page-games";
+    try { window.history.replaceState({ page: start }, "", window.location.href); } catch (e) { /* ignore */ }
+    if (start === "page-games") loadGames();
+    else goToPage(start, { fromHistory: true });
     handleCheckoutReturn(goToPage);
   }).catch(function (e) {
     // A bug during boot must not look like "signed out" without a trace.
