@@ -76,5 +76,9 @@ export function initConsole() {
     loadProfile();
     loadGames();
     handleCheckoutReturn(goToPage);
-  }).catch(redirectToLanding);
+  }).catch(function (e) {
+    // A bug during boot must not look like "signed out" without a trace.
+    console.error("console boot failed", e);
+    redirectToLanding();
+  });
 }

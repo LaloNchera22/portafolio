@@ -15,7 +15,10 @@ function showUsername(username) {
 export function loadProfile() {
   session.client.from("profiles").select("username, display_name, created_at").eq("id", session.uid).single()
     .then(function (r) {
-      const p = r.data || {};
+      // Don't blank the form on a failed load (saving it would wipe the handle).
+      if (r.error || !r.data) { showMessage($("profile-msg"), "Couldn't load your profile. Refresh to try again.", false); $("profile-save").disabled = true; return; }
+      $("profile-save").disabled = false;
+      const p = r.data;
       $("profile-username").value = p.username || "";
       $("profile-display-name").value = p.display_name || "";
       $("profile-email").value = $("acct-email").textContent || "";

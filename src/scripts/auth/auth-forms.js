@@ -127,6 +127,7 @@ export function initAuthForms() {
           if (res.error) { err("login", friendly(res.error)); return; }
           note("login", "Magic link sent — check your inbox to finish signing in.");
         })
+        .catch(function () { err("login", "Network error. Please try again."); })
         .finally(function () { busy(ml, false, "Email me a magic link"); });
     });
 
@@ -140,7 +141,8 @@ export function initAuthForms() {
         .then(function (res) {
           if (res.error) { err("login", friendly(res.error)); return; }
           note("login", "Password reset link sent — check your inbox.");
-        });
+        })
+        .catch(function () { err("login", "Network error. Please try again."); });
     });
   }
 

@@ -26,7 +26,7 @@ function renderStanding(row, period) {
       " board yet. Win a staked game, a challenge or a tournament to get ranked.</p>";
   } else {
     box.innerHTML =
-      '<div class="standing__rank"><span class="standing__k">Your rank</span><span class="standing__n">' + Number(row.rank).toLocaleString("en") + "</span></div>" +
+      '<div class="standing__rank"><span class="standing__k">Your rank</span><span class="standing__n">' + (row.rank ? Number(row.rank).toLocaleString("en") : "—") + "</span></div>" +
       '<dl class="standing__stats">' +
       '<div><dt>Net</dt><dd class="' + (row.net_cents >= 0 ? "pos" : "neg") + '">' + esc(signed(row.net_cents)) + "</dd></div>" +
       "<div><dt>Won</dt><dd>" + esc(formatRcoin(row.won_cents)) + "</dd></div>" +
@@ -81,6 +81,13 @@ function loadPage(append) {
     state.offset = rows.length > 0 ? Number(rows[rows.length - 1].rank) : state.offset;
     setVisible($("ranking-more"), rows.length === PAGE_SIZE);
     $("ranking-status").textContent = (period === "week" ? "This week's ranking, " : "All-time ranking, ") + list.querySelectorAll("li").length + " players shown";
+  }).catch(function () {
+    if (request !== state.request) return;
+    state.loading = false;
+    $("ranking-more").disabled = false;
+    $("ranking-list").setAttribute("aria-busy", "false");
+    if (!append) $("ranking-list").innerHTML = '<p class="muted">You\'re offline. The ranking loads when you reconnect.</p>';
+    $("ranking-status").textContent = "Couldn't load the ranking.";
   });
 }
 
@@ -90,7 +97,7 @@ export function loadRanking() {
   session.client.rpc("rib_my_standing", { p_period: period }).then(function (r) {
     if (period !== state.period) return; // the tab changed while loading
     renderStanding(!r.error && r.data && r.data[0] ? r.data[0] : null, period);
-  });
+  }).catch(function () { /* the board itself reports being offline */ });
 }
 
 export function initRanking() {
@@ -111,13 +118,14 @@ export function loadProfileRecord() {
   const box = $("profile-stats");
   if (!box) return;
   session.client.rpc("rib_my_standing", { p_period: "all" }).then(function (r) {
-    const row = !r.error && r.data && r.data[0];
+    if (r.error) { box.innerHTML = '<p class="muted">Couldn\'t load your record. Try again in a moment.</p>'; return; }
+    const row = r.data && r.data[0];
     if (!row) {
-      box.innerHTML = '<p class="muted">No settled matches yet. Your wins, losses and net rcoin appear here after your first result.</p>';
+      box.innerHTML = '<p class="muted">No ranked results yet. Win or lose a staked game and your record shows up here.</p>';
       return;
     }
     box.innerHTML =
-      '<div><span class="n">#' + Number(row.rank).toLocaleString("en") + '</span><span class="k">all-time rank</span></div>' +
+      '<div><span class="n">' + (row.rank ? "#" + Number(row.rank).toLocaleString("en") : "—") + '</span><span class="k">all-time rank</span></div>' +
       '<div><span class="n ' + (row.net_cents >= 0 ? "pos" : "neg") + '">' + esc(signed(row.net_cents)) + '</span><span class="k">net won</span></div>' +
       '<div><span class="n">' + esc(record(row)) + '</span><span class="k">wins–losses</span></div>';
   });

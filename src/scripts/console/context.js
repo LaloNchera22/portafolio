@@ -29,10 +29,13 @@ export function fetchUsernames(ids) {
   });
   if (!missing.length) return Promise.resolve(usernameCache);
   return session.client.from("profiles").select("id, username").in("id", missing).then(function (r) {
+    // On failure render with the generic label but don't cache it, so the next
+    // load tries again.
+    if (r.error) return usernameCache;
     (r.data || []).forEach(function (p) { usernameCache[p.id] = p.username; });
     missing.forEach(function (id) { if (!(id in usernameCache)) usernameCache[id] = "player"; });
     return usernameCache;
-  });
+  }).catch(function () { return usernameCache; });
 }
 
 /** "you", "@handle", or "—" for an empty id. */

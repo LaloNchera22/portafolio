@@ -19,6 +19,7 @@ import { functionError, notify } from "../lib/errors.js";
 import { CORE_GAMES } from "./catalog/core-games.js";
 import { EXTRA_GAMES } from "./catalog/extra-games.js";
 import { COMING_SOON_GAMES, isStakeable } from "./catalog/catalog-meta.js";
+import { parseStake } from "../lib/stake.js";
 import { GAME_HELP } from "./help.js";
 
 
@@ -110,8 +111,15 @@ export function initGames(ctx) {
   CTX = ctx || {};
   host = h("games-root");
   if (!host) return;
+  // Coming back to the games page must not wipe a match or practice board.
+  if (online || host.querySelector(".gstage")) return;
   renderLobby();
 }
+
+// Refresh a live board when the tab becomes visible again (missed events).
+document.addEventListener("visibilitychange", function () {
+  if (document.visibilityState === "visible" && online) resyncOnline();
+});
 
 /* ---- lobby -------------------------------------------------------------- */
 // Card games (the rest are boards). Fast = a match that wraps up in ~3 min.
@@ -262,14 +270,23 @@ function openGame(gameId) {
   custom.type = "number"; custom.min = "1"; custom.step = "1"; custom.inputMode = "numeric"; custom.placeholder = "Custom";
   custom.setAttribute("aria-label", "Custom stake in rcoin");
   var pot = el("p", "gplay__pot");
-  // the active stake: a typed custom amount wins, else the selected chip, else 1
+  // the active stake: a typed custom amount wins, else the selected chip.
+  // An invalid custom amount is an error, never a silent fallback.
   function currentStake() {
-    var c = parseInt(custom.value, 10);
-    if (custom.value !== "" && c >= 1) return c;
+    if (custom.value !== "") {
+      var parsed = parseStake(custom.value);
+      return parsed.error ? { error: parsed.error } : { rcoin: parsed.rcoin };
+    }
     var on = stakeRow.querySelector("button.on");
-    return on ? parseInt(on.getAttribute("data-r"), 10) : 1;
+    return on ? { rcoin: parseInt(on.getAttribute("data-r"), 10) } : { error: "Pick a stake." };
   }
-  function setPot() { var r = currentStake(); pot.innerHTML = 'Winner takes <b>' + (r * 2) + ' rcoin</b>'; }
+  function setPot() {
+    var s = currentStake();
+    if (s.error) { pot.textContent = s.error; pot.classList.add("is-error"); }
+    else { pot.innerHTML = 'Winner takes <b>' + (s.rcoin * 2) + ' rcoin</b>'; pot.classList.remove("is-error"); }
+    if (cBtn && CTX.configured && isStakeable(gameId)) cBtn.disabled = !!s.error;
+  }
+  var cBtn = null;
   [1, 5, 10, 25].forEach(function (r, i) {
     var b = el("button", "gplay__stake" + (i === 1 ? " on" : ""), String(r));
     b.setAttribute("data-r", r);
@@ -281,10 +298,11 @@ function openGame(gameId) {
   coinR.appendChild(custom);
   setPot();
   coinR.appendChild(pot);
-  var cBtn = el("button", "btn gplay__act", "Create table");
+  cBtn = el("button", "btn gplay__act", "Create table");
   cBtn.addEventListener("click", function () {
-    var r = currentStake();
-    launch(function () { createOnline(gameId, r * 100, cBtn); });
+    var s = currentStake();
+    if (s.error) { setPot(); custom.focus(); return; }
+    launch(function () { createOnline(gameId, s.rcoin * 100, cBtn); });
   });
   coinR.appendChild(cBtn);
   var note = el("p", "gplay__note");
@@ -381,6 +399,7 @@ var online = null; // { match, mod, seat, channel, state }
 
 function stopOnline() {
   if (online && online.channel) { try { CTX.client.removeChannel(online.channel); } catch (e) {} }
+  if (online && online.timer) clearInterval(online.timer);
   online = null;
 }
 
@@ -390,7 +409,8 @@ function loadOpenTables() {
   CTX.client.from("game_matches").select("id, game, stake_cents, host_id, created_at").eq("status", "open").neq("host_id", CTX.UID).order("created_at", { ascending: false }).limit(20)
     .then(function (r) {
       var rows = (r.data) || [];
-      if (r.error || !rows.length) { box.innerHTML = ""; return; }
+      if (r.error) { box.innerHTML = '<p class="muted">Couldn\'t load open tables. They\'ll show up when you come back to this page.</p>'; return; }
+      if (!rows.length) { box.innerHTML = ""; return; }
       box.innerHTML = '<div class="sec__head"><h2>Open tables</h2><span class="sec__note">staked, waiting for a player</span></div>';
       var panel = el("div", "panel");
       rows.forEach(function (m) {
@@ -421,8 +441,9 @@ function loadMyTables() {
     .in("status", ["open", "active"])
     .order("created_at", { ascending: false }).limit(20)
     .then(function (r) {
+      if (r.error) { box.innerHTML = '<p class="muted">Couldn\'t load your tables. Reopen this page to try again.</p>'; return; }
       var rows = (r.data || []).filter(function (m) { return MODULES[m.game]; });
-      if (r.error || !rows.length) { box.innerHTML = ""; return; }
+      if (!rows.length) { box.innerHTML = ""; return; }
       box.innerHTML = '<div class="sec__head"><h2>Your tables</h2><span class="sec__note">staked, in progress</span></div>';
       var panel = el("div", "panel");
       rows.forEach(function (m) {
@@ -459,7 +480,7 @@ function cancelTable(match, btn, after) {
       if (CTX.refreshWallet) CTX.refreshWallet();
       if (after) after();
     })
-    .catch(function () { btn.disabled = false; });
+    .catch(function () { btn.disabled = false; notify(null, "Network error. Check your connection and try again."); });
 }
 
 function createOnline(gameId, stakeCents, btn) {
@@ -472,7 +493,7 @@ function createOnline(gameId, stakeCents, btn) {
       if (CTX.refreshWallet) CTX.refreshWallet();
       enterOnline(r.data, mod, 0, "Waiting for a player to join…");
     })
-    .catch(function () { btn.disabled = false; });
+    .catch(function () { btn.disabled = false; notify(null, "Network error. Check your connection and try again."); });
 }
 
 function joinOnline(match, btn) {
@@ -481,11 +502,11 @@ function joinOnline(match, btn) {
   btn.disabled = true;
   CTX.client.rpc("rib_game_join", { p_match_id: match.id, p_state: null })
     .then(function (r) {
-      if (r.error) { notify(r.error, "We couldn't join this table. Please try again."); btn.disabled = false; return; }
+      if (r.error) { notify(r.error, "We couldn't join this table. Please try again."); btn.disabled = false; loadOpenTables(); return; }
       if (CTX.refreshWallet) CTX.refreshWallet();
       enterOnline(r.data, mod, 1, null);
     })
-    .catch(function () { btn.disabled = false; });
+    .catch(function () { btn.disabled = false; notify(null, "Network error. Check your connection and try again."); });
 }
 
 // Every staked move goes through the game-move Edge Function, which validates
@@ -500,7 +521,30 @@ function sendToServer(body) {
 function resyncOnline() {
   if (!online) return;
   CTX.client.from("game_matches").select("*").eq("id", online.match.id).single()
-    .then(function (r) { if (!r.error && r.data) onlineUpdate(r.data); });
+    .then(function (r) {
+      if (!r.error && r.data) onlineUpdate(r.data);
+      else notify(r.error, "Couldn't refresh the board. It will update on the next move.", "info");
+    })
+    .catch(function () { notify(null, "You're offline. The board will refresh when you reconnect.", "info"); });
+}
+
+// Waiting player: claim the pot once the opponent's turn clock has run out.
+function claimOnTime(btn) {
+  btn.disabled = true;
+  CTX.client.rpc("rib_game_claim_timeout", { p_match_id: online.match.id })
+    .then(function (r) {
+      if (r.error) { btn.disabled = false; notify(r.error, "Couldn't claim the win yet."); resyncOnline(); return; }
+      onlineUpdate(r.data);
+    })
+    .catch(function () { btn.disabled = false; notify(null, "Network error. Check your connection and try again."); });
+}
+
+function clockText(deadline) {
+  var ms = new Date(deadline).getTime() - Date.now();
+  if (!isFinite(ms)) return "";
+  if (ms <= 0) return "0:00";
+  var total = Math.ceil(ms / 1000);
+  return Math.floor(total / 60) + ":" + String(total % 60).padStart(2, "0");
 }
 
 function enterOnline(match, mod, seat, waitMsg) {
@@ -534,17 +578,44 @@ function enterOnline(match, mod, seat, waitMsg) {
   // piece colors follow seat 0/1, so the "you play …" legend only holds for the host
   if (seat === 0 && oLegend && oLegend.you) stageWrap.appendChild(el("p", "gyou", oLegend.you));
   var turnbar = el("div", "gturn"); turnbar.id = "g-turn";
+  turnbar.setAttribute("role", "status");
+  var clock = el("div", "gclock");
+  var clockText_ = el("span", "gclock__time");
+  var claim = el("button", "btn btn--cta btn--sm", "Claim win");
+  claim.hidden = true;
+  claim.addEventListener("click", function () { claimOnTime(claim); });
+  clock.appendChild(clockText_); clock.appendChild(claim);
   var board = el("div", "gboard"); board.id = "g-board";
   var over = el("div", "gover"); over.id = "g-over"; over.hidden = true;
-  stageWrap.appendChild(turnbar); stageWrap.appendChild(board); stageWrap.appendChild(over);
+  over.setAttribute("role", "alert");
+  stageWrap.appendChild(turnbar); stageWrap.appendChild(clock); stageWrap.appendChild(board); stageWrap.appendChild(over);
   host.appendChild(stageWrap);
+
+  // Turn clock: each move has a deadline; when the opponent's runs out, the
+  // waiting player can claim the pot (the server also forfeits on its own).
+  function tickClock() {
+    var m = online && online.match;
+    if (!m || m.status !== "active" || !m.turn_deadline) { clock.hidden = true; return; }
+    clock.hidden = false;
+    var mine = m.turn_id === CTX.UID;
+    var left = clockText(m.turn_deadline);
+    var expired = left === "0:00";
+    clockText_.textContent = (mine ? "Your time to move: " : "Opponent's time to move: ") + left;
+    clock.classList.toggle("is-low", new Date(m.turn_deadline).getTime() - Date.now() < 60000);
+    claim.hidden = mine || !expired;
+  }
+  online.timer = setInterval(tickClock, 1000);
 
   // subscribe to match row updates (state is written only by the server)
   var ch = CTX.client.channel("match-" + match.id)
     .on("postgres_changes", { event: "UPDATE", schema: "public", table: "game_matches", filter: "id=eq." + match.id }, function (payload) {
       onlineUpdate(payload["new"]);
     })
-    .subscribe();
+    .subscribe(function (status) {
+      // Catch up on anything that happened before the subscription was live,
+      // and after a reconnect.
+      if (status === "SUBSCRIBED") resyncOnline();
+    });
   online.channel = ch;
 
   online.render = function () {
@@ -560,6 +631,7 @@ function enterOnline(match, mod, seat, waitMsg) {
       mod.view(st, onlineApi(board, false));
       return;
     }
+    tickClock();
     var yourTurn = (st.turn === online.seat) && !online.pending;
     turnbar.textContent = st.turn === online.seat ? "Your turn." : "Opponent's turn…";
     turnbar.className = "gturn " + (st.turn === online.seat ? "you" : "opp");

@@ -63,6 +63,9 @@ const HINTS = {
   rate_limited: "You're doing that too often. Please wait a moment and try again.",
   too_many_keys: "You have the maximum number of active API keys. Revoke one first.",
   email_reserved: "That e-mail address can't be used. Please use another.",
+  turn_timed_out: "Your time for this move ran out.",
+  not_timed_out: "Your opponent still has time to move.",
+  use_timeout_claim: "Timed matches are decided by the turn clock.",
   wallet_frozen: "Your wallet is on hold after a reversed payment. Contact support to restore it.",
 };
 
