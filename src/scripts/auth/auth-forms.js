@@ -182,6 +182,8 @@ export function initAuthForms() {
       if (!/^[a-zA-Z0-9_]{3,24}$/.test(username)) { err("signup", "Username: 3–24 characters, letters, numbers or underscore."); return; }
       if (password.length < 8) { err("signup", "Use a password of at least 8 characters."); return; }
       if (password !== confirm) { err("signup", "Passwords don't match."); return; }
+      const age = $("signup-age");
+      if (age && !age.checked) { err("signup", "Please confirm you're 18 or older and eligible to play where you live."); return; }
       if (terms && !terms.checked) { err("signup", "Please accept the terms to continue."); return; }
       if (!configured) { notConfigured("signup"); return; }
 
@@ -189,7 +191,8 @@ export function initAuthForms() {
       client.auth.signUp({
         email: email,
         password: password,
-        options: { data: { username: username, display_name: username }, emailRedirectTo: absUrl(CONSOLE_URL) },
+        // Records the self-declared age/eligibility confirmation with the account.
+        options: { data: { username: username, display_name: username, age_confirmed_at: new Date().toISOString() }, emailRedirectTo: absUrl(CONSOLE_URL) },
       })
         .then(function (res) {
           if (res.error) { err("signup", friendly(res.error, "Couldn't create the account.")); return; }
