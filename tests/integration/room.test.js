@@ -11,6 +11,7 @@ const tick = () => new Promise((r) => setTimeout(r, 10));
 const calls = [];
 let roomRow = null;
 let info = null;
+let failNext = null; // an RPC name whose next call returns an error
 
 const soon = () => new Date(Date.now() + 10 * 60 * 1000).toISOString();
 function baseRoom(extra) {
@@ -42,6 +43,7 @@ const client = {
   rpc: (name, args) => {
     calls.push([name, args]);
     if (name === "rib_room_info") return Promise.resolve({ data: [info], error: null });
+    if (failNext === name) { failNext = null; return Promise.resolve({ data: null, error: { message: "x", hint: "ready_expired" } }); }
     return Promise.resolve({ data: {}, error: null });
   },
   channel: () => ({ on() { return this; }, subscribe() { return this; } }),
@@ -80,6 +82,18 @@ async function show(row) {
 }
 
 describe("match room", () => {
+  it("keeps an error on screen after the room reloads, and shows the step and the clock", async () => {
+    await show(baseRoom());
+    expect($("room-steps").querySelector('[aria-current="step"] span').textContent).toBe("Ready");
+    expect($("room-state").querySelector(".room-clock")).not.toBeNull();
+    failNext = "rib_room_ready";
+    $("room-root").querySelector('[data-act="ready"]').click();
+    await tick();
+    await tick();
+    expect($("room-msg").hidden).toBe(false);
+    expect($("room-msg").textContent).toContain("ready check");
+  });
+
   it("hands out the lobby details and runs the ready check", async () => {
     await show(baseRoom());
     expect($("room-root").textContent).toContain("Friday Cup · Semifinals · 10 rcoin entry");
@@ -108,11 +122,11 @@ describe("match room", () => {
     expect($("room-dispute").textContent).toContain("holds a deposit of 1 rcoin");
     const before = calls.length;
     $("room-dispute-reason").value = "too short";
-    $("room-dispute").dispatchEvent(new Event("submit", { cancelable: true }));
+    $("room-dispute").dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
     await tick();
     expect(calls.length).toBe(before);
     $("room-dispute-reason").value = "I won 13-9, the scoreboard is in my capture";
-    $("room-dispute").dispatchEvent(new Event("submit", { cancelable: true }));
+    $("room-dispute").dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
     await tick();
     expect(lastCall("rib_room_dispute")[1]).toEqual({ p_room_id: "r1", p_reason: "I won 13-9, the scoreboard is in my capture" });
   });
@@ -128,7 +142,7 @@ describe("match room", () => {
   it("sends chat messages through the rate-limited RPC", async () => {
     await show(baseRoom());
     $("room-chat-input").value = "lobby is up";
-    $("room-chat-form").dispatchEvent(new Event("submit", { cancelable: true }));
+    $("room-chat-form").dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
     await tick();
     expect(lastCall("rib_room_message")[1]).toEqual({ p_room_id: "r1", p_body: "lobby is up" });
   });
@@ -137,6 +151,7 @@ describe("match room", () => {
     await show(baseRoom({ status: "done", winner_id: "u1", walkover: true }));
     expect($("room-state").textContent).toContain("You won.");
     expect($("room-state").textContent).toContain("Your opponent didn't show up.");
-    expect($("room-chat-form")).toBeNull();
+    expect($("room-chat-form").hidden).toBe(true);
+    expect($("room-steps").querySelector('li:last-child').getAttribute("data-s")).toBe("done");
   });
 });

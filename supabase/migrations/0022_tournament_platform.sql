@@ -510,6 +510,9 @@ begin
     if not p_walkover then
       perform public.rib_rep_bump(v_r.player_a, 1, 0, 0);
       perform public.rib_rep_bump(v_r.player_b, 1, 0, 0);
+      -- The ranking record: confirmed tournament matches (rib_stats_record, 11c).
+      perform public.rib_stats_record(p_winner, 1, 0);
+      perform public.rib_stats_record(case when p_winner = v_r.player_a then v_r.player_b else v_r.player_a end, 0, 1);
     end if;
     perform public.rib_tournament_advance(v_r.id);
   end if;
@@ -1216,7 +1219,9 @@ begin
      order by created_at limit p_batch for update skip locked
   loop
     begin
-      perform public.rib_apply(v_m.host_id, 'game_refund', v_m.stake_cents, -v_m.stake_cents, 'game', v_m.id, 'Open table expired, stake refunded');
+      if v_m.stake_cents > 0 then
+        perform public.rib_apply(v_m.host_id, 'game_refund', v_m.stake_cents, -v_m.stake_cents, 'game', v_m.id, 'Open table expired, stake refunded');
+      end if;
       update public.game_matches set status = 'cancelled', settled_at = now() where id = v_m.id;
       v_open_games := v_open_games + 1;
     exception when others then
@@ -1250,8 +1255,10 @@ begin
   loop
     begin
       perform public.rib_lock_wallets(v_m.host_id, v_m.guest_id);
-      perform public.rib_apply(v_m.host_id, 'game_refund', v_m.stake_cents, -v_m.stake_cents, 'game', v_m.id, 'Match voided (inactivity), stake refunded');
-      if v_m.guest_id is not null then
+      if v_m.stake_cents > 0 then
+        perform public.rib_apply(v_m.host_id, 'game_refund', v_m.stake_cents, -v_m.stake_cents, 'game', v_m.id, 'Match voided (inactivity), stake refunded');
+      end if;
+      if v_m.guest_id is not null and v_m.stake_cents > 0 then
         perform public.rib_apply(v_m.guest_id, 'game_refund', v_m.stake_cents, -v_m.stake_cents, 'game', v_m.id, 'Match voided (inactivity), stake refunded');
       end if;
       update public.game_matches set status = 'cancelled', settled_at = now() where id = v_m.id;
@@ -1288,10 +1295,215 @@ revoke execute on function public.rib_ops_health() from public, anon, authentica
 grant execute on function public.rib_ops_health() to service_role;
 
 -- ----------------------------------------------------------------------------
+-- 11b) Built-in game tables are free friendlies: no entry fee, no prize.
+-- Money paths stay guarded by stake_cents > 0 so older paid rows (refunded
+-- below) can never move money twice.
+-- ----------------------------------------------------------------------------
+alter table public.game_matches drop constraint if exists game_matches_stake_cents_check;
+alter table public.game_matches add constraint game_matches_stake_cents_check check (stake_cents between 0 and 100000);
+
+create or replace function public.rib_game_create(
+  p_game text, p_stake_cents bigint default 0, p_state jsonb default '{}'::jsonb
+) returns public.game_matches
+language plpgsql security definer set search_path = ''
+as $$
+declare v_uid uuid := auth.uid(); v_cnt int; v_row public.game_matches;
+begin
+  if v_uid is null then raise exception 'not signed in' using hint = 'not_authenticated'; end if;
+  -- Mirror of STAKEABLE_RULES in supabase/functions/_shared/game-rules/index.js.
+  if p_game is null or p_game not in ('tictactoe','connect4','reversi','checkers','dots','mancala') then
+    raise exception 'unknown game' using hint = 'unknown_game';
+  end if;
+  if p_state is not null and octet_length(p_state::text) > 16384 then
+    raise exception 'board state too large' using hint = 'state_too_large';
+  end if;
+  perform public.rib_lock_user(v_uid);
+  select count(*) into v_cnt from public.game_matches where host_id = v_uid and status in ('open','active');
+  if v_cnt >= 20 then raise exception 'too many active games (max 20)' using hint = 'too_many_open'; end if;
+
+  insert into public.game_matches (game, host_id, stake_cents, status, state)
+  values (p_game, v_uid, 0, 'open', coalesce(p_state, '{}'::jsonb))
+  returning * into v_row;
+  return v_row;
+end;
+$$;
+
+create or replace function public.rib_game_join(p_match_id uuid, p_state jsonb default null)
+returns public.game_matches
+language plpgsql security definer set search_path = ''
+as $$
+declare v_uid uuid := auth.uid(); v_m public.game_matches;
+begin
+  if v_uid is null then raise exception 'not signed in' using hint = 'not_authenticated'; end if;
+  if p_state is not null and octet_length(p_state::text) > 16384 then
+    raise exception 'board state too large' using hint = 'state_too_large';
+  end if;
+  select * into v_m from public.game_matches where id = p_match_id for update;
+  if v_m.id is null then raise exception 'match not found' using hint = 'match_not_found'; end if;
+  if v_m.host_id = v_uid then raise exception 'you cannot join your own match' using hint = 'cannot_join_own_match'; end if;
+  if v_m.status <> 'open' then raise exception 'this match is no longer open' using hint = 'match_not_open'; end if;
+  if v_m.stake_cents > 0 then
+    perform public.rib_apply(v_uid, 'game_lock', -v_m.stake_cents, v_m.stake_cents, 'game', v_m.id, 'Stake locked');
+  end if;
+  update public.game_matches
+     set guest_id = v_uid, status = 'active', matched_at = now(), turn_id = v_m.host_id,
+         turn_deadline = now() + make_interval(secs => public.rib_turn_seconds()),
+         state = coalesce(p_state, v_m.state)
+   where id = v_m.id
+   returning * into v_m;
+  return v_m;
+end;
+$$;
+
+create or replace function public.rib_game_award(p_match public.game_matches, p_winner uuid, p_memo text)
+returns public.game_matches
+language plpgsql security definer set search_path = ''
+as $$
+declare v_m public.game_matches; v_loser uuid;
+begin
+  if p_match.stake_cents > 0 then
+    v_loser := case when p_winner = p_match.host_id then p_match.guest_id else p_match.host_id end;
+    perform public.rib_lock_wallets(p_match.host_id, p_match.guest_id);
+    perform public.rib_apply(p_winner, 'game_win', p_match.stake_cents * 2, -p_match.stake_cents, 'game', p_match.id, p_memo);
+    perform public.rib_apply(v_loser, 'game_settled', 0, -p_match.stake_cents, 'game', p_match.id, 'Game lost (' || lower(p_memo) || ')');
+  end if;
+  update public.game_matches
+     set status = 'settled', winner_id = p_winner, is_draw = false, turn_id = null, turn_deadline = null,
+         move_seq = move_seq + 1, settled_at = now()
+   where id = p_match.id
+   returning * into v_m;
+  return v_m;
+end;
+$$;
+
+create or replace function public.rib_game_commit_move(
+  p_match_id uuid, p_expected_seq int, p_state jsonb, p_next_turn uuid, p_over boolean, p_winner_id uuid
+) returns public.game_matches
+language plpgsql security definer set search_path = ''
+as $$
+declare v_m public.game_matches; v_loser uuid;
+begin
+  select * into v_m from public.game_matches where id = p_match_id for update;
+  if v_m.id is null then raise exception 'match not found' using hint = 'match_not_found'; end if;
+  if v_m.status <> 'active' then raise exception 'match is not in progress' using hint = 'match_not_in_progress'; end if;
+  if v_m.move_seq <> p_expected_seq then
+    raise exception 'the board changed, retry with the latest state' using hint = 'stale_move';
+  end if;
+  if v_m.turn_deadline is not null and v_m.turn_deadline < now() then
+    raise exception 'time ran out for this turn' using hint = 'turn_timed_out';
+  end if;
+  if p_state is null or octet_length(p_state::text) > 16384 then
+    raise exception 'board state too large' using hint = 'state_too_large';
+  end if;
+  if p_winner_id is not null and p_winner_id <> v_m.host_id and p_winner_id <> v_m.guest_id then
+    raise exception 'invalid winner' using hint = 'invalid_winner';
+  end if;
+
+  if not p_over then
+    update public.game_matches
+       set state = p_state, turn_id = p_next_turn, move_seq = move_seq + 1,
+           turn_deadline = now() + make_interval(secs => public.rib_turn_seconds())
+     where id = v_m.id
+     returning * into v_m;
+    return v_m;
+  end if;
+
+  if v_m.stake_cents > 0 then
+    perform public.rib_lock_wallets(v_m.host_id, v_m.guest_id);
+    if p_winner_id is null then
+      perform public.rib_apply(v_m.host_id,  'game_refund', v_m.stake_cents, -v_m.stake_cents, 'game', v_m.id, 'Draw, stake refunded');
+      perform public.rib_apply(v_m.guest_id, 'game_refund', v_m.stake_cents, -v_m.stake_cents, 'game', v_m.id, 'Draw, stake refunded');
+    else
+      v_loser := case when p_winner_id = v_m.host_id then v_m.guest_id else v_m.host_id end;
+      perform public.rib_apply(p_winner_id, 'game_win',     v_m.stake_cents * 2, -v_m.stake_cents, 'game', v_m.id, 'Game won');
+      perform public.rib_apply(v_loser,     'game_settled', 0,                   -v_m.stake_cents, 'game', v_m.id, 'Game lost');
+    end if;
+  end if;
+
+  update public.game_matches
+     set state = p_state, turn_id = null, turn_deadline = null, move_seq = move_seq + 1,
+         status = 'settled', winner_id = p_winner_id, is_draw = (p_winner_id is null), settled_at = now()
+   where id = v_m.id
+   returning * into v_m;
+  return v_m;
+end;
+$$;
+
+create or replace function public.rib_game_cancel(p_match_id uuid)
+returns public.game_matches
+language plpgsql security definer set search_path = ''
+as $$
+declare v_uid uuid := auth.uid(); v_m public.game_matches;
+begin
+  if v_uid is null then raise exception 'not signed in' using hint = 'not_authenticated'; end if;
+  select * into v_m from public.game_matches where id = p_match_id for update;
+  if v_m.id is null then raise exception 'match not found' using hint = 'match_not_found'; end if;
+  if v_m.host_id <> v_uid then raise exception 'only the host can cancel' using hint = 'cannot_cancel'; end if;
+  if v_m.status <> 'open' then raise exception 'this match can no longer be cancelled' using hint = 'cannot_cancel'; end if;
+  if v_m.stake_cents > 0 then
+    perform public.rib_apply(v_uid, 'game_refund', v_m.stake_cents, -v_m.stake_cents, 'game', v_m.id, 'Match cancelled, refunded');
+  end if;
+  update public.game_matches set status = 'cancelled' where id = v_m.id returning * into v_m;
+  return v_m;
+end;
+$$;
+
+-- ----------------------------------------------------------------------------
+-- 11c) Ranking = tournaments: net rcoin (prizes minus entry fees) from the
+-- ledger, and the record (wins/losses) of confirmed tournament matches.
+-- ----------------------------------------------------------------------------
+create or replace function public.rib_play_delta(p_kind text, p_amount bigint,
+  out net bigint, out won bigint, out win int, out loss int)
+language sql immutable set search_path = ''
+as $$
+  select
+    case when p_kind in ('tournament_entry','tournament_prize','tournament_refund') then p_amount else 0 end,
+    case when p_kind = 'tournament_prize' then p_amount else 0 end,
+    0,
+    0;
+$$;
+revoke execute on function public.rib_play_delta(text,bigint) from public, anon, authenticated;
+
+create or replace function public.rib_stats_record(p_uid uuid, p_win int, p_loss int)
+returns void
+language sql security definer set search_path = ''
+as $$
+  insert into public.player_stats as s (user_id, net_cents, won_cents, wins, losses)
+  values (p_uid, 0, 0, p_win, p_loss)
+  on conflict (user_id) do update set wins = s.wins + excluded.wins, losses = s.losses + excluded.losses, updated_at = now();
+  insert into public.player_stats_weekly as w (week_start, user_id, net_cents, won_cents, wins, losses)
+  values (public.rib_week_start(now()), p_uid, 0, 0, p_win, p_loss)
+  on conflict (week_start, user_id) do update set wins = w.wins + excluded.wins, losses = w.losses + excluded.losses;
+$$;
+revoke execute on function public.rib_stats_record(uuid,int,int) from public, anon, authenticated;
+
+-- One-time rebuild of the ranking on the tournament definition.
+do $$
+begin
+  if exists (select 1 from public.platform_settings where key = 'player_stats_tournaments') then
+    return;
+  end if;
+  delete from public.player_stats;
+  delete from public.player_stats_weekly;
+  insert into public.player_stats (user_id, net_cents, won_cents, wins, losses)
+  select l.user_id, sum(d.net), sum(d.won), 0, 0
+    from public.wallet_ledger l, lateral public.rib_play_delta(l.kind, l.amount_cents) d
+   group by l.user_id
+  having sum(abs(d.net)) > 0;
+  insert into public.player_stats_weekly (week_start, user_id, net_cents, won_cents, wins, losses)
+  select public.rib_week_start(l.created_at), l.user_id, sum(d.net), sum(d.won), 0, 0
+    from public.wallet_ledger l, lateral public.rib_play_delta(l.kind, l.amount_cents) d
+   group by 1, 2
+  having sum(abs(d.net)) > 0;
+  insert into public.platform_settings (key, value) values ('player_stats_tournaments', to_jsonb(now()));
+end;
+$$;
+
+-- ----------------------------------------------------------------------------
 -- 12) Test-mode clean-up: close paid challenges and old-format tournaments
 -- ----------------------------------------------------------------------------
 do $$
-declare v_c public.challenges; v_t public.tournaments; r record;
+declare v_c public.challenges; v_t public.tournaments; v_g public.game_matches; r record;
 begin
   for v_c in select * from public.challenges
               where stake_cents > 0 and status in ('open','pending','active','disputed') order by id for update loop
@@ -1310,6 +1522,17 @@ begin
       end loop;
     end if;
     update public.tournaments set status = 'cancelled', prize_pool_cents = 0, finished_at = now() where id = v_t.id;
+  end loop;
+
+  -- Paid game tables: refund every held stake; open tables and games in
+  -- progress carry on as free friendlies.
+  for v_g in select * from public.game_matches
+              where stake_cents > 0 and status in ('open','active','disputed') order by id for update loop
+    perform public.rib_apply(v_g.host_id, 'game_refund', v_g.stake_cents, -v_g.stake_cents, 'game', v_g.id, 'Tables are free now: stake refunded');
+    if v_g.guest_id is not null and v_g.status in ('active','disputed') then
+      perform public.rib_apply(v_g.guest_id, 'game_refund', v_g.stake_cents, -v_g.stake_cents, 'game', v_g.id, 'Tables are free now: stake refunded');
+    end if;
+    update public.game_matches set stake_cents = 0 where id = v_g.id;
   end loop;
 end;
 $$;

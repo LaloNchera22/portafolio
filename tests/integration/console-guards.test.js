@@ -30,7 +30,11 @@ function query(table) {
 }
 const client = {
   from: (table) => query(table),
-  rpc: (name, args) => { calls.push([name, args]); return Promise.resolve({ data: {}, error: null }); },
+  rpc: (name, args) => {
+    calls.push([name, args]);
+    if (name === "rib_my_profile") return Promise.resolve(profileRow ? { data: profileRow, error: null } : { data: null, error: { message: "offline" } });
+    return Promise.resolve({ data: {}, error: null });
+  },
   functions: { invoke: (name) => { invoked.push(name); return Promise.resolve({ data: null, error: { message: "stop" } }); } },
   auth: { signOut: () => Promise.resolve() },
 };
@@ -92,15 +96,15 @@ describe("withdrawals", () => {
     $("withdraw-amount").value = "0.6";
     $("withdraw-submit").click();
     expect(withdrawCalls()).toHaveLength(0);
-    expect($("wallet-msg").textContent).toBe("Enter whole rcoin, no decimals.");
-    expect($("wallet-msg").getAttribute("role")).toBe("alert");
+    expect($("withdraw-msg").textContent).toBe("Enter whole rcoin, no decimals.");
+    expect($("withdraw-msg").getAttribute("role")).toBe("alert");
   });
 
   it("rejects more than the available balance", () => {
     $("withdraw-amount").value = "500";
     $("withdraw-submit").click();
     expect(withdrawCalls()).toHaveLength(0);
-    expect($("wallet-msg").textContent).toContain("available");
+    expect($("withdraw-msg").textContent).toContain("available");
   });
 
   it("sends a valid whole amount in cents", () => {

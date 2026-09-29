@@ -67,21 +67,15 @@ describe("wallet balance", () => {
 });
 
 describe("games page", () => {
-  it("blocks an invalid custom table stake instead of falling back to 1 rcoin", async () => {
+  it("offers free online tables: no entry fee to pick", async () => {
     engine.initGames({ client, UID: "u1", refreshWallet: () => Promise.resolve(), configured: true });
     await tick();
     const card = [...document.querySelectorAll(".gcard")].find((c) => /Tic-Tac-Toe/.test(c.textContent));
     card.click();
-    const custom = document.querySelector(".gplay__custom");
+    expect(document.querySelector(".gplay__custom")).toBeNull();
+    expect(document.querySelector(".gplay--modal").textContent).toContain("Friendly · free");
     const create = [...document.querySelectorAll(".gplay__act")].find((b) => b.textContent === "Create table");
-    custom.value = "0";
-    custom.dispatchEvent(new Event("input"));
-    expect(create.disabled).toBe(true);
-    expect(document.querySelector(".gplay__pot").textContent).toContain("minimum entry fee");
-    custom.value = "7";
-    custom.dispatchEvent(new Event("input"));
     expect(create.disabled).toBe(false);
-    expect(document.querySelector(".gplay__pot").textContent).toBe("Winner takes 14 rcoin");
     document.querySelector(".gplay__x").click();
   });
 

@@ -25,7 +25,7 @@
         </a>
         <nav class="capp__tabs only-desktop" aria-label="Main">
           <a href="#page-games" data-page="page-games" aria-current="page">Play</a>
-          <a href="#page-compete" data-page="page-compete">Compete</a>
+          <a href="#page-compete" data-page="page-compete">Compete<span class="nav-badge" data-live-badge hidden></span></a>
           <a href="#page-ranking" data-page="page-ranking">Ranking</a>
           <a href="#page-wallet" data-page="page-wallet">Wallet</a>
         </nav>
@@ -49,18 +49,27 @@
     </div>
 
     <main class="capp__wrap">
+      <!-- your matches, on every page: filled by live.js -->
+      <div class="live-rooms" id="live-rooms" hidden aria-live="polite"></div>
       <!-- ============================ PLAY ============================ -->
       <section class="page" id="page-games">
         <div class="head">
-          <div><p class="eyebrow">Play · Win · Cash out</p><h1>Games.</h1></div>
+          <div><p class="eyebrow">Practice · Friendlies · Free</p><h1>Games.</h1></div>
           <div class="head__r">
-            <span class="head__bal"><span class="k">Balance</span><span class="v" id="games-balance">0 <small>rcoin</small></span></span>
-            <button type="button" class="btn btn--sm" data-page="page-wallet">Buy rcoin</button>
+            <button type="button" class="btn btn--cta btn--sm" data-page="page-compete">Find a tournament</button>
           </div>
         </div>
         <p class="games-lead">Every game, two ways: <strong>practice free</strong> against the house bot, or
-          <strong>play for rcoin</strong> — both players pay the same entry fee and the winner takes the whole prize.
-          No rake on the table; the 5% is charged once when you buy rcoin.</p>
+          <strong>play online</strong> against another player, also free. Playing for a prize happens in
+          <a href="#page-compete" data-page="page-compete">tournaments</a>.</p>
+        <aside class="onboard" id="onboard" hidden aria-label="How tournaments work">
+          <ol>
+            <li><strong>Link your game account</strong><span>Riot ID, Epic, Steam or console, in Profile.</span></li>
+            <li><strong>Join a 4 or 8 player tournament</strong><span>It starts the moment the last seat fills.</span></li>
+            <li><strong>Win your matches</strong><span>The champion takes 70% of the prize pool, the runner-up 30%.</span></li>
+          </ol>
+          <button type="button" class="onboard__x" id="onboard-dismiss" aria-label="Hide these steps">×</button>
+        </aside>
         <div id="games-root"><p class="muted is-loading">Loading games…</p></div>
       </section>
 
@@ -74,8 +83,6 @@
           </div>
         </div>
 
-        <!-- your matches that need you right now -->
-        <div class="live-rooms" id="live-rooms" hidden></div>
 
         <div class="seg" id="compete-seg" role="group" aria-label="Compete">
           <button type="button" data-seg="tournaments" aria-pressed="true">Tournaments</button>
@@ -143,6 +150,7 @@
 
         <!-- tournaments waiting for players -->
         <div id="compete-tournaments">
+          <div class="tournament-invite" id="tournament-invite" hidden></div>
           <form class="lobby-filters" id="tournament-filters">
             <input type="search" id="tournament-search" placeholder="Search a game" aria-label="Search a game" maxlength="40" autocomplete="off" />
             <div class="chips" data-tsize role="group" aria-label="Players">
@@ -179,7 +187,7 @@
       <!-- ========================== RANKING ========================== -->
       <section class="page" id="page-ranking" hidden>
         <div class="head">
-          <div><p class="eyebrow">Net rcoin won</p><h1>Ranking.</h1></div>
+          <div><p class="eyebrow">Tournament winnings</p><h1>Ranking.</h1></div>
           <div class="seg seg--inline" id="ranking-period" role="group" aria-label="Ranking period">
             <button type="button" data-period="week" aria-pressed="true">This week</button>
             <button type="button" data-period="all" aria-pressed="false">All time</button>
@@ -189,7 +197,7 @@
         <p class="visually-hidden" role="status" id="ranking-status"></p>
         <div id="ranking-list" aria-busy="true"><p class="muted is-loading">Loading…</p></div>
         <button type="button" class="btn btn--sm lobby-more" id="ranking-more" hidden>Show more</button>
-        <p class="testnote">The ranking counts paid games only, because the server checks every move: prizes won minus entry fees paid. Challenges and tournaments are reported by players, so they don't count. Positions refresh every few minutes, and the weekly board resets every Monday (UTC).</p>
+        <p class="testnote">The ranking counts tournaments: net rcoin is prizes won minus entry fees paid, and the record counts confirmed tournament matches (walkovers don't). Friendlies and practice don't count. Positions refresh every few minutes, and the weekly board resets every Monday (UTC).</p>
       </section>
 
       <!-- =========================== WALLET =========================== -->
@@ -200,7 +208,7 @@
           <div class="hero-bal__main">
             <span class="lbl">Available balance</span>
             <span class="num" id="wallet-balance">0 rcoin</span>
-            <span class="sub" id="wallet-locked">In play: 0 rcoin</span>
+            <span class="sub" id="wallet-locked" hidden></span>
           </div>
           <div class="hero-bal__stats">
             <div><span class="n" id="wallet-usd">$0.00</span><span class="k">value at withdrawal</span></div>
@@ -219,7 +227,7 @@
             </div>
             <div class="buy-brk">
               <div class="row"><span>You pay</span><span id="buy-pay">$100.00</span></div>
-              <div class="row"><span>Entry commission (5%)</span><span id="buy-fee">$5.00</span></div>
+              <div class="row"><span>Purchase fee (5%)</span><span id="buy-fee">$5.00</span></div>
               <div class="row tot"><span>You receive</span><span id="buy-receive">95 rcoin</span></div>
             </div>
             <div class="paymethod" id="pay-method" hidden>
@@ -241,10 +249,11 @@
               <select id="withdraw-destination"><option>USDT (Base network)</option><option>USD (bank transfer)</option></select>
             </div>
             <div class="buy-brk">
-              <div class="row"><span>Exit commission</span><span style="color:var(--c-good)">$0.00</span></div>
+              <div class="row"><span>Withdrawal fee</span><span style="color:var(--c-good)">$0.00</span></div>
               <div class="row tot"><span>You receive</span><span id="withdraw-receive">$0.00</span></div>
             </div>
             <button type="button" class="btn btn--wide" id="withdraw-submit">Withdraw</button>
+            <p class="msg" id="withdraw-msg" hidden></p>
             <p class="hint">No fee on the way out. 1 rcoin = $1.</p>
           </div>
         </div>
@@ -258,51 +267,203 @@
 
       <!-- =========================== PROFILE ========================== -->
       <section class="page" id="page-profile" hidden>
-        <div class="head"><div><p class="eyebrow">Account</p><h1>Profile.</h1></div></div>
-        <div class="card-box">
-          <form id="profile-form" novalidate>
-            <div class="field">
-              <label for="profile-username">Username</label>
-              <input id="profile-username" type="text" minlength="3" maxlength="24" pattern="[a-zA-Z0-9_]+" autocomplete="off" />
+        <div class="head">
+          <div class="phead">
+            <span class="avatar avatar--lg" id="profile-avatar" aria-hidden="true"></span>
+            <div><p class="eyebrow">Account</p><h1 id="profile-title" tabindex="-1">Profile.</h1></div>
+          </div>
+          <div class="head__r"><a class="btn btn--sm" id="profile-public" href="#page-player">View public profile</a></div>
+        </div>
+        <nav class="seg" id="profile-nav" aria-label="Account sections">
+          <a href="#page-profile" data-profile-tab="profile" aria-current="page">Profile</a>
+          <a href="#page-profile/settings" data-profile-tab="settings">Settings</a>
+          <a href="#page-profile/security" data-profile-tab="security">Security</a>
+        </nav>
+
+        <!-- ---- Profile ---- -->
+        <div id="profile-panel-profile" data-profile-panel="profile">
+          <div class="card-box">
+            <form id="profile-form" novalidate>
+              <div class="avatar-field">
+                <span class="avatar avatar--xl" id="avatar-preview" aria-hidden="true"></span>
+                <div class="avatar-field__body">
+                  <label class="field-lbl" for="avatar-input">Profile photo</label>
+                  <p class="field__hint" id="avatar-hint">PNG, JPG or WebP. We crop it square and shrink it to 256 px.</p>
+                  <div class="avatar-field__actions">
+                    <label class="btn btn--sm btn--file">Choose photo<input id="avatar-input" type="file" accept="image/png,image/jpeg,image/webp" aria-describedby="avatar-hint" /></label>
+                    <button type="button" class="btn btn--sm" id="avatar-remove" hidden>Remove photo</button>
+                  </div>
+                </div>
+              </div>
+              <div class="field">
+                <label for="profile-username">Username</label>
+                <input id="profile-username" type="text" minlength="3" maxlength="24" autocomplete="username" spellcheck="false" aria-describedby="profile-username-hint" />
+                <p class="field__hint" id="profile-username-hint">3–24 letters, numbers or underscores. After a change you can pick a new one again in 30 days.</p>
+              </div>
+              <div class="field">
+                <label for="profile-display-name">Display name</label>
+                <input id="profile-display-name" type="text" maxlength="60" autocomplete="nickname" />
+              </div>
+              <div class="field">
+                <label for="profile-bio">Bio</label>
+                <textarea id="profile-bio" rows="3" maxlength="160" aria-describedby="profile-bio-count"></textarea>
+                <p class="field__hint field__count" id="profile-bio-count" aria-live="polite">0 / 160</p>
+              </div>
+              <div class="field">
+                <label for="profile-country">Country</label>
+                <select id="profile-country"><option value="">Prefer not to say</option></select>
+              </div>
+              <dl class="facts">
+                <div><dt>Email</dt><dd id="profile-email">—</dd></div>
+                <div><dt>Member since</dt><dd id="profile-since">—</dd></div>
+              </dl>
+              <button type="submit" class="btn btn--cta" id="profile-save">Save changes</button>
+              <p class="msg" id="profile-msg" role="status" aria-live="polite"></p>
+            </form>
+          </div>
+          <div class="sec" id="game-accounts-sec">
+            <div class="sec__head"><h2 id="game-accounts-title" tabindex="-1">Game accounts</h2></div>
+            <p class="muted sec__lead">Link the names you use in each game. Opponents see them in the match room, and a tournament or friendly can require one.</p>
+            <div id="game-accounts" aria-live="polite"><p class="muted is-loading">Loading…</p></div>
+            <form id="game-account-form" class="card-box game-account-form" novalidate>
+              <div class="field--row">
+                <div class="field"><label for="game-account-network">Network</label><select id="game-account-network"></select></div>
+                <div class="field"><label for="game-account-handle">Your name there</label><input id="game-account-handle" type="text" maxlength="64" autocomplete="off" spellcheck="false" /></div>
+              </div>
+              <button type="submit" class="btn btn--cta btn--sm" id="game-account-save">Link account</button>
+              <p class="msg" id="game-account-msg" role="status" aria-live="polite"></p>
+            </form>
+          </div>
+          <div class="sec">
+            <div class="sec__head"><h2>Your record</h2><a class="sec__note" data-page="page-ranking" href="#page-ranking">See the ranking</a></div>
+            <div class="statline" id="profile-stats" aria-live="polite"><p class="muted is-loading">Loading…</p></div>
+          </div>
+        </div>
+
+        <!-- ---- Settings ---- -->
+        <div id="profile-panel-settings" data-profile-panel="settings" hidden>
+          <p class="msg" id="settings-msg" role="status" aria-live="polite"></p>
+          <fieldset class="card-box setgroup" id="settings-notify" disabled>
+            <legend>Notifications</legend>
+            <div class="setting">
+              <input type="checkbox" role="switch" id="set-match_toasts" data-setting="match_toasts" aria-describedby="set-match_toasts-h" />
+              <label for="set-match_toasts">Pop-ups when a match needs me</label>
+              <p class="field__hint" id="set-match_toasts-h">The live strip and the badge on Compete always show. This only turns off the pop-up.</p>
             </div>
-            <div class="field">
-              <label for="profile-display-name">Display name</label>
-              <input id="profile-display-name" type="text" maxlength="60" autocomplete="off" />
+            <div class="setting">
+              <input type="checkbox" role="switch" id="set-product_emails" data-setting="product_emails" aria-describedby="set-product_emails-h" />
+              <label for="set-product_emails">News and offers by email</label>
+              <p class="field__hint" id="set-product_emails-h">Occasional. Account and security emails are always sent.</p>
             </div>
+          </fieldset>
+          <fieldset class="card-box setgroup" id="settings-privacy" disabled>
+            <legend>Privacy</legend>
+            <div class="setting">
+              <input type="checkbox" role="switch" id="set-show_on_leaderboard" data-setting="show_on_leaderboard" aria-describedby="set-show_on_leaderboard-h" />
+              <label for="set-show_on_leaderboard">Show me on the ranking</label>
+              <p class="field__hint" id="set-show_on_leaderboard-h">When off, you leave the public board and your record is hidden from your public profile. You still see your own standing.</p>
+            </div>
+            <div class="setting">
+              <input type="checkbox" role="switch" id="set-show_game_accounts" data-setting="show_game_accounts" aria-describedby="set-show_game_accounts-h" />
+              <label for="set-show_game_accounts">Show my game accounts on my public profile</label>
+              <p class="field__hint" id="set-show_game_accounts-h">Your opponent in a match room always sees the account that match needs.</p>
+            </div>
+          </fieldset>
+
+          <section class="card-box setgroup rplay" id="settings-limits" aria-labelledby="rplay-title">
+            <h2 class="setgroup__title" id="rplay-title">Play limits</h2>
+            <p class="muted">Limits cover tournament entry fees. Tightening a limit applies right away; loosening it waits, so the decision is made with a clear head.</p>
+            <div class="rplay__block">
+              <h3>Monthly entry limit</h3>
+              <div class="meter" id="cap-meter" hidden>
+                <div class="meter__bar"><span id="cap-meter-fill"></span></div>
+                <p class="meter__text" id="cap-meter-text"></p>
+              </div>
+              <form class="rplay__row" id="cap-form" novalidate>
+                <div class="field">
+                  <label for="cap-amount">Limit per calendar month (rcoin)</label>
+                  <input id="cap-amount" type="number" min="0" max="100000" step="1" inputmode="numeric" placeholder="No limit" aria-describedby="cap-hint" />
+                </div>
+                <button type="submit" class="btn btn--sm btn--cta" id="cap-save">Save limit</button>
+                <button type="button" class="btn btn--sm" id="cap-remove" hidden>Remove limit</button>
+              </form>
+              <p class="field__hint" id="cap-hint">Lowering applies now. Raising or removing it takes effect after 24 hours. Months follow UTC.</p>
+              <p class="pending" id="cap-pending" hidden><span id="cap-pending-text"></span> <button type="button" class="linkbtn" id="cap-pending-cancel">Cancel change</button></p>
+            </div>
+            <div class="rplay__block">
+              <h3>Cool-off</h3>
+              <div id="cooloff-off">
+                <fieldset class="chips-set">
+                  <legend class="field-lbl">Pause paid tournaments for</legend>
+                  <div class="radios" id="cooloff-days">
+                    <label><input type="radio" name="cooloff" value="1" /> 1 day</label>
+                    <label><input type="radio" name="cooloff" value="7" checked /> 1 week</label>
+                    <label><input type="radio" name="cooloff" value="30" /> 1 month</label>
+                    <label><input type="radio" name="cooloff" value="90" /> 3 months</label>
+                    <label><input type="radio" name="cooloff" value="180" /> 6 months</label>
+                    <label><input type="radio" name="cooloff" value="365" /> 1 year</label>
+                  </div>
+                </fieldset>
+                <button type="button" class="btn btn--sm" id="cooloff-start">Start cool-off</button>
+                <p class="field__hint">Free games and friendlies stay open. Ending a cool-off early takes 7 days.</p>
+              </div>
+              <div id="cooloff-on" hidden>
+                <p class="rplay__state" id="cooloff-text"></p>
+                <button type="button" class="btn btn--sm" id="cooloff-end">End early</button>
+                <p class="pending" id="cooloff-pending" hidden><span id="cooloff-pending-text"></span> <button type="button" class="linkbtn" id="cooloff-keep">Keep my cool-off</button></p>
+              </div>
+            </div>
+          </section>
+
+          <section class="card-box setgroup" aria-labelledby="data-title">
+            <h2 class="setgroup__title" id="data-title">Your data</h2>
+            <p class="muted">A JSON file with your profile, settings, linked accounts, tournaments and wallet history. Once an hour.</p>
+            <button type="button" class="btn btn--sm" id="data-export">Download my data</button>
+            <p class="msg" id="data-msg" role="status" aria-live="polite"></p>
+          </section>
+        </div>
+
+        <!-- ---- Security ---- -->
+        <div id="profile-panel-security" data-profile-panel="security" hidden>
+          <form class="card-box setgroup" id="password-form" novalidate>
+            <h2 class="setgroup__title">Password</h2>
+            <input type="text" autocomplete="username" id="password-username" hidden />
+            <div class="field"><label for="password-current">Current password</label><input id="password-current" type="password" autocomplete="current-password" /></div>
             <div class="field--row">
-              <div class="field"><label>Email</label><input id="profile-email" type="text" disabled /></div>
-              <div class="field"><label>Member since</label><input id="profile-since" type="text" disabled /></div>
+              <div class="field"><label for="password-new">New password</label><input id="password-new" type="password" autocomplete="new-password" minlength="8" aria-describedby="password-hint" /></div>
+              <div class="field"><label for="password-confirm">Repeat new password</label><input id="password-confirm" type="password" autocomplete="new-password" /></div>
             </div>
-            <button type="submit" class="btn btn--cta" id="profile-save">Save changes</button>
-            <p class="msg" id="profile-msg" hidden></p>
+            <p class="field__hint" id="password-hint">At least 8 characters, different from the current one.</p>
+            <button type="submit" class="btn btn--sm btn--cta" id="password-save">Change password</button>
+            <p class="msg" id="password-msg" role="status" aria-live="polite"></p>
           </form>
-        </div>
-        <div class="sec" id="game-accounts-sec">
-          <div class="sec__head"><h2>Game accounts</h2></div>
-          <p class="muted sec__lead">Link the names you use in each game. Opponents see them in the match room, and a tournament or friendly can require one.</p>
-          <div id="game-accounts"><p class="muted is-loading">Loading…</p></div>
-          <form id="game-account-form" class="card-box game-account-form" novalidate>
-            <div class="field--row">
-              <div class="field"><label for="game-account-network">Network</label><select id="game-account-network"></select></div>
-              <div class="field"><label for="game-account-handle">Your name there</label><input id="game-account-handle" type="text" maxlength="64" autocomplete="off" /></div>
-            </div>
-            <button type="submit" class="btn btn--cta btn--sm" id="game-account-save">Link account</button>
-            <p class="msg" id="game-account-msg" hidden></p>
+          <form class="card-box setgroup" id="email-form" novalidate>
+            <h2 class="setgroup__title">Email</h2>
+            <p class="muted">Currently <strong id="email-current">—</strong>. We send a confirmation link to the new address; the change applies once you open it.</p>
+            <div class="field"><label for="email-new">New email</label><input id="email-new" type="email" autocomplete="email" inputmode="email" spellcheck="false" /></div>
+            <button type="submit" class="btn btn--sm btn--cta" id="email-save">Change email</button>
+            <p class="msg" id="email-msg" role="status" aria-live="polite"></p>
           </form>
-        </div>
-        <div class="sec">
-          <div class="sec__head"><h2>Your record</h2><a class="sec__note" data-page="page-ranking" href="#page-ranking">See the ranking</a></div>
-          <div class="statline" id="profile-stats"><p class="muted is-loading">Loading…</p></div>
-        </div>
-        <div class="sec danger-zone">
-          <div class="sec__head"><h2>Close account</h2></div>
-          <p class="muted">Closing is permanent. Your handle is anonymized, API keys are revoked, you leave the ranking and you can no longer sign in. Transaction records are kept as required for audit. Finish or leave open games, friendlies and tournaments first.</p>
-          <button type="button" class="btn btn--sm btn--danger" id="account-close">Close my account</button>
-          <p class="msg" id="account-close-msg" role="status" hidden></p>
+          <section class="card-box setgroup" aria-labelledby="sessions-title">
+            <h2 class="setgroup__title" id="sessions-title">Sessions</h2>
+            <p class="muted">Signed in on a shared or lost device? Sign out everywhere except here.</p>
+            <button type="button" class="btn btn--sm" id="sessions-others">Sign out other devices</button>
+            <p class="msg" id="sessions-msg" role="status" aria-live="polite"></p>
+          </section>
+          <section class="sec danger-zone" aria-labelledby="close-title">
+            <div class="sec__head"><h2 id="close-title">Close account</h2></div>
+            <p class="muted">Closing is permanent. Your handle is anonymized, your photo, bio and linked game accounts are removed, API keys are revoked, you leave the ranking and you can no longer sign in. Transaction records are kept as required for audit. Finish or leave open games, friendlies and tournaments first.</p>
+            <button type="button" class="btn btn--sm btn--danger" id="account-close">Close my account</button>
+            <p class="msg" id="account-close-msg" role="status" aria-live="polite"></p>
+          </section>
         </div>
       </section>
 
-      <!-- ============================ ROOM ============================ -->
+      <!-- a player's public card: filled by player.js -->
+      <section class="page" id="page-player" hidden>
+        <div id="player-root" aria-live="polite"><p class="muted is-loading">Loading…</p></div>
+      </section>
+
       <section class="page" id="page-room" hidden>
         <div class="head">
           <div><p class="eyebrow">Match room</p><h1 id="room-title">Room.</h1></div>
@@ -314,7 +475,7 @@
       <!-- ============================= OPS ============================= -->
       <section class="page" id="page-ops" hidden>
         <div class="head"><div><p class="eyebrow">Runinback team</p><h1>Dispute queue.</h1></div></div>
-        <p class="muted sec__lead">Review both players' reports, the room chat and the evidence, then award the prize or refund both. A rejected dispute's deposit goes to the other player.</p>
+        <p class="muted sec__lead">Oldest first. Read both reports, the room chat and the captures, then award the match to one player (the bracket advances) or void it (both are out). A rejected dispute's deposit goes to the other player.</p>
         <div id="ops-root"><p class="muted is-loading">Loading…</p></div>
       </section>
 
@@ -417,17 +578,32 @@
     </main>
 
     <!-- bottom nav (mobile) -->
+    <dialog class="rib-dialog" id="confirm-dialog" aria-labelledby="confirm-title" aria-describedby="confirm-body">
+      <form method="dialog" id="confirm-form" novalidate>
+        <h2 id="confirm-title"></h2>
+        <p id="confirm-body"></p>
+        <div class="field" id="confirm-type-field" hidden>
+          <label for="confirm-type" id="confirm-type-label"></label>
+          <input id="confirm-type" type="text" autocomplete="off" spellcheck="false" />
+        </div>
+        <div class="rib-dialog__actions">
+          <button type="submit" class="btn btn--sm" value="cancel" id="confirm-cancel">Cancel</button>
+          <button type="submit" class="btn btn--sm btn--cta" value="ok" id="confirm-ok"></button>
+        </div>
+      </form>
+    </dialog>
+
     <nav class="capp__bnav only-mobile" aria-label="Main">
       <a href="#page-games" data-page="page-games" aria-current="page">
         <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="M8 12h4M10 10v4"/><circle cx="16" cy="11" r="1"/><circle cx="17.5" cy="13.5" r="1"/></svg><span>Play</span></a>
       <a href="#page-compete" data-page="page-compete">
-        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 21h8M12 17v4M6 4h12v5a6 6 0 0 1-12 0zM6 6H3v2a3 3 0 0 0 3 3M18 6h3v2a3 3 0 0 1-3 3"/></svg><span>Compete</span></a>
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 21h8M12 17v4M6 4h12v5a6 6 0 0 1-12 0zM6 6H3v2a3 3 0 0 0 3 3M18 6h3v2a3 3 0 0 1-3 3"/></svg><span>Compete</span><span class="nav-badge" data-live-badge hidden></span></a>
       <a href="#page-ranking" data-page="page-ranking">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20V11h4v9M10 20V5h4v15M16 20v-6h4v6"/></svg><span>Ranking</span></a>
       <a href="#page-wallet" data-page="page-wallet">
         <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="6" width="18" height="13" rx="2.5"/><path d="M3 10h18"/><circle cx="16.5" cy="14" r="1.2"/></svg><span>Wallet</span></a>
-      <a href="#page-developer" data-page="page-developer">
-        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 8l-4 4 4 4M15 8l4 4-4 4"/></svg><span>Dev</span></a>
+      <a href="#page-profile" data-page="page-profile">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg><span>Profile</span></a>
     </nav>
   </div>
 

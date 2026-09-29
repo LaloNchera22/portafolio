@@ -14,6 +14,15 @@ export const data = {
   tournaments: [
     { id: "t-1", name: "Friday Cup", game: "Valorant", network: null, entry_fee_cents: 1000, size: 4, entrants: 3, created_at: new Date().toISOString(), creator_username: "neo", joined: false },
   ],
+  profile: { username: "e2e_player", display_name: null, bio: null, country: null, avatar_version: 0, created_at: "2026-09-01T00:00:00Z", username_next_change_at: null },
+  settings: {
+    match_toasts: true, product_emails: false, show_on_leaderboard: true, show_game_accounts: false, monthly_cap_cents: null,
+    month_spent_cents: 0, cooloff_until: null, pending_cap: null, pending_cooloff_end_at: null, next_export_at: null,
+  },
+  player: {
+    username: "neo", display_name: "Neo", bio: "Valorant, mostly.", country: "MX", avatar: null, created_at: "2026-01-01T00:00:00Z",
+    is_me: false, ranked: true, stats: { net_cents: 5000, won_cents: 9000, wins: 4, losses: 1, rank_all: 1 }, game_accounts: null, tournaments: [],
+  },
   leaderboard: [
     { rank: 1, user_id: "u-2", username: "neo", net_cents: 5000, won_cents: 9000, wins: 4, losses: 1 },
     { rank: 2, user_id: USER.id, username: "e2e_player", net_cents: 700, won_cents: 1400, wins: 1, losses: 0 },
@@ -48,6 +57,10 @@ export const test = base.extend({
         if (fn === "rib_my_tournaments" || fn === "rib_my_rooms") return json(route, []);
         if (fn === "rib_leaderboard") return json(route, data.leaderboard);
         if (fn === "rib_my_standing") return json(route, [{ rank: 2, net_cents: 700, won_cents: 1400, wins: 1, losses: 0 }]);
+        if (fn === "rib_my_profile") return json(route, data.profile);
+        if (fn === "rib_profile_update") return json(route, Object.assign({}, data.profile, { username: body.p_username, bio: body.p_bio, country: body.p_country }));
+        if (fn === "rib_settings_get" || fn === "rib_settings_update") return json(route, data.settings);
+        if (fn === "rib_public_profile") return json(route, body && body.p_username === "neo" ? data.player : null);
         return json(route, {});
       }
       if (path === "/rest/v1/wallets") return json(route, data.wallet);

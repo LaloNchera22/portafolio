@@ -177,7 +177,7 @@ export const GAME_HELP = {
   },
 
   /* ---- coming soon (shown as a teaser) ---------------------------------- */
-  chess: { soon: true, how: ["The full game of chess is on the way — ranked matches and paid tables."], win: "Checkmate the enemy king." },
+  chess: { soon: true, how: ["The full game of chess is on the way — online matches against other players."], win: "Checkmate the enemy king." },
   ludo: { soon: true, how: ["Roll and race your four tokens home, for 2 to 4 players. Coming soon."], win: "Get all four tokens home first." },
   backgammon: { soon: true, how: ["Roll the dice, race your checkers around the board and bear them off. Coming soon."], win: "Bear off all your checkers first." },
   spades: { soon: true, how: ["Bid the tricks you'll take and hit your target as a partnership. Coming soon."], win: "Reach the target score first." },

@@ -14,7 +14,8 @@ insert into auth.users (id, email, raw_user_meta_data) values
   ('f1000000-0000-0000-0000-000000000001', 'p1@example.test', '{"username":"player_one"}'),
   ('f2000000-0000-0000-0000-000000000002', 'p2@example.test', '{"username":"player_two"}'),
   ('f3000000-0000-0000-0000-000000000003', 'p3@example.test', '{"username":"player_three"}'),
-  ('f4000000-0000-0000-0000-000000000004', 'p4@example.test', '{"username":"player_four"}');
+  ('f4000000-0000-0000-0000-000000000004', 'p4@example.test', '{"username":"player_four"}'),
+  ('99999999-0000-0000-0000-000000000009', 'grace@example.test', '{"username":"grace"}');
 
 -- Run a statement as a signed-in user; returns the SQL error hint (or 'ok').
 create function pg_temp.as_user(p_uid uuid, p_sql text) returns text
@@ -68,6 +69,7 @@ declare
   c uuid := 'cccccccc-0000-0000-0000-000000000003';
   d uuid := 'dddddddd-0000-0000-0000-000000000005';
   e uuid := 'eeeeeeee-0000-0000-0000-000000000006';
+  g uuid := '99999999-0000-0000-0000-000000000009';
   v_challenge uuid;
   v_tournament uuid;
   v_match uuid;
@@ -95,7 +97,8 @@ begin
   perform pg_temp.expect(pg_temp.as_user(a, $q$select public.rib_credit_rcoin_purchase('aaaaaaaa-0000-0000-0000-000000000001', 'cs_x', 10000)$q$), '42501', 'credit function not executable');
   perform pg_temp.expect(pg_temp.as_user(a, 'update public.wallets set test_balance_cents = 1'), '42501', 'wallets not writable');
   perform pg_temp.expect(pg_temp.as_user(a, $q$update public.profiles set role = 'dev'$q$), '42501', 'profile role not writable');
-  perform pg_temp.expect(pg_temp.as_user(a, $q$update public.profiles set display_name = 'Alice' where id = 'aaaaaaaa-0000-0000-0000-000000000001'$q$), 'ok', 'display name writable');
+  perform pg_temp.expect(pg_temp.as_user(a, $q$update public.profiles set display_name = 'Alice' where id = 'aaaaaaaa-0000-0000-0000-000000000001'$q$), '42501', 'profiles only change through rib_profile_update');
+  perform pg_temp.expect(pg_temp.as_user(a, $q$select public.rib_profile_update(null, 'Alice', null, null)$q$), 'ok', 'display name writable');
   perform pg_temp.expect(
     (select string_agg(p.proname, ',') from pg_proc p join pg_namespace n on n.oid = p.pronamespace
       where n.nspname = 'public' and has_function_privilege('anon', p.oid, 'execute')),
@@ -166,6 +169,7 @@ begin
   perform pg_temp.expect(pg_temp.as_user(d, format('select public.rib_tournament_join(%L)', v_tournament)), 'ok', 'dave fills the cup');
   perform pg_temp.expect((select status from public.tournaments where id = v_tournament), 'active', 'a full cup starts');
   perform pg_temp.expect((select string_agg(round || ':' || status, ',' order by round, slot) from public.match_rooms where tournament_id = v_tournament), '1:ready_check,1:ready_check,2:waiting', 'the bracket has two semifinals and a final');
+  perform pg_temp.expect(pg_temp.scalar_as(b, 'select needs_me::text || '':'' || tournament_name from public.rib_my_rooms() limit 1'), 'true:Cup', 'my rooms flag a ready check that needs me');
   perform pg_temp.expect(pg_temp.as_user(e, format('select public.rib_tournament_join(%L)', v_tournament)), 'registration_closed', 'a started cup is closed');
 
   -- Semifinal X (bob's): bob claims a win he didn't get; his opponent disputes.
@@ -221,6 +225,9 @@ begin
   perform pg_temp.expect((select sum(amount_cents)::text from public.wallet_ledger where ref_id = v_tournament and kind = 'tournament_prize' and user_id = v_opp), '2520', 'the champion gets 70% of 90% of the pool');
   perform pg_temp.expect((select sum(amount_cents)::text from public.wallet_ledger where ref_id = v_tournament and kind = 'tournament_prize' and user_id = v_ya), '1080', 'the runner-up gets 30%');
   perform pg_temp.expect((select amount_cents::text from public.platform_revenue where tournament_id = v_tournament), '400', 'the platform keeps 10%');
+  perform pg_temp.expect(pg_temp.scalar_as(v_opp, format('select prize_cents::text || '':'' || eliminated::text from public.rib_my_tournaments() where id = %L', v_tournament)), '2520:false', 'my tournaments show what I won');
+  perform pg_temp.expect(pg_temp.scalar_as(b, format('select prize_cents::text || '':'' || eliminated::text || '':'' || my_round from public.rib_my_tournaments() where id = %L', v_tournament)), '0:true:1', 'my tournaments show where I went out');
+  perform pg_temp.expect(pg_temp.scalar_as(e, format('select name from public.rib_tournament_summary(%L)', v_tournament)), 'Cup', 'a tournament can be looked up for an invite link');
   perform pg_temp.expect((select count(*)::text from public.rib_tournament_bracket(v_tournament)), '3', 'the bracket is public');
   perform pg_temp.as_user(c, 'select public.rib_tournament_create(''Cup R'', ''Valorant'', 0, 4, ''riot'')');
   perform pg_temp.expect(pg_temp.as_user(c, 'select public.rib_game_account_remove(''riot'')'), 'game_account_in_use', 'a linked account in use cannot be removed');
@@ -281,10 +288,11 @@ begin
   perform pg_temp.expect(pg_temp.as_user(b, 'select public.rib_withdraw_test(100)'), 'wallet_frozen', 'frozen wallet cannot withdraw');
   perform pg_temp.expect(pg_temp.as_user(b, 'select public.rib_tournament_create(''Frozen cup'', ''chess'', 100, 4, null)'), 'wallet_frozen', 'frozen wallet cannot pay an entry fee');
 
-  -- Server-authoritative staked games (0012).
-  perform pg_temp.expect(pg_temp.as_user(a, 'select public.rib_game_create(''eights'', 100, ''{}'')'), 'unknown_game', 'crazy eights not stakeable');
+  -- Server-authoritative games (0012), free friendlies since 0022.
+  perform pg_temp.expect(pg_temp.as_user(a, 'select public.rib_game_create(''eights'', 100, ''{}'')'), 'unknown_game', 'crazy eights is not a server-verified game');
   perform pg_temp.expect(pg_temp.as_user(a, 'select public.rib_game_create(''tictactoe'', 100, ''{}'')'), 'ok', 'alice opens a table');
   select id into v_match from public.game_matches where host_id = a and status = 'open' order by created_at desc limit 1;
+  perform pg_temp.expect((select stake_cents::text from public.game_matches where id = v_match), '0', 'tables are free even if a fee is sent');
   perform pg_temp.expect(pg_temp.as_user(c, format('select public.rib_game_join(%L, null)', v_match)), 'ok', 'carol joins the table');
   perform pg_temp.expect(pg_temp.as_user(a, format('select public.rib_game_move(%L, ''{}'', null)', v_match)), '42501', 'client cannot write the board');
   perform pg_temp.expect(pg_temp.as_user(a, format('select public.rib_game_report(%L, %L)', v_match, a)), '42501', 'client cannot report results');
@@ -301,9 +309,8 @@ begin
     perform pg_temp.expect(v_hint, 'stale_move', 'stale move rejected');
   end;
   perform public.rib_game_commit_move(v_match, 1, '{"turn":0}', null, true, a);
-  perform pg_temp.expect((select status || ':' || (winner_id = a)::text from public.game_matches where id = v_match), 'settled:true', 'server settles the pot');
-  perform pg_temp.expect((pg_temp.balance(a) - v_before_a)::text, '200', 'winner receives the pot');
-  perform pg_temp.expect((pg_temp.balance(c) - v_before_c)::text, '0', 'loser stake already spent');
+  perform pg_temp.expect((select status || ':' || (winner_id = a)::text from public.game_matches where id = v_match), 'settled:true', 'the server settles the game');
+  perform pg_temp.expect((pg_temp.balance(a) - v_before_a)::text || '/' || (pg_temp.balance(c) - v_before_c)::text, '0/0', 'a free table moves no money');
 
   -- Abuse limits and identity (0013).
   for i in 1..3 loop
@@ -322,26 +329,21 @@ begin
   values ('dddddddd-0000-0000-0000-000000000004', 'steam_76561197960287930@steam.local',
           '{"steamid":"76561197960287930"}', '{"username":"steam_76561197960287930"}');
   perform pg_temp.expect('ok', 'ok', 'steam-auth can create the steam.local account');
-  perform pg_temp.expect(pg_temp.as_user(a, $q$update public.profiles set username = 'BOB' where id = 'aaaaaaaa-0000-0000-0000-000000000001'$q$), '23505', 'usernames unique regardless of case');
+  perform pg_temp.expect(pg_temp.as_user(a, $q$select public.rib_profile_update('BOB', 'Alice', null, null)$q$), 'username_taken', 'usernames unique regardless of case');
   perform pg_temp.expect(pg_temp.as_user(a, 'select role from public.profiles limit 1'), '42501', 'role column not readable by players');
   perform pg_temp.expect(pg_temp.as_user(a, 'select id, username, display_name from public.profiles limit 1'), 'ok', 'handles readable by players');
 
-  -- Leaderboard (0014-0018). Only server-validated staked games count:
-  --   alice won the 100 tictactoe table (+100, 1-0); carol lost it (-100, 0-1).
-  --   Challenges and tournament prizes are self-reported and don't rank.
+  -- Leaderboard (0022): tournaments rank. Net rcoin = prizes minus entry fees;
+  --   the record counts confirmed tournament matches (walkovers don't).
+  --   Cup (4 x 10 rcoin): the champion nets +15.20; bob paid 10 and lost.
   perform public.refresh_player_rankings();
-  perform pg_temp.expect(
-    (select string_agg(username || ':' || net_cents || ':' || wins || '-' || losses, ',' order by rank)
-       from public.rib_leaderboard('all', 10, 0)),
-    'alice:100:1-0,carol:-100:0-1', 'all-time leaderboard ranks verified results by net');
-  perform pg_temp.expect(
-    (select string_agg(username, ',') from public.rib_leaderboard('all', 1, 1)), 'carol', 'second page continues after rank 1');
-  perform pg_temp.expect(
-    (select count(*)::text from public.rib_leaderboard('week', 10, 0)), '2', 'weekly board has this week''s players');
-  perform set_config('request.jwt.claim.sub', c::text, true);
-  perform pg_temp.expect((select rank::text from public.rib_my_standing('all')), '2', 'my standing shows my rank');
-  update public.player_rankings set rank_all = 0 where user_id = c;
-  perform pg_temp.expect((select rank::text from public.rib_my_standing('all')), '2', 'standing falls back to a live rank before the next refresh');
+  perform pg_temp.expect((select net_cents::text from public.player_stats where user_id = v_opp), '1520', 'the champion ranks by net tournament winnings');
+  perform pg_temp.expect((select net_cents::text from public.player_stats where user_id = b), '-1000', 'entry fees count against the player');
+  perform pg_temp.expect((select (wins >= 2)::text from public.player_stats where user_id = v_opp), 'true', 'confirmed tournament matches build the record');
+  perform pg_temp.expect((select username from public.rib_leaderboard('all', 1, 0)), (select username from public.profiles where id = v_opp), 'the biggest net winner tops the board');
+  perform pg_temp.expect((select count(*)::text from public.rib_leaderboard('week', 50, 0)), (select count(*)::text from public.rib_leaderboard('all', 50, 0)), 'this week''s board has the same players');
+  perform set_config('request.jwt.claim.sub', v_opp::text, true);
+  perform pg_temp.expect((select rank::text from public.rib_my_standing('all')), '1', 'my standing shows my rank');
   perform pg_temp.expect(pg_temp.as_user(a, 'select * from public.player_rankings'), '42501', 'ranking snapshot not readable by clients');
   perform pg_temp.expect(pg_temp.as_user(a, 'select public.refresh_player_rankings()'), '42501', 'ranking refresh not callable by clients');
   perform pg_temp.expect(pg_temp.as_user(a, 'select * from public.player_stats'), '42501', 'raw stats not readable by clients');
@@ -387,8 +389,8 @@ begin
   perform pg_temp.expect(pg_temp.as_user(a, format('select public.rib_game_claim_timeout(%L)', v_match)), 'not_timed_out', 'the late player cannot claim');
   v_before_c := pg_temp.balance(c);
   perform pg_temp.expect(pg_temp.as_user(c, format('select public.rib_game_claim_timeout(%L)', v_match)), 'ok', 'the waiting player claims on time');
-  perform pg_temp.expect((select status || ':' || (winner_id = c)::text from public.game_matches where id = v_match), 'settled:true', 'claim settles the pot');
-  perform pg_temp.expect((pg_temp.balance(c) - v_before_c)::text, '200', 'the waiting player takes the pot');
+  perform pg_temp.expect((select status || ':' || (winner_id = c)::text from public.game_matches where id = v_match), 'settled:true', 'the claim settles the game');
+  perform pg_temp.expect((pg_temp.balance(c) - v_before_c)::text, '0', 'a free game lost on time moves no money');
   -- The background job does the same for unclaimed matches.
   perform pg_temp.as_user(c, 'select public.rib_game_create(''tictactoe'', 100, ''{}'')');
   select id into v_match from public.game_matches where host_id = c and status = 'open' order by created_at desc limit 1;
@@ -415,8 +417,74 @@ begin
   perform pg_temp.expect(pg_temp.as_user(a, 'select public.rib_close_account()'), 'close_account_blocked', 'cannot close with an open challenge');
   perform pg_temp.expect(pg_temp.as_user(e, 'select public.rib_close_account()'), 'ok', 'an idle account closes');
   perform pg_temp.expect((select (username like 'closed_%' and closed_at is not null)::text from public.profiles where id = e), 'true', 'closed profile is anonymized');
+  perform pg_temp.expect(pg_temp.as_user(e, 'select public.rib_settings_get()'), 'account_closed', 'a closed account has no settings to recreate');
   perform pg_temp.expect((select (count(*) > 0)::text from public.wallet_ledger where user_id = e), 'true', 'financial history is kept');
   perform pg_temp.expect((public.rib_ops_health() ? 'disputed_tournaments')::text, 'true', 'ops health reports counters');
+
+  -- Profile, settings and responsible play (0024).
+  perform pg_temp.as_user(g, 'select public.rib_buy_rcoin_test(10000)');
+  perform pg_temp.expect(pg_temp.as_user(g, $q$select public.rib_profile_update('grace_x', 'Grace', E'Hi\tthere', 'mx')$q$), 'ok', 'first username change is free');
+  perform pg_temp.expect((select username || '|' || bio || '|' || country from public.profiles where id = g), 'grace_x|Hi there|MX', 'bio is cleaned and country normalized');
+  perform pg_temp.expect(pg_temp.as_user(g, $q$select public.rib_profile_update('grace_y', 'Grace', null, null)$q$), 'username_cooldown', 'a second handle change waits 30 days');
+  perform pg_temp.expect(pg_temp.as_user(g, $q$select public.rib_profile_update('Grace_X', 'Grace', 'Hi', 'MX')$q$), 'ok', 'a case-only change is always allowed');
+  perform pg_temp.expect(pg_temp.as_user(g, $q$select public.rib_profile_update(null, null, null, 'ZZ')$q$), 'invalid_country', 'country must be ISO 3166');
+  update public.profiles set username_changed_at = null where id = g;
+  perform pg_temp.expect(pg_temp.as_user(g, $q$select public.rib_profile_update('Admin', null, null, null)$q$), 'username_reserved', 'staff handles are reserved');
+  perform pg_temp.expect(pg_temp.as_user(g, $q$select public.rib_profile_update('closed_abc', null, null, null)$q$), 'username_reserved', 'the closure prefix is reserved');
+  perform pg_temp.expect(pg_temp.as_user(g, $q$select public.rib_profile_update('Grace_X', 'Grace', 'Hi', 'MX')$q$), 'ok', 'profile saved');
+  perform pg_temp.expect(pg_temp.as_user(g, 'select public.rib_avatar_set(true)'), 'ok', 'avatar set');
+  perform pg_temp.expect(pg_temp.scalar_as(a, $q$select public.rib_public_profile('grace_x') ->> 'avatar'$q$), g::text || '/avatar.webp?v=1', 'public card carries a versioned avatar');
+  perform pg_temp.expect(pg_temp.scalar_as(a, $q$select (public.rib_public_profile('grace_x') -> 'game_accounts')::text$q$), 'null', 'linked accounts are private by default');
+  perform pg_temp.expect(pg_temp.scalar_as(a, $q$select coalesce(public.rib_public_profile('nobody_here')::text, 'none')$q$), 'none', 'unknown player returns nothing');
+
+  perform pg_temp.expect(pg_temp.as_user(g, $q$select public.rib_settings_update('{"nope": true}')$q$), 'invalid_setting', 'unknown settings are rejected');
+  perform pg_temp.expect(pg_temp.as_user(g, $q$select public.rib_settings_update('{"monthly_cap_cents": 1050}')$q$), 'invalid_entry_cap', 'the cap is whole rcoin');
+  perform pg_temp.expect(pg_temp.as_user(g, $q$select public.rib_settings_update('{"monthly_cap_cents": 1500}')$q$), 'ok', 'set a monthly entry cap');
+  perform pg_temp.expect(pg_temp.as_user(g, $q$select public.rib_tournament_create('Grace Cup', 'CS2', 1000, 4, null)$q$), 'ok', 'an entry under the cap goes through');
+  perform pg_temp.expect(pg_temp.as_user(g, $q$select public.rib_tournament_create('Grace Cup 2', 'CS2', 1000, 4, null)$q$), 'entry_cap_reached', 'an entry past the cap is refused');
+  perform pg_temp.expect(pg_temp.scalar_as(g, $q$select public.rib_settings_get() ->> 'month_spent_cents'$q$), '1000', 'this month''s entry fees are counted');
+  perform pg_temp.expect(pg_temp.as_user(g, $q$select public.rib_settings_update('{"monthly_cap_cents": 5000}')$q$), 'ok', 'ask to raise the cap');
+  perform pg_temp.expect(pg_temp.scalar_as(g, $q$select (public.rib_settings_get() ->> 'monthly_cap_cents') || ':' || (public.rib_settings_get() -> 'pending_cap' ->> 'cents')$q$), '1500:5000', 'raising the cap waits');
+  update public.profile_settings set pending_cap_at = now() - interval '1 second' where user_id = g;
+  perform pg_temp.expect(pg_temp.scalar_as(g, $q$select public.rib_settings_get() ->> 'monthly_cap_cents'$q$), '5000', 'the raise applies after 24 hours');
+  perform pg_temp.expect(pg_temp.as_user(g, $q$select public.rib_settings_update('{"monthly_cap_cents": 2000}')$q$), 'ok', 'lower the cap');
+  perform pg_temp.expect(pg_temp.scalar_as(g, $q$select public.rib_settings_get() ->> 'monthly_cap_cents'$q$), '2000', 'lowering applies at once');
+  perform pg_temp.expect(pg_temp.as_user(g, $q$select public.rib_settings_update('{"cooloff_days": 7}')$q$), 'ok', 'start a cool-off');
+  perform pg_temp.expect(pg_temp.as_user(g, $q$select public.rib_tournament_create('Grace Cup 3', 'CS2', 500, 4, null)$q$), 'cooloff_active', 'a cool-off pauses paid entries');
+  perform pg_temp.expect(pg_temp.as_user(g, $q$select public.rib_tournament_create('Free Cup', 'CS2', 0, 4, null)$q$), 'ok', 'free tournaments stay open during a cool-off');
+  perform pg_temp.expect(pg_temp.as_user(g, $q$select public.rib_settings_update('{"end_cooloff": true}')$q$), 'ok', 'ask to end the cool-off');
+  perform pg_temp.expect(pg_temp.as_user(g, $q$select public.rib_tournament_create('Grace Cup 4', 'CS2', 500, 4, null)$q$), 'cooloff_active', 'ending early waits 7 days');
+  update public.profile_settings set pending_cooloff_end_at = now() - interval '1 second' where user_id = g;
+  perform pg_temp.expect(pg_temp.scalar_as(g, $q$select coalesce(public.rib_settings_get() ->> 'cooloff_until', 'none')$q$), 'none', 'the cool-off ends after the wait');
+
+  perform public.refresh_player_rankings();
+  perform pg_temp.expect(pg_temp.as_user(a, $q$select public.rib_settings_update('{"show_on_leaderboard": false}')$q$), 'ok', 'hide from the ranking');
+  perform pg_temp.expect((select count(*)::text from public.rib_leaderboard('all', 100, 0) where user_id = a), '0', 'hidden players leave the board at once');
+  perform public.refresh_player_rankings();
+  perform pg_temp.expect((select count(*)::text from public.rib_leaderboard('all', 100, 0) where user_id = a), '0', 'and stay off after a refresh');
+  perform pg_temp.expect((select min(rank)::text from public.rib_leaderboard('all', 100, 0)), '1', 'the board re-ranks without gaps');
+  perform pg_temp.expect(pg_temp.scalar_as(b, $q$select coalesce(public.rib_public_profile('alice') -> 'stats', 'null')::text$q$), 'null', 'hidden stats stay off the public card');
+
+  perform pg_temp.expect(pg_temp.scalar_as(b, $q$select (public.rib_public_profile('alice') -> 'tournaments')::text$q$), 'null', 'hidden players'' tournaments stay private too');
+  perform pg_temp.expect(pg_temp.as_user(g, $q$select public.rib_profile_update(null, 'Runinback Support', null, null)$q$), 'display_name_reserved', 'official-looking display names are refused');
+  perform pg_temp.expect(pg_temp.as_user(g, $q$select public.rib_profile_update('admin_help', null, null, null)$q$), 'username_reserved', 'staff prefixes are reserved');
+  perform pg_temp.expect(pg_temp.as_user(g, $q$select public.rib_profile_update(null, E'Gr\u202Eace\u200B', null, 'MX')$q$), 'ok', 'save a name with hidden characters');
+  perform pg_temp.expect((select display_name from public.profiles where id = g), 'Grace', 'bidi and zero-width characters are stripped');
+  insert into auth.users (id, email, raw_user_meta_data) values ('98888888-0000-0000-0000-000000000008', 'fake@example.test', '{"username":"Runinback_Official"}');
+  perform pg_temp.expect((select (username like 'player\_%')::text from public.profiles where id = '98888888-0000-0000-0000-000000000008'), 'true', 'a reserved handle at sign-up becomes a neutral one');
+  -- A refund for last month's entry doesn't free room this month.
+  insert into public.wallet_ledger (user_id, kind, amount_cents, balance_after_cents, ref_type, ref_id, created_at)
+  values (g, 'tournament_entry', -700, 0, 'tournament', 'a0000000-0000-0000-0000-00000000000a', date_trunc('month', now()) - interval '1 day'),
+         (g, 'tournament_refund', 700, 0, 'tournament', 'a0000000-0000-0000-0000-00000000000a', now());
+  perform pg_temp.expect(public.rib_month_entry_spend(g)::text, '1000', 'old refunds don''t lower this month''s spend');
+  delete from public.wallet_ledger where ref_id = 'a0000000-0000-0000-0000-00000000000a';
+
+  perform pg_temp.expect(pg_temp.as_user(g, 'select public.rib_my_data_export()'), 'ok', 'download my data');
+  perform pg_temp.expect(pg_temp.scalar_as(g, $q$select (public.rib_settings_get() ->> 'next_export_at') is not null$q$), 'true', 'the next download is scheduled');
+  perform pg_temp.expect(pg_temp.as_user(g, 'select public.rib_my_data_export()'), 'export_rate_limited', 'data export is once an hour');
+  perform pg_temp.expect(pg_temp.as_user(g, 'select * from public.profile_settings'), '42501', 'settings are RPC-only');
+  perform pg_temp.expect(pg_temp.as_user(g, 'select public.rib_close_account()'), 'close_account_blocked', 'cannot close while entered in a tournament');
+  perform pg_temp.expect(pg_temp.as_user(g, 'select public.rib_month_entry_spend(''99999999-0000-0000-0000-000000000009'')'), '42501', 'spend helper is server-only');
 
   -- Ledger integrity: every balance equals the sum of its ledger rows.
   perform pg_temp.expect(

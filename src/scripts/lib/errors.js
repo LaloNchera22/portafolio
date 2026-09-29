@@ -17,6 +17,23 @@
 
 // Stable, language-independent codes raised by the database (error.hint).
 const HINTS = {
+  // Profile, settings and play limits (0024).
+  username_taken: "That username is taken. Try another one.",
+  username_reserved: "That username is reserved. Pick another one.",
+  invalid_username: "Username: 3–24 characters, letters, numbers or underscore.",
+  username_cooldown: "You changed your username recently. You can pick a new one 30 days after the last change.",
+  invalid_display_name: "Keep the display name under 60 characters.",
+  display_name_reserved: "That display name looks official. Pick another one.",
+  bio_too_long: "Keep your bio under 160 characters.",
+  invalid_country: "Pick a country from the list.",
+  account_closed: "This account is closed.",
+  profile_not_found: "We couldn't find your profile. Refresh the page and try again.",
+  invalid_setting: "That setting couldn't be saved. Refresh the page and try again.",
+  invalid_entry_cap: "The monthly limit is whole rcoin between 0 and 100,000.",
+  invalid_cooloff: "Pick one of the cool-off lengths.",
+  cooloff_active: "Paid tournaments are paused by your cool-off. Free games and friendlies are open.",
+  entry_cap_reached: "This entry fee would pass your monthly limit. You can change it in Settings.",
+  export_rate_limited: "You can download your data once an hour.",
   not_authenticated: "Your session has expired. Please sign in again.",
   wallet_not_found: "We couldn't find your wallet. Refresh the page and try again.",
   insufficient_balance: "You don't have enough rcoin for that. Top up your wallet and try again.",
@@ -92,7 +109,7 @@ const HINTS = {
   not_an_entrant: "Only other entrants can dispute this result.",
   dispute_window_closed: "The review window for this prize has closed.",
   live_keys_unavailable: "Live keys become available when real-money play launches. Use a test key for now.",
-  close_account_blocked: "Finish or cancel your open games, challenges and tournaments before closing your account.",
+  close_account_blocked: "Finish or leave your open games, friendlies and tournaments before closing your account.",
   wallet_frozen: "Your wallet is on hold after a reversed payment. Contact support to restore it.",
 };
 
@@ -210,21 +227,36 @@ function ensureStack() {
   return stack;
 }
 
-export function toast(text, kind) {
+/**
+ * Show a toast. `action` ({ label, onClick }) adds a button and keeps the
+ * toast up longer, so the player can act on it (e.g. "Open room").
+ */
+export function toast(text, kind, action) {
   if (!text) return;
   var s = ensureStack();
   var t = document.createElement("div");
-  t.className = "rib-toast" + (kind === "ok" ? " rib-toast--ok" : kind === "info" ? " rib-toast--info" : " rib-toast--err");
+  t.className = "rib-toast" + (kind === "ok" ? " rib-toast--ok" : kind === "info" ? " rib-toast--info" : kind === "match" ? " rib-toast--match" : " rib-toast--err");
   t.setAttribute("role", "status");
-  t.textContent = text;
+  var body = document.createElement("span");
+  body.textContent = text;
+  t.appendChild(body);
+  var dismiss = function () {
+    t.classList.remove("is-in");
+    setTimeout(function () { if (t.parentNode) t.parentNode.removeChild(t); }, 260);
+  };
+  if (action && action.label) {
+    var b = document.createElement("button");
+    b.type = "button";
+    b.className = "rib-toast__act";
+    b.textContent = action.label;
+    b.addEventListener("click", function () { dismiss(); if (action.onClick) action.onClick(); });
+    t.appendChild(b);
+  }
   s.appendChild(t);
   // fade in
   requestAnimationFrame(function () { t.classList.add("is-in"); });
-  var life = kind === "ok" || kind === "info" ? 3200 : 4200;
-  setTimeout(function () {
-    t.classList.remove("is-in");
-    setTimeout(function () { if (t.parentNode) t.parentNode.removeChild(t); }, 260);
-  }, life);
+  var life = action ? 12000 : kind === "ok" || kind === "info" ? 3200 : 4200;
+  setTimeout(dismiss, life);
 }
 
 /** Surface an error (or notice) as a toast; falls back to alert() for errors. */

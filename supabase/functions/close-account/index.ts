@@ -2,8 +2,9 @@
 // close-account — permanently close the caller's account.
 //
 // rib_close_account (run as the user) refuses while money is in play, then
-// anonymizes the profile, revokes API keys and removes rankings. This function
-// then disables the login: the e-mail is replaced with an undeliverable
+// anonymizes the profile, drops linked game accounts and settings, revokes API
+// keys and removes rankings. This function then removes the profile photo and
+// disables the login: the e-mail is replaced with an undeliverable
 // placeholder and the user is banned. Financial records stay for audit.
 // ============================================================================
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.117.2";
@@ -40,5 +41,14 @@ Deno.serve(async (req) => {
     console.error("close-account: could not disable login", user.id, banErr.message);
     return json({ error: "server_error" }, 500);
   }
+  // End every session now: the ban stops new sign-ins, this stops the tokens
+  // already issued (which could otherwise still upload a photo).
+  const jwt = authHeader.slice("Bearer ".length);
+  const { error: outErr } = await admin.auth.admin.signOut(jwt, "global");
+  if (outErr) console.error("close-account: could not end sessions", user.id, outErr.message);
+  // The profile photo is public by URL; take it down. A miss is not fatal:
+  // the profile no longer points at it (avatar_version = 0).
+  const { error: photoErr } = await admin.storage.from("avatars").remove([`${user.id}/avatar.webp`]);
+  if (photoErr) console.error("close-account: could not remove the profile photo", user.id, photoErr.message);
   return json({ closed: true });
 });
