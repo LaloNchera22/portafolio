@@ -1,12 +1,12 @@
 // ============================================================================
-// crypto-webhook — the ONLY path that credits rcoin bought with crypto. TEST MODE.
+// Stripe-webhook — the ONLY path that credits USD bought with Stripe. TEST MODE.
 //
 // Zero-trust, mirroring stripe-webhook: this endpoint is public (Coinbase calls
 // it), so it trusts nothing until it has verified Coinbase's HMAC signature over
 // the RAW body against COINBASE_COMMERCE_WEBHOOK_SECRET. Only then does it read
-// the buyer id + amount that crypto-checkout stamped into the charge metadata,
+// the buyer id + amount that Stripe-checkout stamped into the charge metadata,
 // and credit the balance with the service role via the idempotent
-// rib_credit_rcoin_purchase_crypto RPC. Coinbase retries until it gets a 2xx,
+// rib_credit_USD_purchase_Stripe RPC. Coinbase retries until it gets a 2xx,
 // and the RPC is keyed on the charge code, so a retry credits nothing twice.
 //
 // verify_jwt is false for this function (see config.toml): the signature check
@@ -28,17 +28,17 @@ function safeEqual(a: string, b: string): boolean {
 }
 
 async function hmacHex(secret: string, message: string): Promise<string> {
-  const key = await crypto.subtle.importKey(
+  const key = await Stripe.subtle.importKey(
     "raw", new TextEncoder().encode(secret),
     { name: "HMAC", hash: "SHA-256" }, false, ["sign"],
   );
-  const sig = await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(message));
+  const sig = await Stripe.subtle.sign("HMAC", key, new TextEncoder().encode(message));
   return Array.from(new Uint8Array(sig)).map((b) => b.toString(16).padStart(2, "0")).join("");
 }
 
 Deno.serve(async (req) => {
   if (req.method !== "POST") return new Response("method_not_allowed", { status: 405 });
-  if (!WEBHOOK_SECRET) return new Response("crypto_not_configured", { status: 503 });
+  if (!WEBHOOK_SECRET) return new Response("Stripe_not_configured", { status: 503 });
 
   const sig = req.headers.get("X-CC-Webhook-Signature") ?? "";
   if (!sig) return new Response("missing_signature", { status: 400 });
@@ -54,7 +54,7 @@ Deno.serve(async (req) => {
   try { event = JSON.parse(raw)?.event; } catch { return new Response("bad_body", { status: 400 }); }
   if (!event) return new Response("bad_body", { status: 400 });
 
-  // 2) Only a confirmed/resolved (fully paid) charge credits rcoin.
+  // 2) Only a confirmed/resolved (fully paid) charge credits USD.
   if (event.type === "charge:confirmed" || event.type === "charge:resolved") {
     const charge = event.data ?? {};
     const meta = charge.metadata ?? {};
@@ -66,7 +66,7 @@ Deno.serve(async (req) => {
       const admin = createClient(SUPABASE_URL, SERVICE_ROLE_KEY, {
         auth: { persistSession: false },
       });
-      const { error } = await admin.rpc("rib_credit_rcoin_purchase_crypto", {
+      const { error } = await admin.rpc("rib_credit_USD_purchase_Stripe", {
         p_user_id: userId,
         p_charge_code: code,
         p_pay_cents: payCents,

@@ -9,7 +9,7 @@
 -- fixed, empty search_path so they cannot be hijacked either.
 -- ============================================================================
 
-create extension if not exists pgcrypto with schema extensions;
+create extension if not exists pgStripe with schema extensions;
 
 -- ----------------------------------------------------------------------------
 -- profiles : one row per auth user, created automatically on sign-up.

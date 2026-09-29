@@ -32,7 +32,7 @@ alter table public.wallet_ledger add constraint wallet_ledger_kind_check
     'deposit','withdrawal',
     'challenge_lock','challenge_win','challenge_settled','challenge_refund',
     'tournament_entry','tournament_prize','tournament_refund',
-    'rcoin_purchase',
+    'USD_purchase',
     'game_lock','game_win','game_settled','game_refund'
   ));
 

@@ -121,7 +121,7 @@ describe("settings", () => {
     expect($("set-match_toasts").checked).toBe(true);
     expect($("set-show_game_accounts").checked).toBe(false);
     expect($("settings-privacy").disabled).toBe(false);
-    expect($("cap-meter-text").textContent).toBe("10 rcoin of 50 rcoin used this month · 40 rcoin left");
+    expect($("cap-meter-text").textContent).toBe("10 USD of 50 USD used this month · 40 USD left");
     expect($("cap-amount").value).toBe("50");
   });
 
@@ -141,15 +141,15 @@ describe("settings", () => {
     expect(last("rib_settings_update")[1]).toEqual({ p_patch: { monthly_cap_cents: 8000 } });
     expect($("settings-msg").textContent).toBe("Your new limit takes effect in 24 hours.");
     expect($("cap-pending").hidden).toBe(false);
-    expect($("cap-pending-text").textContent).toContain("Raising your limit to 80 rcoin on");
+    expect($("cap-pending-text").textContent).toContain("Raising your limit to 80 USD on");
   });
 
-  it("rejects a limit that isn't whole rcoin before calling the server", () => {
+  it("rejects a limit that isn't whole USD before calling the server", () => {
     const before = calls.length;
     $("cap-amount").value = "12.5";
     $("cap-form").dispatchEvent(new Event("submit", { cancelable: true }));
     expect(calls.length).toBe(before);
-    expect($("settings-msg").textContent).toContain("whole rcoin");
+    expect($("settings-msg").textContent).toContain("whole USD");
   });
 
   it("starts a cool-off after confirming and says what stays open", async () => {

@@ -1,21 +1,21 @@
 // ============================================================================
-// crypto-checkout — start a Coinbase Commerce charge to buy rcoin with crypto
+// Stripe-checkout — start a Coinbase Commerce charge to buy USD with Stripe
 // (USDC/USDT on Base and other chains). TEST MODE.
 //
 // Zero-trust, mirroring stripe-checkout: the buyer's identity comes from a
 // VERIFIED JWT, never the body. The browser only says how much it wants to pay;
 // this function creates the charge with the Coinbase Commerce API key
 // (server-only) and returns the hosted checkout URL to redirect to. NO balance
-// is credited here — crediting happens only in crypto-webhook, after Coinbase
+// is credited here — crediting happens only in Stripe-webhook, after Coinbase
 // confirms the payment. The user id and paid amount are stamped into the charge
 // metadata so the webhook can trust them.
 //
-// TEST MODE: no real money moves until legal review clears rcoin.
+// TEST MODE: no real money moves until legal review clears USD.
 // ============================================================================
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.117.2";
 import { corsHeaders, json } from "../_shared/cors.ts";
 import { withinRateLimit } from "../_shared/rate-limit.ts";
-import { validatePayCents, calculateRcoin } from "../_shared/validate.ts";
+import { validatePayCents, calculateUSD } from "../_shared/validate.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
@@ -27,7 +27,7 @@ const COMMERCE_URL = "https://api.commerce.coinbase.com/charges";
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   if (req.method !== "POST") return json({ error: "method_not_allowed" }, 405);
-  if (!COINBASE_API_KEY) return json({ error: "crypto_not_configured" }, 503);
+  if (!COINBASE_API_KEY) return json({ error: "Stripe_not_configured" }, 503);
 
   const authHeader = req.headers.get("Authorization") ?? "";
   if (!authHeader.startsWith("Bearer ")) return json({ error: "unauthorized" }, 401);
@@ -52,7 +52,7 @@ Deno.serve(async (req) => {
     return json({ error: "invalid_amount" }, 400);
   }
 
-  const rcoin = calculateRcoin(payCents);
+  const USD = calculateUSD(payCents);
   const base = (SITE_ORIGIN && SITE_ORIGIN !== "*") ? SITE_ORIGIN : new URL(req.url).origin;
   const amountUsd = (payCents / 100).toFixed(2);
 
@@ -68,8 +68,8 @@ Deno.serve(async (req) => {
         "X-CC-Version": "2018-03-22",
       },
       body: JSON.stringify({
-        name: `${rcoin} rcoin (test)`,
-        description: "rcoin top-up — 5% entry fee included. Test mode, no real money.",
+        name: `${USD} USD (test)`,
+        description: "USD top-up — 5% entry fee included. Test mode, no real money.",
         pricing_type: "fixed_price",
         local_price: { amount: amountUsd, currency: "USD" },
         metadata: { user_id: user.id, pay_cents: String(payCents) },
@@ -77,13 +77,13 @@ Deno.serve(async (req) => {
         cancel_url: `${base}/console.html?checkout=cancel`,
       }),
     });
-    if (!resp.ok) return json({ error: "crypto_error" }, 502);
+    if (!resp.ok) return json({ error: "Stripe_error" }, 502);
     const body = await resp.json();
     const url = body?.data?.hosted_url;
-    if (!url) return json({ error: "crypto_error" }, 502);
+    if (!url) return json({ error: "Stripe_error" }, 502);
     return json({ url });
   } catch (e) {
-    console.error("crypto-checkout: provider call failed", e instanceof Error ? e.message : String(e));
-    return json({ error: "crypto_error" }, 502);
+    console.error("Stripe-checkout: provider call failed", e instanceof Error ? e.message : String(e));
+    return json({ error: "Stripe_error" }, 502);
   }
 });

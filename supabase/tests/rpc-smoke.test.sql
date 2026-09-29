@@ -88,13 +88,13 @@ begin
   -- Sign-up never trusts a client-supplied role.
   perform pg_temp.expect((select role from public.profiles where id = c), 'player', 'signup ignores client role');
 
-  -- Test top-ups are off by default: nobody can mint rcoin for free.
-  perform pg_temp.expect(pg_temp.as_user(a, 'select public.rib_buy_rcoin_test(10000)'), 'test_payments_disabled', 'test buy disabled by default');
+  -- Test top-ups are off by default: nobody can mint USD for free.
+  perform pg_temp.expect(pg_temp.as_user(a, 'select public.rib_buy_USD_test(10000)'), 'test_payments_disabled', 'test buy disabled by default');
   perform pg_temp.expect(pg_temp.as_user(a, 'select public.rib_deposit_test(10000)'), 'test_payments_disabled', 'test deposit disabled by default');
 
   -- Internal functions and money tables are not reachable from the client.
   perform pg_temp.expect(pg_temp.as_user(a, $q$select public.rib_apply('aaaaaaaa-0000-0000-0000-000000000001', 'deposit', 100000, 0, null, null, 'x')$q$), '42501', 'rib_apply not executable');
-  perform pg_temp.expect(pg_temp.as_user(a, $q$select public.rib_credit_rcoin_purchase('aaaaaaaa-0000-0000-0000-000000000001', 'cs_x', 10000)$q$), '42501', 'credit function not executable');
+  perform pg_temp.expect(pg_temp.as_user(a, $q$select public.rib_credit_USD_purchase('aaaaaaaa-0000-0000-0000-000000000001', 'cs_x', 10000)$q$), '42501', 'credit function not executable');
   perform pg_temp.expect(pg_temp.as_user(a, 'update public.wallets set test_balance_cents = 1'), '42501', 'wallets not writable');
   perform pg_temp.expect(pg_temp.as_user(a, $q$update public.profiles set role = 'dev'$q$), '42501', 'profile role not writable');
   perform pg_temp.expect(pg_temp.as_user(a, $q$update public.profiles set display_name = 'Alice' where id = 'aaaaaaaa-0000-0000-0000-000000000001'$q$), '42501', 'profiles only change through rib_profile_update');
@@ -106,11 +106,11 @@ begin
 
   -- Fund the three players (staging behaviour).
   update public.platform_settings set value = 'true' where key = 'test_payments_enabled';
-  perform pg_temp.expect(pg_temp.as_user(a, 'select public.rib_buy_rcoin_test(10000)'), 'ok', 'alice buys');
-  perform pg_temp.expect(pg_temp.as_user(b, 'select public.rib_buy_rcoin_test(10000)'), 'ok', 'bob buys');
-  perform pg_temp.expect(pg_temp.as_user(c, 'select public.rib_buy_rcoin_test(10000)'), 'ok', 'carol buys');
-  perform pg_temp.as_user(d, 'select public.rib_buy_rcoin_test(10000)');
-  perform pg_temp.as_user(e, 'select public.rib_buy_rcoin_test(10000)');
+  perform pg_temp.expect(pg_temp.as_user(a, 'select public.rib_buy_USD_test(10000)'), 'ok', 'alice buys');
+  perform pg_temp.expect(pg_temp.as_user(b, 'select public.rib_buy_USD_test(10000)'), 'ok', 'bob buys');
+  perform pg_temp.expect(pg_temp.as_user(c, 'select public.rib_buy_USD_test(10000)'), 'ok', 'carol buys');
+  perform pg_temp.as_user(d, 'select public.rib_buy_USD_test(10000)');
+  perform pg_temp.as_user(e, 'select public.rib_buy_USD_test(10000)');
   perform pg_temp.expect(pg_temp.balance(a)::text, '9500', '5% entry fee applied');
 
   -- Friendlies (0022): free 1v1 challenges played in a room, no money moves.
@@ -147,8 +147,8 @@ begin
   -- Tournaments (0022): sit & go of 4 or 8, random bracket, rooms per match,
   -- 10% platform fee, 70/30 prizes, deposits on disputes, walkovers.
   perform pg_temp.expect(pg_temp.as_user(c, 'select public.rib_tournament_create(''Cup'', ''Valorant'', 1000, 5, null)'), 'invalid_tournament_size', 'tournaments have 4 or 8 players');
-  perform pg_temp.expect(pg_temp.as_user(c, 'select public.rib_tournament_create(''Cup'', ''Valorant'', 50, 4, null)'), 'invalid_entry_fee', 'entry fee is 0 or at least 1 rcoin');
-  perform pg_temp.expect(pg_temp.as_user(b, 'select public.rib_tournament_create(''Cup'', ''Valorant'', 3000, 4, null)'), 'new_account_limit', 'new accounts are capped at 25 rcoin');
+  perform pg_temp.expect(pg_temp.as_user(c, 'select public.rib_tournament_create(''Cup'', ''Valorant'', 50, 4, null)'), 'invalid_entry_fee', 'entry fee is 0 or at least 1 USD');
+  perform pg_temp.expect(pg_temp.as_user(b, 'select public.rib_tournament_create(''Cup'', ''Valorant'', 3000, 4, null)'), 'new_account_limit', 'new accounts are capped at 25 USD');
   perform pg_temp.expect(pg_temp.as_user(c, 'select public.rib_tournament_create(''Cup'', ''Valorant'', 1000, 4, ''riot'')'), 'game_account_required', 'a network tournament needs a linked account');
   perform pg_temp.expect(pg_temp.as_user(c, 'select public.rib_game_account_set(''steam-ish'', ''Carol'')'), 'invalid_network', 'unknown networks are rejected');
   perform pg_temp.as_user(c, 'select public.rib_game_account_set(''riot'', ''Carol#NA1'')');
@@ -277,14 +277,14 @@ begin
   perform pg_temp.expect((select status || ':' || (winner_id = v_yb)::text || ':' || (runner_up_id is null)::text from public.tournaments where id = v_tournament), 'finished:true:true', 'the champion has no runner-up after a walkover final');
 
   -- Chargeback: bob's card top-up is disputed after he spent part of it.
-  perform public.rib_credit_rcoin_purchase(b, 'cs_test_bob', 10000);           -- +9500
+  perform public.rib_credit_USD_purchase(b, 'cs_test_bob', 10000);           -- +9500
   perform pg_temp.expect(pg_temp.balance(b)::text, '18000', 'stripe credit');
   perform pg_temp.expect(pg_temp.as_user(b, 'select public.rib_withdraw_test(12000)'), 'ok', 'bob withdraws most of it');
-  perform pg_temp.expect(public.rib_reverse_rcoin_purchase('stripe', 'cs_test_bob', 'dispute')::text, '6000', 'reversal debits what is left');
-  perform pg_temp.expect(public.rib_reverse_rcoin_purchase('stripe', 'cs_test_bob', 'dispute')::text, '0', 'reversal is idempotent');
+  perform pg_temp.expect(public.rib_reverse_USD_purchase('stripe', 'cs_test_bob', 'dispute')::text, '6000', 'reversal debits what is left');
+  perform pg_temp.expect(public.rib_reverse_USD_purchase('stripe', 'cs_test_bob', 'dispute')::text, '0', 'reversal is idempotent');
   perform pg_temp.expect(pg_temp.balance(b)::text, '0', 'wallet emptied');
   perform pg_temp.expect((select (frozen_at is not null)::text from public.wallets where user_id = b), 'true', 'shortfall freezes the wallet');
-  perform public.rib_credit_rcoin_purchase(b, 'cs_test_bob_2', 1000);
+  perform public.rib_credit_USD_purchase(b, 'cs_test_bob_2', 1000);
   perform pg_temp.expect(pg_temp.as_user(b, 'select public.rib_withdraw_test(100)'), 'wallet_frozen', 'frozen wallet cannot withdraw');
   perform pg_temp.expect(pg_temp.as_user(b, 'select public.rib_tournament_create(''Frozen cup'', ''chess'', 100, 4, null)'), 'wallet_frozen', 'frozen wallet cannot pay an entry fee');
 
@@ -333,9 +333,9 @@ begin
   perform pg_temp.expect(pg_temp.as_user(a, 'select role from public.profiles limit 1'), '42501', 'role column not readable by players');
   perform pg_temp.expect(pg_temp.as_user(a, 'select id, username, display_name from public.profiles limit 1'), 'ok', 'handles readable by players');
 
-  -- Leaderboard (0022): tournaments rank. Net rcoin = prizes minus entry fees;
+  -- Leaderboard (0022): tournaments rank. Net USD = prizes minus entry fees;
   --   the record counts confirmed tournament matches (walkovers don't).
-  --   Cup (4 x 10 rcoin): the champion nets +15.20; bob paid 10 and lost.
+  --   Cup (4 x 10 USD): the champion nets +15.20; bob paid 10 and lost.
   perform public.refresh_player_rankings();
   perform pg_temp.expect((select net_cents::text from public.player_stats where user_id = v_opp), '1520', 'the champion ranks by net tournament winnings');
   perform pg_temp.expect((select net_cents::text from public.player_stats where user_id = b), '-1000', 'entry fees count against the player');
@@ -422,7 +422,7 @@ begin
   perform pg_temp.expect((public.rib_ops_health() ? 'disputed_tournaments')::text, 'true', 'ops health reports counters');
 
   -- Profile, settings and responsible play (0024).
-  perform pg_temp.as_user(g, 'select public.rib_buy_rcoin_test(10000)');
+  perform pg_temp.as_user(g, 'select public.rib_buy_USD_test(10000)');
   perform pg_temp.expect(pg_temp.as_user(g, $q$select public.rib_profile_update('grace_x', 'Grace', E'Hi\tthere', 'mx')$q$), 'ok', 'first username change is free');
   perform pg_temp.expect((select username || '|' || bio || '|' || country from public.profiles where id = g), 'grace_x|Hi there|MX', 'bio is cleaned and country normalized');
   perform pg_temp.expect(pg_temp.as_user(g, $q$select public.rib_profile_update('grace_y', 'Grace', null, null)$q$), 'username_cooldown', 'a second handle change waits 30 days');
@@ -438,7 +438,7 @@ begin
   perform pg_temp.expect(pg_temp.scalar_as(a, $q$select coalesce(public.rib_public_profile('nobody_here')::text, 'none')$q$), 'none', 'unknown player returns nothing');
 
   perform pg_temp.expect(pg_temp.as_user(g, $q$select public.rib_settings_update('{"nope": true}')$q$), 'invalid_setting', 'unknown settings are rejected');
-  perform pg_temp.expect(pg_temp.as_user(g, $q$select public.rib_settings_update('{"monthly_cap_cents": 1050}')$q$), 'invalid_entry_cap', 'the cap is whole rcoin');
+  perform pg_temp.expect(pg_temp.as_user(g, $q$select public.rib_settings_update('{"monthly_cap_cents": 1050}')$q$), 'invalid_entry_cap', 'the cap is whole USD');
   perform pg_temp.expect(pg_temp.as_user(g, $q$select public.rib_settings_update('{"monthly_cap_cents": 1500}')$q$), 'ok', 'set a monthly entry cap');
   perform pg_temp.expect(pg_temp.as_user(g, $q$select public.rib_tournament_create('Grace Cup', 'CS2', 1000, 4, null)$q$), 'ok', 'an entry under the cap goes through');
   perform pg_temp.expect(pg_temp.as_user(g, $q$select public.rib_tournament_create('Grace Cup 2', 'CS2', 1000, 4, null)$q$), 'entry_cap_reached', 'an entry past the cap is refused');

@@ -11,7 +11,7 @@
 // only: keys must never ship in a browser, so no CORS headers are sent.
 // ============================================================================
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.117.2";
-import { sha256Hex } from "../_shared/crypto.ts";
+import { sha256Hex } from "../_shared/Stripe.ts";
 import { STAKEABLE_RULES } from "../_shared/game-rules/index.js";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
@@ -80,7 +80,7 @@ Deno.serve(async (req) => {
     return reply({
       period,
       data: (data ?? []).map((r: { rank: number; username: string; net_cents: number; won_cents: number; wins: number; losses: number }) => ({
-        rank: r.rank, username: r.username, net_rcoin: r.net_cents / 100, won_rcoin: r.won_cents / 100, wins: r.wins, losses: r.losses,
+        rank: r.rank, username: r.username, net_USD: r.net_cents / 100, won_USD: r.won_cents / 100, wins: r.wins, losses: r.losses,
       })),
     });
   }

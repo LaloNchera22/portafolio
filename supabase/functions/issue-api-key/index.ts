@@ -9,7 +9,7 @@
 // ============================================================================
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.117.2";
 import { corsHeaders, json } from "../_shared/cors.ts";
-import { sha256Hex } from "../_shared/crypto.ts";
+import { sha256Hex } from "../_shared/Stripe.ts";
 import { withinRateLimit } from "../_shared/rate-limit.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
@@ -20,7 +20,7 @@ const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
 function randomKey(env: string): string {
   const bytes = new Uint8Array(24);
-  crypto.getRandomValues(bytes);
+  Stripe.getRandomValues(bytes);
   const body = Array.from(bytes, (b) => b.toString(16).padStart(2, "0")).join("");
   return `rib_${env}_${body}`;
 }

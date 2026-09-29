@@ -31,7 +31,7 @@ describe("wallet", () => {
       <div id="pay-method" hidden>
         <div data-chips="pay-method">
           <button data-method="card">Card</button>
-          <button data-method="crypto">Crypto</button>
+          <button data-method="Stripe">Stripe</button>
         </div>
       </div>
       <div id="pay-note"></div>
@@ -77,8 +77,8 @@ describe("wallet", () => {
 
   it("refreshWallet updates DOM elements", async () => {
     await refreshWallet();
-    expect(document.getElementById("wallet-chip").textContent).toBe("20 rcoin");
-    expect(document.getElementById("games-balance").textContent).toBe("20 rcoin");
+    expect(document.getElementById("wallet-chip").textContent).toBe("20 USD");
+    expect(document.getElementById("games-balance").textContent).toBe("20 USD");
     expect(session.balanceCents).toBe(2000);
   });
 
@@ -92,7 +92,7 @@ describe("wallet", () => {
   it("updatePurchaseQuote calculates correctly", () => {
     updatePurchaseQuote();
     expect(document.getElementById("buy-pay").textContent).toBe("$10.00");
-    expect(document.getElementById("buy-receive").textContent).toBe("9.5 rcoin");
+    expect(document.getElementById("buy-receive").textContent).toBe("9.5 USD");
   });
 
   it("initWallet binds events and handles test checkout", () => {
@@ -102,7 +102,7 @@ describe("wallet", () => {
     buyBtn.click();
     
     expect(calls.length).toBe(1);
-    expect(calls[0][0]).toBe("rib_buy_rcoin_test");
+    expect(calls[0][0]).toBe("rib_buy_USD_test");
     expect(calls[0][1]).toEqual({ p_pay_cents: 1000 });
   });
 

@@ -36,7 +36,7 @@ test.describe("console", () => {
 
   test("loads the wallet balance and the games lobby", async ({ page, api }) => {
     await page.goto("/console.html");
-    await expect(page.locator("#wallet-chip")).toHaveText("120 rcoin");
+    await expect(page.locator("#wallet-chip")).toHaveText("120 USD");
     await expect(page.locator(".gcard").first()).toBeVisible();
     expect(api.calls.some((c) => c.path === "/rest/v1/wallets")).toBe(true);
   });
