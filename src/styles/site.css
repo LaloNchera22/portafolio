@@ -1622,7 +1622,6 @@ ul {
   transform: translateY(28px);
   transition: opacity 0.8s var(--ease-out), transform 0.8s var(--ease-out);
   transition-delay: var(--reveal-delay, 0s);
-  will-change: opacity, transform;
 }
 [data-reveal].is-visible {
   opacity: 1;
@@ -1681,22 +1680,13 @@ ul {
   transition: transform 0.35s var(--ease-spring);
 }
 
-/* Page transition curtain */
-.curtain {
-  position: fixed;
-  inset: 0;
-  z-index: 999;
-  background: var(--color-just-black);
-  transform: translateY(-100%);
-  pointer-events: none;
-}
-.curtain.is-active {
-  transform: translateY(0);
-  transition: transform 0.5s var(--ease-in-out);
-}
-.curtain.is-leaving {
-  transform: translateY(100%);
-  transition: transform 0.5s var(--ease-in-out);
+/* Page transitions: a short native cross-fade between same-origin pages
+   (no JS, no overlay, no navigation delay; ignored where unsupported). */
+@view-transition { navigation: auto; }
+::view-transition-old(root) { animation-duration: 0.22s; }
+::view-transition-new(root) { animation-duration: 0.22s; }
+@media (prefers-reduced-motion: reduce) {
+  @view-transition { navigation: none; }
 }
 
 /* Reduced motion */
@@ -1922,7 +1912,6 @@ body.home #main { --color-surface-50: var(--color-surface-cream); }
   transform: translateY(32px);
   transition: opacity 0.9s var(--ease-in-out), transform 0.9s var(--ease-in-out);
   transition-delay: var(--d, 0s);
-  will-change: opacity, transform;
 }
 .is-in [data-rise] { opacity: 1; transform: none; }
 [data-rise="left"]  { transform: translateX(-34px); }
@@ -2143,4 +2132,20 @@ body[data-auth-scope] .nav {
   .btn,
   .nav__toggle,
   .footer__social a { min-height: 44px; }
+}
+
+/* Landing hero: the page's one orchestrated entrance, in CSS so the
+   headline paints on the first frame (it's the LCP element) and never
+   waits for JavaScript or an IntersectionObserver. */
+@keyframes hero-rise {
+  from { opacity: 0.01; transform: translateY(18px); }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .hero__eyebrow,
+  .hero__title,
+  .hero__lead,
+  .hero__actions { animation: hero-rise 0.8s var(--ease-out) both; }
+  .hero__title { animation-delay: 0.05s; }
+  .hero__lead { animation-delay: 0.15s; }
+  .hero__actions { animation-delay: 0.25s; }
 }
