@@ -81,7 +81,8 @@ Deno.serve(async (req) => {
       cancel_url: `${base}/console.html?checkout=cancel`,
     });
     return json({ url: session.url });
-  } catch (_e) {
+  } catch (e) {
+    console.error("stripe-checkout: provider call failed", e instanceof Error ? e.message : String(e));
     return json({ error: "stripe_error" }, 502);
   }
 });
