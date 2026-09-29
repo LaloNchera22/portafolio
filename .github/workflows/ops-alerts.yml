@@ -1,0 +1,29 @@
+name: Ops alerts
+
+# Every 15 minutes, ask the ops-alerts Edge Function to check platform health
+# and notify the chat webhook on problems. Configure repository secrets
+# SUPABASE_FUNCTIONS_URL (https://<ref>.supabase.co/functions/v1) and
+# OPS_SECRET (same value as the function secret); without them this is a no-op.
+on:
+  schedule:
+    - cron: "*/15 * * * *"
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Run health check
+        env:
+          FUNCTIONS_URL: ${{ secrets.SUPABASE_FUNCTIONS_URL }}
+          OPS_SECRET: ${{ secrets.OPS_SECRET }}
+        run: |
+          if [ -z "$FUNCTIONS_URL" ] || [ -z "$OPS_SECRET" ]; then
+            echo "Ops alerts not configured; skipping."
+            exit 0
+          fi
+          curl --fail --silent --show-error --max-time 30 \
+            -H "x-ops-secret: $OPS_SECRET" "$FUNCTIONS_URL/ops-alerts"

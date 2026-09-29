@@ -70,6 +70,8 @@ const HINTS = {
   not_enough_entrants: "A tournament needs at least 3 entrants before you can finish it.",
   not_an_entrant: "Only other entrants can dispute this result.",
   dispute_window_closed: "The review window for this prize has closed.",
+  live_keys_unavailable: "Live keys become available when real-money play launches. Use a test key for now.",
+  close_account_blocked: "Finish or cancel your open games, challenges and tournaments before closing your account.",
   wallet_frozen: "Your wallet is on hold after a reversed payment. Contact support to restore it.",
 };
 

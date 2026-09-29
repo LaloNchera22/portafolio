@@ -6,7 +6,11 @@
 import { byId as $, escapeHtml as esc, setVisible, showMessage } from "../lib/dom.js";
 import { formatDate } from "../lib/format.js";
 import { functionError } from "../lib/errors.js";
+import { config } from "../lib/config.js";
 import { errorText, session } from "./context.js";
+
+// Project names by id, for labelling keys.
+const projectNames = {};
 
 function environmentTag(env) {
   return env === "live" ? "live" : "";
@@ -24,12 +28,36 @@ export function loadProjects() {
         list.innerHTML = '<div class="empty"><h3>No projects yet</h3><p>Create one to group your API keys by game or environment.</p></div>';
         return;
       }
+      rows.forEach(function (p) { projectNames[p.id] = p.name; });
       list.innerHTML = '<div class="panel">' + rows.map(function (p) {
-        return '<div class="row row--proj"><div><div class="row__name">' + esc(p.name) +
+        return '<div class="row row--keys"><div><div class="row__name">' + esc(p.name) +
           '</div><div class="row__meta">' + esc(p.environment) + " · " + formatDate(p.created_at) +
-          '</div></div><span class="tag ' + environmentTag(p.environment) + '">' + esc(p.environment) + "</span></div>";
+          '</div></div><span class="tag ' + environmentTag(p.environment) + '">' + esc(p.environment) + "</span>" +
+          '<button type="button" class="btn btn--sm btn--danger" data-project-delete="' + esc(p.id) + '" data-project-name="' + esc(p.name) + '">Delete</button></div>';
       }).join("") + "</div>";
+      list.querySelectorAll("[data-project-delete]").forEach(function (b) {
+        b.addEventListener("click", function () { deleteProject(b); });
+      });
     });
+}
+
+// Deleting a project revokes its keys (database trigger), so say so first.
+function deleteProject(btn) {
+  const name = btn.getAttribute("data-project-name");
+  if (!window.confirm("Delete project \u201c" + name + "\u201d? Its API keys are revoked immediately.")) return;
+  btn.disabled = true;
+  session.client.from("projects").delete().eq("id", btn.getAttribute("data-project-delete"))
+    .then(function (r) {
+      if (r.error) { btn.disabled = false; showMessage($("project-msg"), errorText(r.error, "Couldn't delete the project."), false); return; }
+      loadProjects();
+      loadKeys();
+      loadDeveloperMetrics();
+    })
+    .catch(function () { btn.disabled = false; showMessage($("project-msg"), "Network error. Try again.", false); });
+}
+
+function curlExample(key) {
+  return "curl " + config.supabaseUrl.replace(/\/+$/, "") + "/functions/v1/api/v1/status \\\n  -H \"Authorization: Bearer " + key + "\"";
 }
 
 function fillProjectSelect(rows) {
@@ -67,7 +95,7 @@ function initProjects() {
 
 /* ---- API keys ------------------------------------------------------------ */
 export function loadKeys() {
-  session.client.from("api_keys").select("id, name, environment, key_prefix, created_at, revoked_at").order("created_at", { ascending: false })
+  session.client.from("api_keys").select("id, name, environment, key_prefix, created_at, revoked_at, project_id, last_used_at").order("created_at", { ascending: false })
     .then(function (r) {
       const list = $("key-list");
       if (r.error) { list.innerHTML = '<p class="muted">Couldn\'t load keys.</p>'; return; }
@@ -79,7 +107,9 @@ export function loadKeys() {
       list.innerHTML = '<div class="panel">' + rows.map(function (k) {
         const revoked = !!k.revoked_at;
         return '<div class="row row--keys"><div><div class="row__name">' + esc(k.name || "default") +
-          '</div><div class="row__meta"><code>' + esc(k.key_prefix) + "…</code> · " + formatDate(k.created_at) +
+          '</div><div class="row__meta"><code>' + esc(k.key_prefix) + "…</code> · " +
+          (k.project_id && projectNames[k.project_id] ? esc(projectNames[k.project_id]) + " · " : "") +
+          "created " + formatDate(k.created_at) + " · " + (k.last_used_at ? "last used " + formatDate(k.last_used_at) : "never used") +
           '</div></div><span class="tag ' + (revoked ? "revoked" : environmentTag(k.environment)) + '">' +
           (revoked ? "revoked" : esc(k.environment)) + "</span>" +
           (revoked ? "" : '<button type="button" class="btn btn--sm btn--danger" data-revoke="' + esc(k.id) + '">Revoke</button>') +
@@ -111,6 +141,7 @@ function initKeys() {
     $("key-msg").hidden = true;
     $("key-reveal").hidden = true;
     $("key-plaintext").textContent = ""; // don't leave a secret in the DOM
+    $("key-curl").textContent = "";
   });
   $("key-copy").addEventListener("click", function () {
     const text = $("key-plaintext").textContent || "";
@@ -134,6 +165,7 @@ function initKeys() {
         }
         $("key-msg").hidden = true;
         $("key-plaintext").textContent = r.data.key;
+        $("key-curl").textContent = curlExample(r.data.key);
         $("key-copy").textContent = "Copy";
         $("key-reveal").hidden = false;
         $("key-name").value = "";

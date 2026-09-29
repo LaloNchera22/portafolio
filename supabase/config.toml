@@ -62,3 +62,16 @@ verify_jwt = false
 # user JWT (the platform verifies it, then the function calls getUser()).
 [functions.game-move]
 verify_jwt = true
+
+# Public developer API. Authenticated by API key inside the function, not by
+# a user JWT.
+[functions.api]
+verify_jwt = false
+
+# Closes the caller's account (user JWT required).
+[functions.close-account]
+verify_jwt = true
+
+# Scheduled health check; authenticated by the x-ops-secret header.
+[functions.ops-alerts]
+verify_jwt = false

@@ -318,3 +318,8 @@
   .capp .hero-bal__stats { gap: 20px; }
   .capp .head--tight { align-items: flex-start; }
 }
+
+/* developer quickstart + danger zone */
+.capp .keybox__curl { margin: 6px 0 0; padding: 12px; background: var(--c-canvas); border: 1px solid var(--c-hairline); border-radius: 10px; overflow-x: auto; font-size: 12.5px; }
+.capp .danger-zone { border-top: 1px solid var(--c-hairline); padding-top: 26px; }
+.capp .danger-zone p { font-size: 13.5px; max-width: 64ch; line-height: 1.55; margin: 0 0 14px; }
