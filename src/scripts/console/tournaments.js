@@ -58,6 +58,9 @@ function actionsFor(t, entries) {
   else if (joined) html = JOINED_TAG;
   // The organizer can't award the pool to themself (enforced by the RPC too).
   const candidates = entries.filter(function (e) { return e.user_id !== t.creator_id; });
+  if (isOrganizer && (t.status === "open" || t.status === "full")) {
+    html += ' <button type="button" class="btn btn--sm btn--danger" data-tcancel="' + esc(t.id) + '">Cancel</button>';
+  }
   if (isOrganizer && (t.status === "open" || t.status === "full" || t.status === "active") && candidates.length) {
     html += ' <select class="mini-sel" data-winner-select="' + esc(t.id) + '"><option value="">Winner…</option>' +
       candidates.map(function (e) { return '<option value="' + esc(e.user_id) + '">' + esc(playerLabel(e.user_id)) + "</option>"; }).join("") +
@@ -80,6 +83,12 @@ function render(tournaments, byTournament) {
 
   box.querySelectorAll("[data-join]").forEach(function (b) {
     b.addEventListener("click", function () { callTournamentRpc("rib_tournament_join", { p_tournament_id: b.getAttribute("data-join") }, b); });
+  });
+  box.querySelectorAll("[data-tcancel]").forEach(function (b) {
+    b.addEventListener("click", function () {
+      if (!window.confirm("Cancel this tournament? Every entry fee is refunded to its player.")) return;
+      callTournamentRpc("rib_tournament_cancel", { p_tournament_id: b.getAttribute("data-tcancel") }, b);
+    });
   });
   box.querySelectorAll("[data-finish]").forEach(function (b) {
     b.addEventListener("click", function () {

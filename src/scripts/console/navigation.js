@@ -29,10 +29,11 @@ export function goToPage(id) {
 function wireSegment(buttonsSelector, attr, panels, currentAttr) {
   const buttons = document.querySelectorAll(buttonsSelector);
   buttons.forEach(function (b) {
-    b.addEventListener("click", function () {
+    b.addEventListener("click", function (e) {
+      e.preventDefault();
       const which = b.getAttribute(attr);
       buttons.forEach(function (x) {
-        if (currentAttr === "aria-selected") x.setAttribute("aria-selected", String(x === b));
+        if (currentAttr === "aria-pressed") x.setAttribute("aria-pressed", String(x === b));
         else if (x === b) x.setAttribute("aria-current", "page");
         else x.removeAttribute("aria-current");
       });
@@ -62,11 +63,11 @@ export function initNavigation(loaders) {
   }
   const toDeveloper = byId("switch-to-developer");
   const toPlayer = byId("switch-to-player");
-  if (toDeveloper) toDeveloper.addEventListener("click", function () { goToPage("page-developer"); });
+  if (toDeveloper) toDeveloper.addEventListener("click", function (e) { e.preventDefault(); goToPage("page-developer"); });
   if (toPlayer) toPlayer.addEventListener("click", function () { goToPage("page-games"); });
 
   wireSegment("#compete-seg button[data-seg]", "data-seg",
-    { challenges: "compete-challenges", tournaments: "compete-tournaments" }, "aria-selected");
+    { lobby: "compete-lobby", mine: "compete-mine", tournaments: "compete-tournaments" }, "aria-pressed");
   wireSegment("#dev-nav a[data-dev]", "data-dev",
     { projects: "dev-projects", keys: "dev-keys", payouts: "dev-payouts" }, "aria-current");
 }
@@ -77,8 +78,7 @@ export function initAmountChips(onChange) {
     group.addEventListener("click", function (e) {
       const b = e.target.closest("button[data-amt]");
       if (!b) return;
-      group.querySelectorAll("button").forEach(function (x) { x.classList.remove("on"); });
-      b.classList.add("on");
+      group.querySelectorAll("button").forEach(function (x) { x.classList.toggle("on", x === b); x.setAttribute("aria-pressed", String(x === b)); });
       if (onChange) onChange(group.getAttribute("data-chips"), parseInt(b.getAttribute("data-amt"), 10));
     });
   });

@@ -28,6 +28,10 @@ Vercel serves dist/ with CSP + HSTS; hashed assets are cached immutably.
   tables go through RPCs; `rib_apply` performs the funds check atomically;
   multi-wallet RPCs lock wallets in uuid order; per-user caps take an advisory
   lock. Internal functions are not executable by client roles (migration 0009).
+- **Incremental player stats.** The ranking reads `player_stats` /
+  `player_stats_weekly`, updated by a trigger on every ledger insert, and pages
+  on an index ordered like the board — it never aggregates the ledger at read
+  time. Weeks are Monday 00:00 UTC.
 - **Stable error codes.** RPCs raise English messages with a `hint` code; the
   client maps hints to copy (`lib/errors.js`), so wording and language can change
   without breaking the UI.

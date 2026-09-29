@@ -50,3 +50,14 @@ export function formatDate(value) {
   try { return new Date(value).toLocaleDateString("en", { year: "numeric", month: "short", day: "numeric" }); }
   catch (e) { return "—"; }
 }
+
+/** "just now", "5 min ago", "3 h ago", "2 d ago" — for lobby and activity rows. */
+export function formatTimeAgo(value, now) {
+  const then = new Date(value).getTime();
+  if (!isFinite(then)) return "";
+  const seconds = Math.max(0, Math.round(((now || Date.now()) - then) / 1000));
+  if (seconds < 60) return "just now";
+  if (seconds < 3600) return Math.floor(seconds / 60) + " min ago";
+  if (seconds < 86400) return Math.floor(seconds / 3600) + " h ago";
+  return Math.floor(seconds / 86400) + " d ago";
+}

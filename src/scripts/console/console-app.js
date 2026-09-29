@@ -13,6 +13,7 @@ import { initGames } from "../games/engine.js";
 import { initChallenges, loadChallenges } from "./challenges.js";
 import { initContext, session } from "./context.js";
 import { initDeveloperPortal, loadDeveloperMetrics, loadKeys, loadProjects } from "./developer.js";
+import { initRanking, loadProfileRecord, loadRanking } from "./leaderboard.js";
 import { goToPage, initAmountChips, initNavigation } from "./navigation.js";
 import { initProfile, loadProfile } from "./profile.js";
 import { initTournaments, loadTournaments } from "./tournaments.js";
@@ -31,7 +32,8 @@ const PAGE_LOADERS = {
   "page-games": loadGames,
   "page-compete": function () { loadChallenges(); loadTournaments(); },
   "page-wallet": function () { refreshWallet(); loadLedger(); },
-  "page-profile": loadProfile,
+  "page-ranking": loadRanking,
+  "page-profile": function () { loadProfile(); loadProfileRecord(); },
   "page-developer": function () { loadProjects(); loadKeys(); loadDeveloperMetrics(); refreshWallet(); },
 };
 
@@ -67,6 +69,7 @@ export function initConsole() {
     initDeveloperPortal();
     initChallenges();
     initTournaments();
+    initRanking();
     initWallet();
 
     refreshWallet();
