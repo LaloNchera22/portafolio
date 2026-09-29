@@ -5,6 +5,8 @@
    ========================================================================== */
 
 export function initSiteInteractions() {
+  // Tell public/js-flag.js the bundle booted, so reveal states stay enabled.
+  document.documentElement.classList.add("js-ready");
   const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
   const finePointer = window.matchMedia("(pointer: fine)").matches;
@@ -204,7 +206,9 @@ export function initSiteInteractions() {
     });
   });
 
-  /* --- Forms (client-side demo, no backend) ----------------------------- */
+  /* --- Forms: hand off to the visitor's email app ---------------------- */
+  // There is no form backend yet, so never claim a message was sent: build
+  // a mailto with the answers and say plainly where it went.
   document.querySelectorAll("[data-form]").forEach((form) => {
     form.addEventListener("submit", (e) => {
       e.preventDefault();
@@ -212,13 +216,21 @@ export function initSiteInteractions() {
         form.reportValidity();
         return;
       }
+      const to = form.getAttribute("data-form");
+      const subject = form.getAttribute("data-form-subject") || "Runinback";
+      const body = [...form.querySelectorAll("input, select, textarea")]
+        .filter((el) => el.name && el.value.trim())
+        .map((el) => {
+          const label = form.querySelector('label[for="' + el.id + '"]');
+          return (label ? label.textContent.trim() : el.name) + ": " + el.value.trim();
+        })
+        .join("\n");
+      window.location.href = "mailto:" + to + "?subject=" + encodeURIComponent(subject) + "&body=" + encodeURIComponent(body);
       const success = form.querySelector("[data-form-success]");
-      form.querySelectorAll("input, textarea, select, button").forEach((el) => (el.disabled = true));
       if (success) {
         success.classList.add("is-visible");
         success.setAttribute("role", "status");
       }
-      form.reset();
     });
   });
 
@@ -453,7 +465,11 @@ export function initSiteInteractions() {
       '<button type="button" class="btn btn--ghost btn--sm" data-cookie="declined">Decline</button>' +
       '<button type="button" class="btn btn--cta btn--sm" data-cookie="accepted">Accept</button>' +
       "</div>";
-    document.body.appendChild(banner);
+    // Early in the document (right after the skip link) so keyboard and
+    // screen-reader users meet it before the page content it overlays.
+    const skip = document.querySelector(".skip-link");
+    if (skip) skip.after(banner);
+    else document.body.prepend(banner);
 
     requestAnimationFrame(() => {
       setTimeout(() => banner.classList.add("is-in"), 60);
@@ -464,6 +480,12 @@ export function initSiteInteractions() {
       if (!btn) return;
       save(btn.getAttribute("data-cookie"));
       banner.classList.remove("is-in");
+      // Don't strand keyboard focus on a button that's about to disappear.
+      const main = document.getElementById("main");
+      if (main && banner.contains(document.activeElement)) {
+        if (!main.hasAttribute("tabindex")) main.setAttribute("tabindex", "-1");
+        main.focus({ preventScroll: true });
+      }
       setTimeout(() => banner.remove(), 650);
     });
   })();

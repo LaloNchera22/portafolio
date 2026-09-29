@@ -139,7 +139,7 @@ function callTournamentRpc(fn, args, btn) {
 
 export function initTournaments() {
   const form = $("tournament-form");
-  $("tournament-new").addEventListener("click", function () { setVisible(form, true); $("tournament-name").focus(); });
+  $("tournament-new").addEventListener("click", function () { setVisible(form, true); $("tournament-msg").hidden = true; $("tournament-name").focus(); });
   $("tournament-cancel").addEventListener("click", function () { setVisible(form, false); $("tournament-msg").hidden = true; });
   form.addEventListener("submit", function (e) {
     e.preventDefault();
@@ -158,6 +158,7 @@ export function initTournaments() {
         setVisible(form, false);
         $("tournament-name").value = "";
         $("tournament-game").value = "";
+        showMessage($("tournament-msg"), "Tournament created.", true);
         loadTournaments();
       })
       .catch(function () { showError("Network error."); })

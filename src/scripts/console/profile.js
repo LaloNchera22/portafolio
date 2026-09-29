@@ -8,7 +8,10 @@ import { errorText, rememberUsername, session } from "./context.js";
 
 export const USERNAME_PATTERN = /^[a-zA-Z0-9_]{3,24}$/;
 
+let savedUsername = ""; // the username the server has, not what's typed in the form
+
 function showUsername(username) {
+  savedUsername = username;
   rememberUsername(session.uid, username);
   $("acct-name").textContent = "@" + username;
 }
@@ -61,7 +64,9 @@ export function initAccountClosure() {
   const btn = $("account-close");
   if (!btn) return;
   btn.addEventListener("click", function () {
-    const handle = ($("profile-username").value || "").trim();
+    // Confirm against the stored username, never the (possibly unsaved) input.
+    const handle = savedUsername;
+    if (!handle) { showMessage($("account-close-msg"), "Your profile hasn't loaded. Refresh and try again.", false); return; }
     const typed = window.prompt("This can't be undone. Type your username (" + handle + ") to close your account.");
     if (typed === null) return;
     if (typed.trim() !== handle) { showMessage($("account-close-msg"), "The username didn't match. Nothing was changed.", false); return; }

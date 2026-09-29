@@ -27,6 +27,9 @@ export function escapeHtml(s) {
 /** Show an inline status message (.msg) as success or error. */
 export function showMessage(node, text, ok) {
   if (!node) return;
+  // Errors interrupt, confirmations wait their turn; set before the text so
+  // the live region exists when the content lands.
+  node.setAttribute("role", ok ? "status" : "alert");
   node.textContent = text;
   node.className = "msg " + (ok ? "msg--ok" : "msg--err");
   node.hidden = false;

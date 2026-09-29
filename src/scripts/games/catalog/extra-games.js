@@ -713,6 +713,7 @@ var Memory = {
       var faceUp = s.taken[i] >= 0 || revealed[i] || chosen === i;
       var c = el("button", "ge-cell ge-mem__c" + (s.taken[i] >= 0 ? " taken" : "") + (faceUp ? " up" : ""));
       c.textContent = faceUp ? String.fromCharCode(65 + s.cards[i]) : "";
+      c.setAttribute("aria-label", "Card " + (i + 1) + ", " + (faceUp ? String.fromCharCode(65 + s.cards[i]) + (s.taken[i] >= 0 ? ", matched" : "") : "face down") + (chosen === i ? ", selected" : ""));
       if (api.canMove && s.taken[i] < 0 && chosen !== i) { c.addEventListener("click", function () { if (chosen == null) { api._mem = { a: i }; api.rerender(); } else { var a = chosen; api._mem = null; api.move({ a: a, b: i }); } }); }
       else c.disabled = true;
       g.appendChild(c);
@@ -728,7 +729,7 @@ var Memory = {
 /* 16. Go Fish (vs bot)                                                    */
 /* ======================================================================= */
 var GoFish = {
-  id: "gofish", name: "Go Fish", tag: "6 min", icon: "🐠",
+  id: "gofish", name: "Go Fish", tag: "6 min", icon: "∝",
   blurb: "Ask for ranks, collect four of a kind. Most books wins.",
   init: function () {
     var deck = []; for (var r = 0; r < 13; r++) for (var s = 0; s < 4; s++) deck.push(r);
@@ -823,7 +824,7 @@ var Pig = {
 /* 18. Dominoes — draw double-six, 2 players                               */
 /* ======================================================================= */
 var Dominoes = {
-  id: "dominoes", name: "Dominoes", tag: "8 min", icon: "🁫",
+  id: "dominoes", name: "Dominoes", tag: "8 min", icon: "◫",
   blurb: "Match the ends of the chain. First to empty their hand wins.",
   init: function () {
     var set = []; for (var a = 0; a <= 6; a++) for (var b = a; b <= 6; b++) set.push([a, b]);
@@ -989,7 +990,7 @@ var Fifteen = {
 /* 21. Kayles — a row of pins; knock down 1 or 2 adjacent. Last pin wins.  */
 /* ======================================================================= */
 var Kayles = {
-  id: "kayles", name: "Kayles", tag: "3 min", icon: "🎳",
+  id: "kayles", name: "Kayles", tag: "3 min", icon: "⋯",
   blurb: "Knock down one pin, or two side by side. Take the last and win.",
   init: function () { return { pins: new Array(12).fill(1), turn: 0 }; },
   legal: function (s) {
@@ -1025,7 +1026,8 @@ var Kayles = {
     var row = el("div", "ge-kayles__row");
     for (var i = 0; i < s.pins.length; i++) (function (i) {
       var b = el("button", "ge-kayles__pin" + (s.pins[i] ? "" : " down") + (sel === i ? " sel" : ""));
-      b.textContent = s.pins[i] ? "🎳" : "";
+      b.textContent = s.pins[i] ? "▮" : "";
+      b.setAttribute("aria-label", "Pin " + (i + 1) + (s.pins[i] ? ", standing" : ", knocked down") + (sel === i ? ", selected" : ""));
       if (api.canMove && s.pins[i]) {
         b.addEventListener("click", function () {
           if (sel == null) { api._k = { a: i }; api.rerender(); }

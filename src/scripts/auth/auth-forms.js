@@ -23,9 +23,26 @@ export function initAuthForms() {
 
   /* ---- helpers ------------------------------------------------------------ */
   function absUrl(u) { return new URL(u, window.location.href).href; }
-  function err(scope, m) { var e = $(scope + "-error"); if (e) { e.textContent = m; e.hidden = false; } var n = $(scope + "-note"); if (n) n.hidden = true; }
+  // Show an error; with a field id, also mark that field invalid, tie the
+  // message to it for screen readers, and move focus there.
+  function err(scope, m, fieldId) {
+    clearInvalid(scope);
+    var e = $(scope + "-error"); if (e) { e.textContent = m; e.hidden = false; }
+    var n = $(scope + "-note"); if (n) n.hidden = true;
+    var f = fieldId && $(fieldId);
+    if (f) {
+      f.setAttribute("aria-invalid", "true");
+      var ids = (f.getAttribute("aria-describedby") || "").split(" ").filter(Boolean);
+      if (ids.indexOf(scope + "-error") < 0) f.setAttribute("aria-describedby", ids.concat(scope + "-error").join(" "));
+      f.focus();
+    }
+  }
+  function clearInvalid(scope) {
+    var form = $(scope + "-form");
+    if (form) form.querySelectorAll('[aria-invalid="true"]').forEach(function (f) { f.removeAttribute("aria-invalid"); });
+  }
   function note(scope, m) { var n = $(scope + "-note"); if (n) { n.textContent = m; n.hidden = false; } var e = $(scope + "-error"); if (e) e.hidden = true; }
-  function clearMsg(scope) { var e = $(scope + "-error"); if (e) e.hidden = true; var n = $(scope + "-note"); if (n) n.hidden = true; }
+  function clearMsg(scope) { clearInvalid(scope); var e = $(scope + "-error"); if (e) e.hidden = true; var n = $(scope + "-note"); if (n) n.hidden = true; }
   function notConfigured(scope) { err(scope, "The backend isn't connected yet. Set SUPABASE_URL and SUPABASE_ANON_KEY in your Vercel environment variables."); }
   function isEmail(s) { return /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(s); }
   function busy(btn, on, label) { if (!btn) return; btn.disabled = on; btn.style.opacity = on ? ".6" : ""; if (label != null) btn.textContent = on ? "One moment…" : label; }
@@ -120,7 +137,7 @@ export function initAuthForms() {
       clearMsg("login");
       if (!configured) { notConfigured("login"); return; }
       var email = ($("login-email").value || "").trim();
-      if (!isEmail(email)) { err("login", "Enter your email above first, then request the magic link."); return; }
+      if (!isEmail(email)) { err("login", "Enter your email above first, then request the magic link.", "login-email"); return; }
       busy(ml, true, "Email me a magic link");
       client.auth.signInWithOtp({ email: email, options: { emailRedirectTo: absUrl(CONSOLE_URL) } })
         .then(function (res) {
@@ -136,7 +153,7 @@ export function initAuthForms() {
       clearMsg("login");
       if (!configured) { notConfigured("login"); return; }
       var email = ($("login-email").value || "").trim();
-      if (!isEmail(email)) { err("login", "Enter your email above first, then tap reset."); return; }
+      if (!isEmail(email)) { err("login", "Enter your email above first, then tap reset.", "login-email"); return; }
       client.auth.resetPasswordForEmail(email, { redirectTo: absUrl("login.html") })
         .then(function (res) {
           if (res.error) { err("login", friendly(res.error)); return; }
@@ -179,12 +196,12 @@ export function initAuthForms() {
       var confirm = $("signup-confirm").value || "";
       var terms = $("signup-terms");
 
-      if (!/^[a-zA-Z0-9_]{3,24}$/.test(username)) { err("signup", "Username: 3–24 characters, letters, numbers or underscore."); return; }
-      if (password.length < 8) { err("signup", "Use a password of at least 8 characters."); return; }
-      if (password !== confirm) { err("signup", "Passwords don't match."); return; }
+      if (!/^[a-zA-Z0-9_]{3,24}$/.test(username)) { err("signup", "Username: 3–24 characters, letters, numbers or underscore.", "signup-username"); return; }
+      if (password.length < 8) { err("signup", "Use a password of at least 8 characters.", "signup-password"); return; }
+      if (password !== confirm) { err("signup", "Passwords don't match.", "signup-confirm"); return; }
       const age = $("signup-age");
-      if (age && !age.checked) { err("signup", "Please confirm you're 18 or older and eligible to play where you live."); return; }
-      if (terms && !terms.checked) { err("signup", "Please accept the terms to continue."); return; }
+      if (age && !age.checked) { err("signup", "Please confirm you're 18 or older and eligible to play where you live.", "signup-age"); return; }
+      if (terms && !terms.checked) { err("signup", "Please accept the terms to continue.", "signup-terms"); return; }
       if (!configured) { notConfigured("signup"); return; }
 
       var btn = $("signup-submit"); busy(btn, true);
