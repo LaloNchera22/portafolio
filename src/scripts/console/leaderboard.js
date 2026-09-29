@@ -46,7 +46,8 @@ function rowHtml(row) {
   const hidden = function (text) { return '<span class="visually-hidden">' + text + "</span>"; };
   return '<li class="rank' + podium + (me ? " rank--me" : "") + '">' +
     '<span class="rank__pos">' + hidden("Rank ") + row.rank + "</span>" +
-    '<span class="rank__who" title="@' + esc(row.username) + '">@' + esc(row.username) + (me ? ' <span class="tag">you</span>' : "") + "</span>" +
+    '<a class="rank__who" href="#page-player/' + encodeURIComponent(row.username) + '" data-player="' + esc(row.username) + '" title="@' + esc(row.username) + '">@' +
+      esc(row.username) + (me ? ' <span class="tag">you</span>' : "") + "</a>" +
     '<span class="rank__net ' + (row.net_cents >= 0 ? "pos" : "neg") + '">' + hidden("net ") + esc(signed(row.net_cents)) + "</span>" +
     '<span class="rank__won">' + esc(formatRcoin(row.won_cents)) + " won</span>" +
     '<span class="rank__rec">' + hidden("record ") + esc(record(row)) + "</span>" +
@@ -59,7 +60,8 @@ function podiumHtml(rows) {
   return '<ol class="podium" aria-label="Top 3">' + rows.slice(0, 3).map(function (row, i) {
     const me = row.user_id === session.uid;
     return '<li class="' + cls[i] + (me ? " is-me" : "") + '"><span class="podium__pos">' + row.rank + "</span>" +
-      '<span class="podium__who">@' + esc(row.username) + (me ? ' <span class="tag">you</span>' : "") + "</span>" +
+      '<a class="podium__who" href="#page-player/' + encodeURIComponent(row.username) + '" data-player="' + esc(row.username) + '">@' +
+        esc(row.username) + (me ? ' <span class="tag">you</span>' : "") + "</a>" +
       '<span class="podium__net ' + (row.net_cents >= 0 ? "pos" : "neg") + '" data-net="' + row.net_cents + '">' + esc(signed(row.net_cents)) + "</span>" +
       '<span class="podium__rec">' + esc(record(row)) + " · " + esc(formatRcoin(row.won_cents)) + " won</span></li>";
   }).join("") + "</ol>";
@@ -147,13 +149,16 @@ export function initRanking() {
 }
 
 /** Compact record for the profile page (all time). */
+let recordRequest = 0;
 export function loadProfileRecord() {
   const box = $("profile-stats");
   if (!box) return;
+  const token = ++recordRequest;
   session.client.rpc("rib_my_standing", { p_period: "all" }).then(function (r) {
+    if (token !== recordRequest) return;
     if (r.error) { box.innerHTML = '<p class="muted">Couldn\'t load your record. Try again in a moment.</p>'; return; }
     const row = r.data && r.data[0];
-    if (!row) {
+    if (!row || row.net_cents == null) {
       box.innerHTML = '<p class="muted">No ranked results yet. Play a tournament and your record shows up here.</p>';
       return;
     }
@@ -161,5 +166,7 @@ export function loadProfileRecord() {
       '<div><span class="n">' + (row.rank ? "#" + Number(row.rank).toLocaleString("en") : "—") + '</span><span class="k">all-time rank</span></div>' +
       '<div><span class="n ' + (row.net_cents >= 0 ? "pos" : "neg") + '">' + esc(signed(row.net_cents)) + '</span><span class="k">net won</span></div>' +
       '<div><span class="n">' + esc(record(row)) + '</span><span class="k">wins–losses</span></div>';
+  }).catch(function () {
+    if (token === recordRequest) box.innerHTML = '<p class="muted">Couldn\'t reach the server. Try again in a moment.</p>';
   });
 }

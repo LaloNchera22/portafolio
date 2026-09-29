@@ -78,6 +78,24 @@ test.describe("console", () => {
     await expect(page.locator(".standing__n")).toHaveText("2");
   });
 
+  test("edits the profile, opens settings and a player's public card", async ({ page, api }) => {
+    await page.goto("/console.html#page-profile");
+    await expect(page.locator("#profile-username")).toHaveValue("e2e_player");
+    await page.fill("#profile-bio", "Ranked grinder.");
+    await page.selectOption("#profile-country", "MX");
+    await page.click("#profile-save");
+    await expect(page.locator("#profile-msg")).toHaveText("Saved.");
+    await expect.poll(() => api.calls.find((c) => c.path === "/rest/v1/rpc/rib_profile_update")?.body)
+      .toMatchObject({ p_username: "e2e_player", p_bio: "Ranked grinder.", p_country: "MX" });
+    await page.click('#profile-nav a[data-profile-tab="settings"]');
+    await expect(page).toHaveURL(/#page-profile\/settings$/);
+    await expect(page.locator("#set-show_on_leaderboard")).toBeChecked();
+    await page.goto("/console.html#page-ranking");
+    await page.locator('#ranking-list [data-player="neo"]').first().click();
+    await expect(page.locator("#player-title")).toHaveText("Neo");
+    await expect(page.locator("#player-root")).toContainText("Mexico");
+  });
+
   test("developer portal offers test keys only while in test mode", async ({ page }) => {
     await page.goto("/console.html");
     await page.evaluate(() => document.querySelector("#switch-to-developer").click());

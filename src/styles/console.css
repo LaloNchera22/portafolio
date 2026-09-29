@@ -745,3 +745,102 @@ html.gmodal-open { overflow: hidden; }
 @media (max-width: 720px) {
   .capp .onboard ol { grid-template-columns: 1fr; gap: 14px; }
 }
+
+/* ---- Profile, settings, security, player card (0024) ------------------------ */
+.capp .msg:empty { padding: 0; margin: 0; }
+.capp .avatar { width: 40px; height: 40px; border-radius: 50%; flex: 0 0 auto; display: grid; place-content: center; overflow: hidden;
+  background: var(--c-elevated); border: 1px solid var(--c-hairline); color: var(--c-cream); font-weight: 600; font-size: 16px; }
+.capp .avatar img, .capp .acct-avatar img { width: 100%; height: 100%; object-fit: cover; display: block; border-radius: 50%; }
+.capp .avatar--lg { width: 56px; height: 56px; font-size: 22px; }
+.capp .avatar--xl { width: 88px; height: 88px; font-size: 34px; }
+.capp .avatar.has-photo, .capp .acct-avatar.has-photo { border-color: transparent; padding: 0; }
+.capp .phead { display: flex; align-items: center; gap: 16px; min-width: 0; }
+.capp .phead h1 { overflow-wrap: anywhere; }
+.capp #profile-nav a { font-size: 13.5px; font-weight: 500; color: var(--c-dim); text-decoration: none; padding: 7px 18px; border-radius: 100px; transition: color .2s; }
+.capp #profile-nav a:hover { color: var(--c-cream); }
+.capp #profile-nav a[aria-current="page"] { color: var(--c-canvas); }
+.capp #profile-nav:not(.has-thumb) a[aria-current="page"] { background: var(--c-cream); }
+.capp #profile-nav a:focus-visible { outline: 2px solid var(--c-cream); outline-offset: 2px; }
+.capp [data-profile-panel] > * + * { margin-top: 18px; }
+.capp [data-profile-panel] .sec { margin-top: 40px; }
+
+.capp .avatar-field { display: flex; gap: 18px; align-items: center; margin-bottom: 20px; }
+.capp .avatar-field__body { display: grid; gap: 4px; min-width: 0; }
+.capp .avatar-field__actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 6px; }
+.capp .btn--file { position: relative; overflow: hidden; }
+.capp .btn--file input { position: absolute; inset: 0; opacity: 0; cursor: pointer; font-size: 0; }
+.capp .btn--file:focus-within { outline: 2px solid var(--c-cream); outline-offset: 2px; }
+.capp .field textarea { width: 100%; font-family: var(--c-font); font-size: 15px; line-height: 1.5; color: var(--c-cream); background: var(--c-canvas);
+  border: 1px solid var(--c-hairline); border-radius: 10px; padding: 11px 13px; resize: vertical; min-height: 84px; }
+.capp .field textarea:focus { outline: none; border-color: var(--c-cream); }
+.capp .field textarea:focus-visible { outline: 2px solid var(--c-cream); outline-offset: 2px; }
+.capp .field [aria-invalid="true"] { border-color: var(--c-bad); }
+.capp .field__count { text-align: right; font-variant-numeric: tabular-nums; }
+.capp .facts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin: 4px 0 20px; }
+.capp .facts dt { font-size: 13px; color: var(--c-dim); }
+.capp .facts dd { margin: 3px 0 0; font-size: 15px; overflow-wrap: anywhere; }
+
+.capp .setgroup { border: 0; margin-inline: 0; min-width: 0; }
+.capp .setgroup legend, .capp .setgroup__title { font-size: 17px; font-weight: 600; letter-spacing: -.01em; margin: 0 0 6px; padding: 0; float: left; width: 100%; }
+.capp .setgroup legend + * { clear: both; }
+.capp .setgroup > .muted { margin: 0 0 14px; font-size: 14px; line-height: 1.55; }
+.capp .setgroup[disabled] .setting { opacity: .55; }
+.capp .setting { display: grid; grid-template-columns: auto 1fr; column-gap: 14px; align-items: center; padding: 14px 0; border-top: 1px solid var(--c-hairline); }
+.capp .setting:first-of-type { border-top: 0; }
+.capp .setting label { font-size: 15px; cursor: pointer; }
+.capp .setting .field__hint { grid-column: 2; margin-top: 2px; }
+.capp input[role="switch"] { appearance: none; -webkit-appearance: none; margin: 0; width: 42px; height: 24px; border-radius: 100px; cursor: pointer; position: relative;
+  background: var(--c-canvas); border: 1px solid var(--c-control, var(--c-hairline)); transition: background-color var(--m) var(--m-ease), border-color var(--m) var(--m-ease); }
+.capp input[role="switch"]::after { content: ""; position: absolute; top: 3px; left: 3px; width: 16px; height: 16px; border-radius: 50%; background: var(--c-dim);
+  transition: transform var(--m) var(--m-ease), background-color var(--m) var(--m-ease); }
+.capp input[role="switch"]:checked { background: var(--c-good); border-color: var(--c-good); }
+.capp input[role="switch"]:checked::after { transform: translateX(18px); background: var(--c-canvas); }
+.capp input[role="switch"]:focus-visible { outline: 2px solid var(--c-cream); outline-offset: 2px; }
+.capp input[role="switch"]:disabled { cursor: progress; }
+@media (forced-colors: active) { .capp input[role="switch"] { border: 1px solid CanvasText; } .capp input[role="switch"]::after { background: CanvasText; } }
+
+.capp .rplay__block { padding: 16px 0; border-top: 1px solid var(--c-hairline); }
+.capp .rplay__block h3 { font-size: 15px; font-weight: 600; margin: 0 0 10px; }
+.capp .rplay__row { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 10px; }
+.capp .rplay__row .field { flex: 1 1 200px; margin: 0; }
+.capp .rplay__state { margin: 0 0 10px; font-size: 14.5px; line-height: 1.55; color: var(--c-escrow); }
+.capp .meter { margin-bottom: 14px; }
+.capp .meter__bar { height: 6px; border-radius: 100px; background: var(--c-canvas); overflow: hidden; }
+.capp .meter__bar span { display: block; height: 100%; width: 0; background: var(--c-escrow); border-radius: inherit; transition: width var(--m-slow) var(--m-ease); }
+.capp .meter.is-full .meter__bar span { background: var(--c-bad); }
+.capp .meter__text { margin: 6px 0 0; font-size: 13px; color: var(--c-dim); font-variant-numeric: tabular-nums; }
+.capp .pending { margin: 10px 0 0; font-size: 13.5px; color: var(--c-cream); padding: 10px 12px; border: 1px dashed var(--c-hairline); border-radius: 10px; }
+.capp .linkbtn { font: inherit; font-weight: 600; color: var(--c-match); background: none; border: 0; padding: 0; cursor: pointer; text-decoration: underline; text-underline-offset: 3px; }
+.capp .linkbtn:focus-visible { outline: 2px solid var(--c-cream); outline-offset: 2px; border-radius: 4px; }
+.capp .chips-set { border: 0; padding: 0; margin: 0 0 12px; }
+.capp .radios { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+.capp .radios label { display: inline-flex; align-items: center; gap: 6px; font-size: 13.5px; padding: 7px 14px; border: 1px solid var(--c-hairline);
+  border-radius: 100px; cursor: pointer; transition: border-color .2s, color .2s; }
+.capp .radios input { accent-color: var(--c-cream); margin: 0; }
+.capp .radios label:has(input:checked) { border-color: var(--c-cream); }
+.capp .radios label:focus-within { outline: 2px solid var(--c-cream); outline-offset: 2px; }
+
+.capp .rib-dialog { max-width: min(440px, calc(100vw - 32px)); width: 100%; background: var(--c-panel); color: var(--c-cream); border: 1px solid var(--c-hairline);
+  border-radius: 16px; padding: 22px; }
+.capp .rib-dialog::backdrop { background: rgba(14, 16, 15, .72); }
+.capp .rib-dialog h2 { font-size: 19px; margin: 0 0 8px; text-wrap: balance; }
+.capp .rib-dialog p { margin: 0 0 16px; color: var(--c-dim); line-height: 1.55; text-wrap: pretty; }
+.capp .rib-dialog__actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 8px; }
+.capp .rib-dialog .btn:disabled { opacity: .45; cursor: not-allowed; }
+@media (prefers-reduced-motion: no-preference) { .capp .rib-dialog[open] { animation: c-pop var(--m) var(--m-ease); } }
+
+.capp .pcard__meta { margin: 6px 0 0; font-size: 14px; color: var(--c-dim); }
+.capp .pcard__bio { max-width: 60ch; margin: 0 0 8px; font-size: 16px; line-height: 1.6; text-wrap: pretty; overflow-wrap: anywhere; }
+.capp a.rank__who, .capp a.podium__who { color: inherit; text-decoration: none; }
+.capp a.rank__who:hover, .capp a.podium__who:hover { text-decoration: underline; text-underline-offset: 3px; }
+.capp a.rank__who:focus-visible, .capp a.podium__who:focus-visible { outline: 2px solid var(--c-cream); outline-offset: 2px; border-radius: 4px; }
+@media (max-width: 560px) {
+  .capp .avatar--xl { width: 64px; height: 64px; font-size: 26px; }
+  .capp .facts { grid-template-columns: 1fr; }
+  .capp .avatar-field { align-items: flex-start; }
+  .capp #profile-nav { display: flex; width: 100%; }
+  .capp #profile-nav a { flex: 1; text-align: center; padding-inline: 8px; }
+}
+.capp .setgroup .chips-set legend { float: none; font-size: 13px; font-weight: 400; letter-spacing: 0; color: var(--c-dim); margin: 0; }
+/* Headings focused by script after a page change: no ring, it wasn't a keypress. */
+.capp h1[tabindex="-1"]:focus, .capp h2[tabindex="-1"]:focus { outline: none; }

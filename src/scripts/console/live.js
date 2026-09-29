@@ -13,6 +13,7 @@ import { toast } from "../lib/errors.js";
 import { roundName } from "../lib/tournament.js";
 import { session } from "./context.js";
 import { openRoom } from "./room.js";
+import { prefs } from "./settings.js";
 
 const POLL_MS = 30000;
 const live = { rows: [], seen: {}, channels: [], timer: 0, poll: 0, title: "", first: true };
@@ -78,7 +79,7 @@ function announce() {
     const key = m.id + ":" + m.status + ":" + (m.confirm_deadline || "");
     if (!m.needs_me || live.seen[key]) return;
     live.seen[key] = true;
-    if (live.first) return;
+    if (live.first || !prefs.match_toasts) return;
     const roomPage = $("page-room");
     if (roomPage && !roomPage.hidden && location.hash.indexOf(m.id) !== -1) return;
     const d = describe(m);

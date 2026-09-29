@@ -30,7 +30,11 @@ function query(table) {
 }
 const client = {
   from: (table) => query(table),
-  rpc: (name, args) => { calls.push([name, args]); return Promise.resolve({ data: {}, error: null }); },
+  rpc: (name, args) => {
+    calls.push([name, args]);
+    if (name === "rib_my_profile") return Promise.resolve(profileRow ? { data: profileRow, error: null } : { data: null, error: { message: "offline" } });
+    return Promise.resolve({ data: {}, error: null });
+  },
   functions: { invoke: (name) => { invoked.push(name); return Promise.resolve({ data: null, error: { message: "stop" } }); } },
   auth: { signOut: () => Promise.resolve() },
 };

@@ -267,51 +267,203 @@
 
       <!-- =========================== PROFILE ========================== -->
       <section class="page" id="page-profile" hidden>
-        <div class="head"><div><p class="eyebrow">Account</p><h1>Profile.</h1></div></div>
-        <div class="card-box">
-          <form id="profile-form" novalidate>
-            <div class="field">
-              <label for="profile-username">Username</label>
-              <input id="profile-username" type="text" minlength="3" maxlength="24" pattern="[a-zA-Z0-9_]+" autocomplete="off" />
+        <div class="head">
+          <div class="phead">
+            <span class="avatar avatar--lg" id="profile-avatar" aria-hidden="true"></span>
+            <div><p class="eyebrow">Account</p><h1 id="profile-title" tabindex="-1">Profile.</h1></div>
+          </div>
+          <div class="head__r"><a class="btn btn--sm" id="profile-public" href="#page-player">View public profile</a></div>
+        </div>
+        <nav class="seg" id="profile-nav" aria-label="Account sections">
+          <a href="#page-profile" data-profile-tab="profile" aria-current="page">Profile</a>
+          <a href="#page-profile/settings" data-profile-tab="settings">Settings</a>
+          <a href="#page-profile/security" data-profile-tab="security">Security</a>
+        </nav>
+
+        <!-- ---- Profile ---- -->
+        <div id="profile-panel-profile" data-profile-panel="profile">
+          <div class="card-box">
+            <form id="profile-form" novalidate>
+              <div class="avatar-field">
+                <span class="avatar avatar--xl" id="avatar-preview" aria-hidden="true"></span>
+                <div class="avatar-field__body">
+                  <label class="field-lbl" for="avatar-input">Profile photo</label>
+                  <p class="field__hint" id="avatar-hint">PNG, JPG or WebP. We crop it square and shrink it to 256 px.</p>
+                  <div class="avatar-field__actions">
+                    <label class="btn btn--sm btn--file">Choose photo<input id="avatar-input" type="file" accept="image/png,image/jpeg,image/webp" aria-describedby="avatar-hint" /></label>
+                    <button type="button" class="btn btn--sm" id="avatar-remove" hidden>Remove photo</button>
+                  </div>
+                </div>
+              </div>
+              <div class="field">
+                <label for="profile-username">Username</label>
+                <input id="profile-username" type="text" minlength="3" maxlength="24" autocomplete="username" spellcheck="false" aria-describedby="profile-username-hint" />
+                <p class="field__hint" id="profile-username-hint">3–24 letters, numbers or underscores. After a change you can pick a new one again in 30 days.</p>
+              </div>
+              <div class="field">
+                <label for="profile-display-name">Display name</label>
+                <input id="profile-display-name" type="text" maxlength="60" autocomplete="nickname" />
+              </div>
+              <div class="field">
+                <label for="profile-bio">Bio</label>
+                <textarea id="profile-bio" rows="3" maxlength="160" aria-describedby="profile-bio-count"></textarea>
+                <p class="field__hint field__count" id="profile-bio-count" aria-live="polite">0 / 160</p>
+              </div>
+              <div class="field">
+                <label for="profile-country">Country</label>
+                <select id="profile-country"><option value="">Prefer not to say</option></select>
+              </div>
+              <dl class="facts">
+                <div><dt>Email</dt><dd id="profile-email">—</dd></div>
+                <div><dt>Member since</dt><dd id="profile-since">—</dd></div>
+              </dl>
+              <button type="submit" class="btn btn--cta" id="profile-save">Save changes</button>
+              <p class="msg" id="profile-msg" role="status" aria-live="polite"></p>
+            </form>
+          </div>
+          <div class="sec" id="game-accounts-sec">
+            <div class="sec__head"><h2 id="game-accounts-title" tabindex="-1">Game accounts</h2></div>
+            <p class="muted sec__lead">Link the names you use in each game. Opponents see them in the match room, and a tournament or friendly can require one.</p>
+            <div id="game-accounts" aria-live="polite"><p class="muted is-loading">Loading…</p></div>
+            <form id="game-account-form" class="card-box game-account-form" novalidate>
+              <div class="field--row">
+                <div class="field"><label for="game-account-network">Network</label><select id="game-account-network"></select></div>
+                <div class="field"><label for="game-account-handle">Your name there</label><input id="game-account-handle" type="text" maxlength="64" autocomplete="off" spellcheck="false" /></div>
+              </div>
+              <button type="submit" class="btn btn--cta btn--sm" id="game-account-save">Link account</button>
+              <p class="msg" id="game-account-msg" role="status" aria-live="polite"></p>
+            </form>
+          </div>
+          <div class="sec">
+            <div class="sec__head"><h2>Your record</h2><a class="sec__note" data-page="page-ranking" href="#page-ranking">See the ranking</a></div>
+            <div class="statline" id="profile-stats" aria-live="polite"><p class="muted is-loading">Loading…</p></div>
+          </div>
+        </div>
+
+        <!-- ---- Settings ---- -->
+        <div id="profile-panel-settings" data-profile-panel="settings" hidden>
+          <p class="msg" id="settings-msg" role="status" aria-live="polite"></p>
+          <fieldset class="card-box setgroup" id="settings-notify" disabled>
+            <legend>Notifications</legend>
+            <div class="setting">
+              <input type="checkbox" role="switch" id="set-match_toasts" data-setting="match_toasts" aria-describedby="set-match_toasts-h" />
+              <label for="set-match_toasts">Pop-ups when a match needs me</label>
+              <p class="field__hint" id="set-match_toasts-h">The live strip and the badge on Compete always show. This only turns off the pop-up.</p>
             </div>
-            <div class="field">
-              <label for="profile-display-name">Display name</label>
-              <input id="profile-display-name" type="text" maxlength="60" autocomplete="off" />
+            <div class="setting">
+              <input type="checkbox" role="switch" id="set-product_emails" data-setting="product_emails" aria-describedby="set-product_emails-h" />
+              <label for="set-product_emails">News and offers by email</label>
+              <p class="field__hint" id="set-product_emails-h">Occasional. Account and security emails are always sent.</p>
             </div>
+          </fieldset>
+          <fieldset class="card-box setgroup" id="settings-privacy" disabled>
+            <legend>Privacy</legend>
+            <div class="setting">
+              <input type="checkbox" role="switch" id="set-show_on_leaderboard" data-setting="show_on_leaderboard" aria-describedby="set-show_on_leaderboard-h" />
+              <label for="set-show_on_leaderboard">Show me on the ranking</label>
+              <p class="field__hint" id="set-show_on_leaderboard-h">When off, you leave the public board and your record is hidden from your public profile. You still see your own standing.</p>
+            </div>
+            <div class="setting">
+              <input type="checkbox" role="switch" id="set-show_game_accounts" data-setting="show_game_accounts" aria-describedby="set-show_game_accounts-h" />
+              <label for="set-show_game_accounts">Show my game accounts on my public profile</label>
+              <p class="field__hint" id="set-show_game_accounts-h">Your opponent in a match room always sees the account that match needs.</p>
+            </div>
+          </fieldset>
+
+          <section class="card-box setgroup rplay" id="settings-limits" aria-labelledby="rplay-title">
+            <h2 class="setgroup__title" id="rplay-title">Play limits</h2>
+            <p class="muted">Limits cover tournament entry fees. Tightening a limit applies right away; loosening it waits, so the decision is made with a clear head.</p>
+            <div class="rplay__block">
+              <h3>Monthly entry limit</h3>
+              <div class="meter" id="cap-meter" hidden>
+                <div class="meter__bar"><span id="cap-meter-fill"></span></div>
+                <p class="meter__text" id="cap-meter-text"></p>
+              </div>
+              <form class="rplay__row" id="cap-form" novalidate>
+                <div class="field">
+                  <label for="cap-amount">Limit per calendar month (rcoin)</label>
+                  <input id="cap-amount" type="number" min="0" max="100000" step="1" inputmode="numeric" placeholder="No limit" aria-describedby="cap-hint" />
+                </div>
+                <button type="submit" class="btn btn--sm btn--cta" id="cap-save">Save limit</button>
+                <button type="button" class="btn btn--sm" id="cap-remove" hidden>Remove limit</button>
+              </form>
+              <p class="field__hint" id="cap-hint">Lowering applies now. Raising or removing it takes effect after 24 hours. Months follow UTC.</p>
+              <p class="pending" id="cap-pending" hidden><span id="cap-pending-text"></span> <button type="button" class="linkbtn" id="cap-pending-cancel">Cancel change</button></p>
+            </div>
+            <div class="rplay__block">
+              <h3>Cool-off</h3>
+              <div id="cooloff-off">
+                <fieldset class="chips-set">
+                  <legend class="field-lbl">Pause paid tournaments for</legend>
+                  <div class="radios" id="cooloff-days">
+                    <label><input type="radio" name="cooloff" value="1" /> 1 day</label>
+                    <label><input type="radio" name="cooloff" value="7" checked /> 1 week</label>
+                    <label><input type="radio" name="cooloff" value="30" /> 1 month</label>
+                    <label><input type="radio" name="cooloff" value="90" /> 3 months</label>
+                    <label><input type="radio" name="cooloff" value="180" /> 6 months</label>
+                    <label><input type="radio" name="cooloff" value="365" /> 1 year</label>
+                  </div>
+                </fieldset>
+                <button type="button" class="btn btn--sm" id="cooloff-start">Start cool-off</button>
+                <p class="field__hint">Free games and friendlies stay open. Ending a cool-off early takes 7 days.</p>
+              </div>
+              <div id="cooloff-on" hidden>
+                <p class="rplay__state" id="cooloff-text"></p>
+                <button type="button" class="btn btn--sm" id="cooloff-end">End early</button>
+                <p class="pending" id="cooloff-pending" hidden><span id="cooloff-pending-text"></span> <button type="button" class="linkbtn" id="cooloff-keep">Keep my cool-off</button></p>
+              </div>
+            </div>
+          </section>
+
+          <section class="card-box setgroup" aria-labelledby="data-title">
+            <h2 class="setgroup__title" id="data-title">Your data</h2>
+            <p class="muted">A JSON file with your profile, settings, linked accounts, tournaments and wallet history. Once an hour.</p>
+            <button type="button" class="btn btn--sm" id="data-export">Download my data</button>
+            <p class="msg" id="data-msg" role="status" aria-live="polite"></p>
+          </section>
+        </div>
+
+        <!-- ---- Security ---- -->
+        <div id="profile-panel-security" data-profile-panel="security" hidden>
+          <form class="card-box setgroup" id="password-form" novalidate>
+            <h2 class="setgroup__title">Password</h2>
+            <input type="text" autocomplete="username" id="password-username" hidden />
+            <div class="field"><label for="password-current">Current password</label><input id="password-current" type="password" autocomplete="current-password" /></div>
             <div class="field--row">
-              <div class="field"><label>Email</label><input id="profile-email" type="text" disabled /></div>
-              <div class="field"><label>Member since</label><input id="profile-since" type="text" disabled /></div>
+              <div class="field"><label for="password-new">New password</label><input id="password-new" type="password" autocomplete="new-password" minlength="8" aria-describedby="password-hint" /></div>
+              <div class="field"><label for="password-confirm">Repeat new password</label><input id="password-confirm" type="password" autocomplete="new-password" /></div>
             </div>
-            <button type="submit" class="btn btn--cta" id="profile-save">Save changes</button>
-            <p class="msg" id="profile-msg" hidden></p>
+            <p class="field__hint" id="password-hint">At least 8 characters, different from the current one.</p>
+            <button type="submit" class="btn btn--sm btn--cta" id="password-save">Change password</button>
+            <p class="msg" id="password-msg" role="status" aria-live="polite"></p>
           </form>
-        </div>
-        <div class="sec" id="game-accounts-sec">
-          <div class="sec__head"><h2>Game accounts</h2></div>
-          <p class="muted sec__lead">Link the names you use in each game. Opponents see them in the match room, and a tournament or friendly can require one.</p>
-          <div id="game-accounts"><p class="muted is-loading">Loading…</p></div>
-          <form id="game-account-form" class="card-box game-account-form" novalidate>
-            <div class="field--row">
-              <div class="field"><label for="game-account-network">Network</label><select id="game-account-network"></select></div>
-              <div class="field"><label for="game-account-handle">Your name there</label><input id="game-account-handle" type="text" maxlength="64" autocomplete="off" /></div>
-            </div>
-            <button type="submit" class="btn btn--cta btn--sm" id="game-account-save">Link account</button>
-            <p class="msg" id="game-account-msg" hidden></p>
+          <form class="card-box setgroup" id="email-form" novalidate>
+            <h2 class="setgroup__title">Email</h2>
+            <p class="muted">Currently <strong id="email-current">—</strong>. We send a confirmation link to the new address; the change applies once you open it.</p>
+            <div class="field"><label for="email-new">New email</label><input id="email-new" type="email" autocomplete="email" inputmode="email" spellcheck="false" /></div>
+            <button type="submit" class="btn btn--sm btn--cta" id="email-save">Change email</button>
+            <p class="msg" id="email-msg" role="status" aria-live="polite"></p>
           </form>
-        </div>
-        <div class="sec">
-          <div class="sec__head"><h2>Your record</h2><a class="sec__note" data-page="page-ranking" href="#page-ranking">See the ranking</a></div>
-          <div class="statline" id="profile-stats"><p class="muted is-loading">Loading…</p></div>
-        </div>
-        <div class="sec danger-zone">
-          <div class="sec__head"><h2>Close account</h2></div>
-          <p class="muted">Closing is permanent. Your handle is anonymized, API keys are revoked, you leave the ranking and you can no longer sign in. Transaction records are kept as required for audit. Finish or leave open games, friendlies and tournaments first.</p>
-          <button type="button" class="btn btn--sm btn--danger" id="account-close">Close my account</button>
-          <p class="msg" id="account-close-msg" role="status" hidden></p>
+          <section class="card-box setgroup" aria-labelledby="sessions-title">
+            <h2 class="setgroup__title" id="sessions-title">Sessions</h2>
+            <p class="muted">Signed in on a shared or lost device? Sign out everywhere except here.</p>
+            <button type="button" class="btn btn--sm" id="sessions-others">Sign out other devices</button>
+            <p class="msg" id="sessions-msg" role="status" aria-live="polite"></p>
+          </section>
+          <section class="sec danger-zone" aria-labelledby="close-title">
+            <div class="sec__head"><h2 id="close-title">Close account</h2></div>
+            <p class="muted">Closing is permanent. Your handle is anonymized, your photo, bio and linked game accounts are removed, API keys are revoked, you leave the ranking and you can no longer sign in. Transaction records are kept as required for audit. Finish or leave open games, friendlies and tournaments first.</p>
+            <button type="button" class="btn btn--sm btn--danger" id="account-close">Close my account</button>
+            <p class="msg" id="account-close-msg" role="status" aria-live="polite"></p>
+          </section>
         </div>
       </section>
 
-      <!-- ============================ ROOM ============================ -->
+      <!-- a player's public card: filled by player.js -->
+      <section class="page" id="page-player" hidden>
+        <div id="player-root" aria-live="polite"><p class="muted is-loading">Loading…</p></div>
+      </section>
+
       <section class="page" id="page-room" hidden>
         <div class="head">
           <div><p class="eyebrow">Match room</p><h1 id="room-title">Room.</h1></div>
@@ -426,6 +578,21 @@
     </main>
 
     <!-- bottom nav (mobile) -->
+    <dialog class="rib-dialog" id="confirm-dialog" aria-labelledby="confirm-title" aria-describedby="confirm-body">
+      <form method="dialog" id="confirm-form" novalidate>
+        <h2 id="confirm-title"></h2>
+        <p id="confirm-body"></p>
+        <div class="field" id="confirm-type-field" hidden>
+          <label for="confirm-type" id="confirm-type-label"></label>
+          <input id="confirm-type" type="text" autocomplete="off" spellcheck="false" />
+        </div>
+        <div class="rib-dialog__actions">
+          <button type="submit" class="btn btn--sm" value="cancel" id="confirm-cancel">Cancel</button>
+          <button type="submit" class="btn btn--sm btn--cta" value="ok" id="confirm-ok"></button>
+        </div>
+      </form>
+    </dialog>
+
     <nav class="capp__bnav only-mobile" aria-label="Main">
       <a href="#page-games" data-page="page-games" aria-current="page">
         <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="M8 12h4M10 10v4"/><circle cx="16" cy="11" r="1"/><circle cx="17.5" cy="13.5" r="1"/></svg><span>Play</span></a>

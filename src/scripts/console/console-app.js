@@ -15,7 +15,12 @@ import { initDeveloperPortal, loadDeveloperMetrics, loadKeys, loadProjects } fro
 import { initRanking, loadProfileRecord, loadRanking } from "./leaderboard.js";
 import { currentRouteArg, goToPage, initAmountChips, initNavigation, initialPage } from "./navigation.js";
 import { initOps, loadOps } from "./ops.js";
-import { initAccountClosure, initGameAccounts, initProfile, loadGameAccounts, loadProfile, prepareLink } from "./profile.js";
+import { initPlayer, loadPlayer } from "./player.js";
+import {
+  initAccountClosure, initGameAccounts, initProfile, loadGameAccounts, loadProfile, prepareLink, setGameAccountsListener, showProfileSection,
+} from "./profile.js";
+import { initSecurity, loadSecurity } from "./security.js";
+import { initSettings, loadSettings } from "./settings.js";
 import { initLiveWatch, urgentRoom } from "./live.js";
 import { initRoom, loadRoom, openRoom } from "./room.js";
 import { initTournaments, loadTournaments } from "./tournaments.js";
@@ -55,12 +60,15 @@ function loadGames() {
     });
 }
 
-// Tournament and friendly forms offer only the game accounts this player linked.
+// Tournament and friendly forms offer only the game accounts this player
+// linked. A failed read (null) keeps whatever the selects already offer.
+function fillAccountSelects(rows) {
+  if (!rows) return;
+  fillNetworkSelect($("tournament-network"), rows);
+  fillNetworkSelect($("challenge-network"), rows);
+}
 function loadGameAccountSelects() {
-  return loadGameAccounts().then(function (rows) {
-    fillNetworkSelect($("tournament-network"), rows);
-    fillNetworkSelect($("challenge-network"), rows);
-  });
+  return loadGameAccounts().then(fillAccountSelects);
 }
 
 const PAGE_LOADERS = {
@@ -71,9 +79,13 @@ const PAGE_LOADERS = {
   "page-wallet": function () { refreshWallet(); loadLedger(); if (currentRouteArg()) prepareTopUp(currentRouteArg()); },
   "page-ranking": loadRanking,
   "page-profile": function () {
+    const section = showProfileSection(currentRouteArg());
+    if (section === "settings") { loadSettings(); return; }
+    if (section === "security") { loadSecurity(); return; }
     loadProfile(); loadProfileRecord();
     loadGameAccountSelects().then(function () { if (currentRouteArg()) prepareLink(currentRouteArg()); });
   },
+  "page-player": function () { loadPlayer(currentRouteArg()); },
   "page-developer": function () { loadProjects(); loadKeys(); loadDeveloperMetrics(); refreshWallet(); },
 };
 
@@ -107,6 +119,10 @@ export function initConsole() {
     });
     initProfile();
     initGameAccounts();
+    setGameAccountsListener(fillAccountSelects);
+    initSettings();
+    initSecurity();
+    initPlayer();
     initRoom();
     initOps();
     initAccountClosure();

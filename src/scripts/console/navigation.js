@@ -7,13 +7,16 @@ let pageLoaders = {};
 let routeArg = null; // "#page-room/<id>" → "<id>": what a page should open
 
 // Pages that belong to a nav destination without being one themselves.
-const NAV_PARENT = { "page-room": "page-compete", "page-ops": "page-profile" };
+const NAV_PARENT = { "page-room": "page-compete", "page-ops": "page-profile", "page-player": "page-ranking" };
 
 /** Parse "#page-room/abc" into { id: "page-room", arg: "abc" }. */
 function parseHash(hash) {
   const raw = (hash || "").replace(/^#/, "");
   const cut = raw.indexOf("/");
-  return cut === -1 ? { id: raw, arg: null } : { id: raw.slice(0, cut), arg: decodeURIComponent(raw.slice(cut + 1)) || null };
+  if (cut === -1) return { id: raw, arg: null };
+  let arg = raw.slice(cut + 1);
+  try { arg = decodeURIComponent(arg); } catch (e) { /* a malformed escape: keep it raw */ }
+  return { id: raw.slice(0, cut), arg: arg || null };
 }
 
 /** The argument of the current route (e.g. the room id), if any. */
@@ -88,7 +91,7 @@ function syncSeg(group) {
     thumb.setAttribute("aria-hidden", "true");
     group.insertBefore(thumb, group.firstChild);
   }
-  const on = group.querySelector('button[aria-pressed="true"], button[aria-selected="true"]');
+  const on = group.querySelector('button[aria-pressed="true"], button[aria-selected="true"], a[aria-current="page"]');
   if (!on || !on.offsetWidth) return;
   group.style.setProperty("--seg-x", on.offsetLeft + "px");
   group.style.setProperty("--seg-w", on.offsetWidth + "px");
