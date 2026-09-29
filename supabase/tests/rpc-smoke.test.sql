@@ -166,6 +166,7 @@ begin
   perform pg_temp.expect(pg_temp.as_user(d, format('select public.rib_tournament_join(%L)', v_tournament)), 'ok', 'dave fills the cup');
   perform pg_temp.expect((select status from public.tournaments where id = v_tournament), 'active', 'a full cup starts');
   perform pg_temp.expect((select string_agg(round || ':' || status, ',' order by round, slot) from public.match_rooms where tournament_id = v_tournament), '1:ready_check,1:ready_check,2:waiting', 'the bracket has two semifinals and a final');
+  perform pg_temp.expect(pg_temp.scalar_as(b, 'select needs_me::text || '':'' || tournament_name from public.rib_my_rooms() limit 1'), 'true:Cup', 'my rooms flag a ready check that needs me');
   perform pg_temp.expect(pg_temp.as_user(e, format('select public.rib_tournament_join(%L)', v_tournament)), 'registration_closed', 'a started cup is closed');
 
   -- Semifinal X (bob's): bob claims a win he didn't get; his opponent disputes.
@@ -221,6 +222,9 @@ begin
   perform pg_temp.expect((select sum(amount_cents)::text from public.wallet_ledger where ref_id = v_tournament and kind = 'tournament_prize' and user_id = v_opp), '2520', 'the champion gets 70% of 90% of the pool');
   perform pg_temp.expect((select sum(amount_cents)::text from public.wallet_ledger where ref_id = v_tournament and kind = 'tournament_prize' and user_id = v_ya), '1080', 'the runner-up gets 30%');
   perform pg_temp.expect((select amount_cents::text from public.platform_revenue where tournament_id = v_tournament), '400', 'the platform keeps 10%');
+  perform pg_temp.expect(pg_temp.scalar_as(v_opp, format('select prize_cents::text || '':'' || eliminated::text from public.rib_my_tournaments() where id = %L', v_tournament)), '2520:false', 'my tournaments show what I won');
+  perform pg_temp.expect(pg_temp.scalar_as(b, format('select prize_cents::text || '':'' || eliminated::text || '':'' || my_round from public.rib_my_tournaments() where id = %L', v_tournament)), '0:true:1', 'my tournaments show where I went out');
+  perform pg_temp.expect(pg_temp.scalar_as(e, format('select name from public.rib_tournament_summary(%L)', v_tournament)), 'Cup', 'a tournament can be looked up for an invite link');
   perform pg_temp.expect((select count(*)::text from public.rib_tournament_bracket(v_tournament)), '3', 'the bracket is public');
   perform pg_temp.as_user(c, 'select public.rib_tournament_create(''Cup R'', ''Valorant'', 0, 4, ''riot'')');
   perform pg_temp.expect(pg_temp.as_user(c, 'select public.rib_game_account_remove(''riot'')'), 'game_account_in_use', 'a linked account in use cannot be removed');

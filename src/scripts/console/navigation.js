@@ -4,6 +4,20 @@
 import { byId, setVisible } from "../lib/dom.js";
 
 let pageLoaders = {};
+let routeArg = null; // "#page-room/<id>" → "<id>": what a page should open
+
+// Pages that belong to a nav destination without being one themselves.
+const NAV_PARENT = { "page-room": "page-compete", "page-ops": "page-profile" };
+
+/** Parse "#page-room/abc" into { id: "page-room", arg: "abc" }. */
+function parseHash(hash) {
+  const raw = (hash || "").replace(/^#/, "");
+  const cut = raw.indexOf("/");
+  return cut === -1 ? { id: raw, arg: null } : { id: raw.slice(0, cut), arg: decodeURIComponent(raw.slice(cut + 1)) || null };
+}
+
+/** The argument of the current route (e.g. the room id), if any. */
+export function currentRouteArg() { return routeArg; }
 
 export function closeAccountMenu() {
   const menu = byId("acct-menu");
@@ -24,16 +38,21 @@ function isPage(id) {
  */
 export function goToPage(id, options) {
   if (!isPage(id)) return;
-  if (!(options && options.fromHistory) && location.hash !== "#" + id) {
-    history.pushState({ page: id }, "", "#" + id);
+  const arg = options && options.arg ? String(options.arg) : null;
+  routeArg = arg;
+  const hash = "#" + id + (arg ? "/" + encodeURIComponent(arg) : "");
+  if (!(options && options.fromHistory) && location.hash !== hash) {
+    history.pushState({ page: id, arg: arg }, "", hash);
   }
   document.querySelectorAll(".capp .page").forEach(function (p) { p.hidden = p.id !== id; });
   // reflect the active destination on every nav surface (top tabs + bottom nav)
+  const navId = NAV_PARENT[id] || id;
   document.querySelectorAll(".capp__tabs a[data-page], .capp__bnav a[data-page]").forEach(function (a) {
-    if (a.getAttribute("data-page") === id) a.setAttribute("aria-current", "page");
+    if (a.getAttribute("data-page") === navId) a.setAttribute("aria-current", "page");
     else a.removeAttribute("aria-current");
   });
   closeAccountMenu();
+  syncIndicators();
   document.dispatchEvent(new CustomEvent("rib:page", { detail: id }));
   if (pageLoaders[id]) pageLoaders[id]();
   window.scrollTo(0, 0);
@@ -56,6 +75,56 @@ function wireSegment(buttonsSelector, attr, panels, currentAttr, onSwitch) {
   });
 }
 
+/* ---- sliding indicators ------------------------------------------------------
+ * Segmented controls get a thumb that slides to the pressed button; the top
+ * tabs an underline, the bottom nav a bar over the current item. Positions
+ * are measured, so they're re-synced when a page shows or the size changes.
+ * -------------------------------------------------------------------------- */
+function syncSeg(group) {
+  let thumb = group.querySelector(".seg__thumb");
+  if (!thumb) {
+    thumb = document.createElement("span");
+    thumb.className = "seg__thumb";
+    thumb.setAttribute("aria-hidden", "true");
+    group.insertBefore(thumb, group.firstChild);
+  }
+  const on = group.querySelector('button[aria-pressed="true"], button[aria-selected="true"]');
+  if (!on || !on.offsetWidth) return;
+  group.style.setProperty("--seg-x", on.offsetLeft + "px");
+  group.style.setProperty("--seg-w", on.offsetWidth + "px");
+  group.classList.add("has-thumb");
+  requestAnimationFrame(function () { group.classList.add("is-ready"); });
+}
+
+function syncTabs() {
+  const tabs = document.querySelector(".capp__tabs");
+  if (tabs) {
+    const on = tabs.querySelector('a[aria-current="page"]');
+    if (on && on.offsetWidth) {
+      tabs.style.setProperty("--tab-x", on.offsetLeft + "px");
+      tabs.style.setProperty("--tab-w", on.offsetWidth + "px");
+      tabs.classList.add("has-thumb");
+    } else {
+      tabs.style.setProperty("--tab-w", "0px");
+    }
+  }
+  const bnav = document.querySelector(".capp__bnav");
+  if (bnav) {
+    const links = Array.prototype.slice.call(bnav.querySelectorAll("a[data-page]"));
+    const idx = links.findIndex(function (a) { return a.getAttribute("aria-current") === "page"; });
+    bnav.style.setProperty("--bn-i", String(Math.max(0, idx)));
+    bnav.style.setProperty("--bn-o", idx === -1 ? "0" : "1");
+  }
+}
+
+/** Re-measure every sliding indicator (segments, tabs, bottom nav). */
+export function syncIndicators() {
+  requestAnimationFrame(function () {
+    document.querySelectorAll(".capp .seg").forEach(syncSeg);
+    syncTabs();
+  });
+}
+
 /** @param {Record<string, () => void>} loaders page id → loader */
 export function initNavigation(loaders) {
   pageLoaders = loaders || {};
@@ -64,9 +133,15 @@ export function initNavigation(loaders) {
     a.addEventListener("click", function (e) { e.preventDefault(); goToPage(a.getAttribute("data-page")); });
   });
 
+  // Any segment press (here or in page modules) moves its thumb.
+  document.addEventListener("click", function (e) { if (e.target.closest(".capp .seg")) syncIndicators(); });
+  window.addEventListener("resize", syncIndicators, { passive: true });
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(syncIndicators);
+
   window.addEventListener("popstate", function (e) {
-    const id = (e.state && e.state.page) || location.hash.slice(1) || "page-games";
-    goToPage(id, { fromHistory: true });
+    const parsed = parseHash(location.hash);
+    const id = (e.state && e.state.page) || parsed.id || "page-games";
+    goToPage(id, { fromHistory: true, arg: (e.state && e.state.arg) || parsed.arg });
   });
 
   const avatar = byId("acct-avatar");
@@ -94,8 +169,10 @@ export function initNavigation(loaders) {
 
 /** The page named by the URL hash on load, if it is a console page. */
 export function initialPage() {
-  const id = location.hash.slice(1);
-  return isPage(id) ? id : null;
+  const parsed = parseHash(location.hash);
+  if (!isPage(parsed.id)) return null;
+  routeArg = parsed.arg;
+  return parsed.id;
 }
 
 /** Wire every [data-chips] group: one selected chip at a time. */

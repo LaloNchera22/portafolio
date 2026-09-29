@@ -210,21 +210,36 @@ function ensureStack() {
   return stack;
 }
 
-export function toast(text, kind) {
+/**
+ * Show a toast. `action` ({ label, onClick }) adds a button and keeps the
+ * toast up longer, so the player can act on it (e.g. "Open room").
+ */
+export function toast(text, kind, action) {
   if (!text) return;
   var s = ensureStack();
   var t = document.createElement("div");
-  t.className = "rib-toast" + (kind === "ok" ? " rib-toast--ok" : kind === "info" ? " rib-toast--info" : " rib-toast--err");
+  t.className = "rib-toast" + (kind === "ok" ? " rib-toast--ok" : kind === "info" ? " rib-toast--info" : kind === "match" ? " rib-toast--match" : " rib-toast--err");
   t.setAttribute("role", "status");
-  t.textContent = text;
+  var body = document.createElement("span");
+  body.textContent = text;
+  t.appendChild(body);
+  var dismiss = function () {
+    t.classList.remove("is-in");
+    setTimeout(function () { if (t.parentNode) t.parentNode.removeChild(t); }, 260);
+  };
+  if (action && action.label) {
+    var b = document.createElement("button");
+    b.type = "button";
+    b.className = "rib-toast__act";
+    b.textContent = action.label;
+    b.addEventListener("click", function () { dismiss(); if (action.onClick) action.onClick(); });
+    t.appendChild(b);
+  }
   s.appendChild(t);
   // fade in
   requestAnimationFrame(function () { t.classList.add("is-in"); });
-  var life = kind === "ok" || kind === "info" ? 3200 : 4200;
-  setTimeout(function () {
-    t.classList.remove("is-in");
-    setTimeout(function () { if (t.parentNode) t.parentNode.removeChild(t); }, 260);
-  }, life);
+  var life = action ? 12000 : kind === "ok" || kind === "info" ? 3200 : 4200;
+  setTimeout(dismiss, life);
 }
 
 /** Surface an error (or notice) as a toast; falls back to alert() for errors. */

@@ -17,6 +17,7 @@ const tables = {
     stake_cents: 0, status: "active", room_id: "r9", matched_at: "2026-01-01T00:00:00Z", created_at: "2026-01-01T00:00:00Z",
   }],
   profiles: [{ id: "u2", username: "rival" }],
+  game_accounts: [{ network: "riot", handle: "Me#NA1" }],
 };
 const rpcData = {
   rib_open_challenges: [
@@ -129,9 +130,11 @@ describe("tournaments", () => {
   it("lists tournaments waiting for players with fill and prizes", () => {
     const list = $("tournament-list");
     expect(list.querySelectorAll(".tcard")).toHaveLength(2);
-    expect(list.textContent).toContain("3/4 players · 1 to start");
+    expect(list.textContent).toContain("3/4 players · 1 seat left");
+    expect(list.textContent).toContain("Riot ID required");
     expect(list.textContent).toContain("Champion 25.2 rcoin · runner-up 10.8 rcoin");
-    expect(list.querySelector('[role="progressbar"]').getAttribute("aria-valuenow")).toBe("3");
+    expect(list.querySelector(".seats").getAttribute("aria-label")).toBe("3 of 4 seats taken");
+    expect(list.querySelectorAll('[data-tid="t1"] .seat.is-taken')).toHaveLength(3);
     expect(list.querySelector('[data-leave="t2"]')).not.toBeNull();
   });
 
@@ -144,7 +147,7 @@ describe("tournaments", () => {
   it("previews the prize split before creating", async () => {
     expect($("tournament-prize").textContent).toContain("Platform (10%)");
     document.querySelector('[data-chips="tournament-size"] [data-amt="8"]').click();
-    await tick();
+    await new Promise((r) => setTimeout(r, 400)); // the numbers count to their new values
     expect($("tournament-prize").textContent).toContain("Pool80 rcoin");
   });
 
@@ -167,7 +170,7 @@ describe("tournaments", () => {
     $("tournament-mine").querySelector('[data-bracket="t3"]').click();
     await tick();
     const bracket = $("bracket-t3");
-    expect([...bracket.querySelectorAll("h4")].map((h) => h.textContent)).toEqual(["Semifinals", "Final"]);
+    expect([...bracket.querySelectorAll("h4")].map((h) => h.textContent)).toEqual(["Semifinals", "Final", "Champion"]);
     expect(bracket.querySelector(".is-win").textContent).toBe("@neo");
     expect(bracket.querySelector('[data-room="r1"]')).not.toBeNull();
   });

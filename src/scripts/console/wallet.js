@@ -12,8 +12,9 @@ import { byId as $, escapeHtml as esc, showMessage } from "../lib/dom.js";
 import {
   centsToRcoin, formatDate, formatRcoin, formatUsd, parseDollarsToCents, parseRcoinToCents, quotePurchase,
 } from "../lib/format.js";
-import { functionError } from "../lib/errors.js";
+import { functionError, toast } from "../lib/errors.js";
 import { errorText, session } from "./context.js";
+import { goToPage } from "./navigation.js";
 
 const MIN_PURCHASE_CENTS = 100;
 const MAX_PURCHASE_CENTS = 200000;
@@ -164,6 +165,24 @@ function withdraw(amountInput, msgNode, btn, onDone) {
     .finally(function () { btn.disabled = false; });
 }
 
+// Came from "Add rcoin to join": prefill what's missing, offer the way back.
+let returnTo = null;
+
+/** Prefill a top-up (route arg "buy/<missing cents>/<tournament id>"). */
+export function prepareTopUp(arg) {
+  const parts = String(arg || "").split("/");
+  if (parts[0] !== "buy") return;
+  const missing = parseInt(parts[1], 10) || 0;
+  // Gross up for the 5% purchase fee so the credit covers the entry fee.
+  const dollars = Math.max(1, Math.ceil(missing / 0.95 / 100));
+  $("buy-amount").value = String(dollars);
+  document.querySelectorAll('[data-chips="buy-amount"] button').forEach(function (x) { x.classList.remove("on"); });
+  updatePurchaseQuote();
+  returnTo = parts[2] || null;
+  showMessage($("wallet-msg"), "Add at least " + formatRcoin(missing) + " to join. We've filled in the amount.", true);
+  $("buy-amount").focus();
+}
+
 export function initWallet() {
   if (!$("buy-submit")) return;
   // Coming back from a hosted checkout via the back button restores this page
@@ -198,6 +217,11 @@ export function initWallet() {
         showMessage($("wallet-msg"), "Purchase complete.", true);
         refreshWallet();
         loadLedger();
+        if (returnTo) {
+          const id = returnTo;
+          returnTo = null;
+          toast("rcoin added. You can join now.", "ok", { label: "Back to the tournament", onClick: function () { goToPage("page-compete", { arg: "t/" + id }); } });
+        }
       })
       .catch(function () { showMessage($("wallet-msg"), "Network error.", false); })
       .finally(function () { btn.disabled = false; updatePurchaseQuote(); });
