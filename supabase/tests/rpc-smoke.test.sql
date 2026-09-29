@@ -271,6 +271,11 @@ begin
   perform pg_temp.expect(public.rib_forfeit_timeouts()::text, '1', 'forfeit job resolves the timed-out match');
   perform pg_temp.expect((select (winner_id = a)::text from public.game_matches where id = v_match), 'true', 'the player on move forfeits');
 
+  -- Client error reports (0020).
+  perform pg_temp.expect(pg_temp.as_user(a, 'select public.rib_log_client_error(''TypeError: x is undefined'', ''console.js:1'', ''/console.html'', null, null)'), 'ok', 'signed-in users can report errors');
+  perform pg_temp.expect((select count(*)::text from public.client_errors where user_id = a), '1', 'error report stored');
+  perform pg_temp.expect(pg_temp.as_user(a, 'select * from public.client_errors'), '42501', 'error reports are server-only');
+
   -- Ledger integrity: every balance equals the sum of its ledger rows.
   perform pg_temp.expect(
     (select count(*)::text from public.wallets w
