@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 // Regression tests for failures found by the plugin-agent audit: no fake zero
-// balance on errors, confirmed and correctly attributed challenge reports, no
+// balance on errors, no
 // silent 1-rcoin fallback for invalid table stakes, and returning to the games
 // page keeps a board in progress.
 import { readFileSync } from "node:fs";
@@ -63,27 +63,6 @@ describe("wallet balance", () => {
     expect($("wallet-chip").textContent).toBe("42 rcoin");
     expect(ctx.session.balanceCents).toBe(4200);
     walletResponse = { data: { test_balance_cents: 4200, test_locked_cents: 0 }, error: null };
-  });
-});
-
-describe("challenge reports", () => {
-  it("confirms and reports the opponent as winner on 'I lost'", async () => {
-    challengesMod.loadChallenges();
-    await tick();
-    window.confirm.mockClear();
-    $("challenge-mine").querySelector("[data-lost]").click();
-    await tick();
-    expect(window.confirm).toHaveBeenCalledOnce();
-    const report = calls.filter((c) => c[0] === "rib_challenge_report").pop();
-    expect(report[1]).toEqual({ p_challenge_id: "c1", p_winner_id: "u2" });
-  });
-
-  it("sends nothing when the report is not confirmed", async () => {
-    const before = calls.length;
-    window.confirm.mockReturnValueOnce(false);
-    $("challenge-mine").querySelector("[data-won]").click();
-    await tick();
-    expect(calls.length).toBe(before);
   });
 });
 

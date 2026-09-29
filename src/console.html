@@ -44,6 +44,7 @@
       </div>
       <a href="#page-profile" role="menuitem" data-page="page-profile">Profile <span class="chev">›</span></a>
       <a href="#page-developer" role="menuitem" id="switch-to-developer">Switch to developer <span class="chev">Dev ›</span></a>
+      <a href="#page-ops" role="menuitem" data-page="page-ops" id="acct-ops" hidden>Dispute queue <span class="chev">Ops ›</span></a>
       <button type="button" role="menuitem" class="acct-menu__out" data-auth-signout>Log out</button>
     </div>
 
@@ -66,100 +67,112 @@
       <!-- ========================== COMPETE ========================== -->
       <section class="page" id="page-compete" hidden>
         <div class="head">
-          <div><p class="eyebrow">Entry fee · Escrow · Winner takes all</p><h1>Compete.</h1></div>
-          <div class="head__r"><button type="button" class="btn btn--cta btn--sm" id="challenge-new">New challenge</button></div>
-        </div>
-        <div class="seg" id="compete-seg" role="group" aria-label="Compete">
-          <button type="button" data-seg="lobby" aria-pressed="true">Lobby</button>
-          <button type="button" data-seg="mine" aria-pressed="false">My challenges</button>
-          <button type="button" data-seg="tournaments" aria-pressed="false">Tournaments</button>
+          <div><p class="eyebrow">Sit &amp; go · 4 or 8 players</p><h1>Compete.</h1></div>
+          <div class="head__r">
+            <button type="button" class="btn btn--sm" id="challenge-new">New friendly</button>
+            <button type="button" class="btn btn--cta btn--sm" id="tournament-new">New tournament</button>
+          </div>
         </div>
 
-        <!-- new challenge -->
+        <!-- your matches that need you right now -->
+        <div class="live-rooms" id="live-rooms" hidden></div>
+
+        <div class="seg" id="compete-seg" role="group" aria-label="Compete">
+          <button type="button" data-seg="tournaments" aria-pressed="true">Tournaments</button>
+          <button type="button" data-seg="mine" aria-pressed="false">My tournaments</button>
+          <button type="button" data-seg="friendlies" aria-pressed="false">Friendlies</button>
+        </div>
+
+        <!-- new tournament -->
+        <form id="tournament-form" class="card-box tournament-form" hidden novalidate>
+          <h2 class="form-title">New tournament</h2>
+          <div class="field--row">
+            <div class="field"><label for="tournament-name">Name</label><input id="tournament-name" type="text" maxlength="80" placeholder="Friday Cup" autocomplete="off" /></div>
+            <div class="field"><label for="tournament-game">Game</label><input id="tournament-game" type="text" maxlength="40" placeholder="Valorant, CS2, Rocket League…" autocomplete="off" /></div>
+          </div>
+          <div class="field--row">
+            <div class="field">
+              <span class="field__label" id="tournament-size-label">Players</span>
+              <div class="chips" data-chips="tournament-size" role="group" aria-labelledby="tournament-size-label">
+                <button type="button" data-amt="4" class="on" aria-pressed="true">4</button>
+                <button type="button" data-amt="8" aria-pressed="false">8</button>
+              </div>
+            </div>
+            <div class="field">
+              <span class="field__label" id="tournament-fee-label">Entry fee (rcoin)</span>
+              <div class="chips" data-chips="tournament-fee" role="group" aria-labelledby="tournament-fee-label">
+                <button type="button" data-amt="0" aria-pressed="false">Free</button>
+                <button type="button" data-amt="100" aria-pressed="false">1</button>
+                <button type="button" data-amt="500" aria-pressed="false">5</button>
+                <button type="button" data-amt="1000" class="on" aria-pressed="true">10</button>
+                <button type="button" data-amt="2500" aria-pressed="false">25</button>
+              </div>
+            </div>
+          </div>
+          <div class="field">
+            <label for="tournament-network">Game account</label>
+            <select id="tournament-network" aria-describedby="tournament-network-help"><option value="">Not required</option></select>
+            <p class="field__hint" id="tournament-network-help">Require every player to have linked this account, so opponents know exactly who to invite in the game.</p>
+          </div>
+          <dl class="tprize" id="tournament-prize" aria-live="polite"></dl>
+          <p class="field__hint">You're the first entrant. It starts as soon as it fills; if it doesn't fill in 24 hours, every entry fee is refunded.</p>
+          <div class="head__r">
+            <button type="submit" class="btn btn--cta" id="tournament-save">Create and join</button>
+            <button type="button" class="btn" id="tournament-cancel">Cancel</button>
+          </div>
+        </form>
+
+        <!-- new friendly -->
         <form id="challenge-form" class="card-box challenge-form" hidden novalidate>
-          <h2 class="form-title">New challenge</h2>
+          <h2 class="form-title">New friendly</h2>
+          <p class="field__hint">Friendlies are free: no entry fee and no prize, just a room to play and a result on your record.</p>
           <div class="field--row">
             <div class="field"><label for="challenge-game">Game</label><input id="challenge-game" type="text" maxlength="40" placeholder="Valorant, CS2, FIFA…" autocomplete="off" /></div>
             <div class="field"><label for="challenge-mode">Format</label><input id="challenge-mode" type="text" maxlength="40" placeholder="1v1" value="1v1" /></div>
           </div>
-          <fieldset class="stake" id="challenge-stake">
-            <legend>Entry fee</legend>
-            <div class="stake__dial">
-              <button type="button" class="stake__step" data-step="-1" aria-label="Minus: lower the entry fee by 1 rcoin"><span aria-hidden="true">−</span></button>
-              <div class="stake__value">
-                <label for="challenge-stake-input" class="visually-hidden">Entry fee in rcoin</label>
-                <input id="challenge-stake-input" type="text" inputmode="numeric" pattern="[0-9]*" value="10" maxlength="4" autocomplete="off" aria-describedby="challenge-stake-help challenge-stake-error" />
-                <span class="stake__unit" aria-hidden="true">rcoin</span>
-              </div>
-              <button type="button" class="stake__step" data-step="1" aria-label="Plus: raise the entry fee by 1 rcoin"><span aria-hidden="true">+</span></button>
-            </div>
-            <div class="chips stake__presets" data-stake-presets></div>
-            <p class="stake__summary" id="challenge-stake-help"></p>
-            <p class="stake__error" id="challenge-stake-error" role="alert"></p>
-          </fieldset>
-          <div class="field"><label for="challenge-target">Opponent (optional)</label><input id="challenge-target" type="text" maxlength="24" placeholder="Leave empty to post it in the lobby" autocomplete="off" /></div>
+          <div class="field--row">
+            <div class="field"><label for="challenge-target">Opponent (optional)</label><input id="challenge-target" type="text" maxlength="24" placeholder="Leave empty to post it in the lobby" autocomplete="off" /></div>
+            <div class="field"><label for="challenge-network">Game account</label><select id="challenge-network"><option value="">Not required</option></select></div>
+          </div>
           <div class="head__r">
-            <button type="submit" class="btn btn--cta" id="challenge-save">Post challenge</button>
+            <button type="submit" class="btn btn--cta" id="challenge-save">Post friendly</button>
             <button type="button" class="btn" id="challenge-cancel">Cancel</button>
           </div>
         </form>
         <p class="msg" id="challenge-msg" role="status" hidden></p>
 
-        <!-- lobby: every open challenge you can accept -->
-        <div id="compete-lobby">
+        <!-- tournaments waiting for players -->
+        <div id="compete-tournaments">
+          <form class="lobby-filters" id="tournament-filters">
+            <input type="search" id="tournament-search" placeholder="Search a game" aria-label="Search a game" maxlength="40" autocomplete="off" />
+            <div class="chips" data-tsize role="group" aria-label="Players">
+              <button type="button" data-size="" class="on" aria-pressed="true">Any size</button>
+              <button type="button" data-size="4" aria-pressed="false">4 players</button>
+              <button type="button" data-size="8" aria-pressed="false">8 players</button>
+            </div>
+          </form>
+          <div class="sec"><div id="tournament-list" aria-busy="true"><p class="muted is-loading">Loading…</p></div></div>
+        </div>
+
+        <!-- my tournaments -->
+        <div id="compete-mine" hidden>
+          <div class="sec"><div id="tournament-mine"><p class="muted is-loading">Loading…</p></div></div>
+        </div>
+
+        <!-- friendlies -->
+        <div id="compete-friendlies" hidden>
           <form class="lobby-filters" id="lobby-filters">
             <input type="search" id="lobby-game" placeholder="Search a game" aria-label="Search a game" maxlength="40" autocomplete="off" />
-            <div class="chips" data-lobby-range role="group" aria-label="Entry fee">
-              <button type="button" data-range="any" class="on" aria-pressed="true">Any entry fee</button>
-              <button type="button" data-range="low" aria-pressed="false">Up to 5</button>
-              <button type="button" data-range="mid" aria-pressed="false">5 to 25</button>
-              <button type="button" data-range="high" aria-pressed="false">25 and up</button>
-            </div>
           </form>
           <div class="sec">
             <p class="visually-hidden" role="status" id="lobby-status"></p>
             <div id="challenge-open" aria-busy="true"><p class="muted is-loading">Loading…</p></div>
             <button type="button" class="btn btn--sm lobby-more" id="lobby-more" hidden>Show more</button>
           </div>
-        </div>
-
-        <!-- my challenges -->
-        <div id="compete-mine" hidden>
-          <div class="sec"><div id="challenge-mine"><p class="muted is-loading">Loading…</p></div></div>
-        </div>
-
-        <!-- tournaments -->
-        <div id="compete-tournaments" hidden>
-          <div class="head head--tight">
-            <p class="muted lead-inline">Bracket tournaments with a shared pool built from entry fees; the champion takes it all. Organizers can't enter their own paid events, and the prize is paid 24 hours after the result unless an entrant disputes it.</p>
-            <button type="button" class="btn btn--cta btn--sm" id="tournament-new">New tournament</button>
+          <div class="sec">
+            <div class="sec__head"><h2>My friendlies</h2></div>
+            <div id="challenge-mine"><p class="muted is-loading">Loading…</p></div>
           </div>
-          <form id="tournament-form" class="card-box" hidden>
-            <div class="field--row">
-              <div class="field"><label for="tournament-name">Name</label><input id="tournament-name" type="text" maxlength="80" placeholder="House Cup" /></div>
-              <div class="field"><label for="tournament-game">Game</label><input id="tournament-game" type="text" maxlength="40" placeholder="Valorant" /></div>
-            </div>
-            <div class="field--row">
-              <div class="field">
-                <label>Entry fee</label>
-                <div class="chips" data-chips="tournament-fee">
-                  <button type="button" data-amt="0">Free</button>
-                  <button type="button" data-amt="1000" class="on">10</button>
-                  <button type="button" data-amt="2500">25</button>
-                  <button type="button" data-amt="5000">50</button>
-                </div>
-              </div>
-              <div class="field"><label for="tournament-max">Slots</label>
-                <select id="tournament-max"><option>4</option><option>8</option><option>16</option><option>32</option></select>
-              </div>
-            </div>
-            <div class="head__r">
-              <button type="submit" class="btn btn--cta" id="tournament-save">Create</button>
-              <button type="button" class="btn" id="tournament-cancel">Cancel</button>
-            </div>
-            <p class="msg" id="tournament-msg" hidden></p>
-          </form>
-          <div class="sec"><div id="tournament-list"><p class="muted is-loading">Loading…</p></div></div>
         </div>
       </section>
 
@@ -264,16 +277,45 @@
             <p class="msg" id="profile-msg" hidden></p>
           </form>
         </div>
+        <div class="sec" id="game-accounts-sec">
+          <div class="sec__head"><h2>Game accounts</h2></div>
+          <p class="muted sec__lead">Link the names you use in each game. Opponents see them in the match room, and a tournament or friendly can require one.</p>
+          <div id="game-accounts"><p class="muted is-loading">Loading…</p></div>
+          <form id="game-account-form" class="card-box game-account-form" novalidate>
+            <div class="field--row">
+              <div class="field"><label for="game-account-network">Network</label><select id="game-account-network"></select></div>
+              <div class="field"><label for="game-account-handle">Your name there</label><input id="game-account-handle" type="text" maxlength="64" autocomplete="off" /></div>
+            </div>
+            <button type="submit" class="btn btn--cta btn--sm" id="game-account-save">Link account</button>
+            <p class="msg" id="game-account-msg" hidden></p>
+          </form>
+        </div>
         <div class="sec">
           <div class="sec__head"><h2>Your record</h2><a class="sec__note" data-page="page-ranking" href="#page-ranking">See the ranking</a></div>
           <div class="statline" id="profile-stats"><p class="muted is-loading">Loading…</p></div>
         </div>
         <div class="sec danger-zone">
           <div class="sec__head"><h2>Close account</h2></div>
-          <p class="muted">Closing is permanent. Your handle is anonymized, API keys are revoked, you leave the ranking and you can no longer sign in. Transaction records are kept as required for audit. Finish or cancel open games, challenges and tournaments first.</p>
+          <p class="muted">Closing is permanent. Your handle is anonymized, API keys are revoked, you leave the ranking and you can no longer sign in. Transaction records are kept as required for audit. Finish or leave open games, friendlies and tournaments first.</p>
           <button type="button" class="btn btn--sm btn--danger" id="account-close">Close my account</button>
           <p class="msg" id="account-close-msg" role="status" hidden></p>
         </div>
+      </section>
+
+      <!-- ============================ ROOM ============================ -->
+      <section class="page" id="page-room" hidden>
+        <div class="head">
+          <div><p class="eyebrow">Match room</p><h1 id="room-title">Room.</h1></div>
+          <div class="head__r"><button type="button" class="btn btn--sm" id="room-back">‹ Compete</button></div>
+        </div>
+        <div id="room-root"><p class="muted is-loading">Loading…</p></div>
+      </section>
+
+      <!-- ============================= OPS ============================= -->
+      <section class="page" id="page-ops" hidden>
+        <div class="head"><div><p class="eyebrow">Runinback team</p><h1>Dispute queue.</h1></div></div>
+        <p class="muted sec__lead">Review both players' reports, the room chat and the evidence, then award the prize or refund both. A rejected dispute's deposit goes to the other player.</p>
+        <div id="ops-root"><p class="muted is-loading">Loading…</p></div>
       </section>
 
       <!-- ============================= DEV ============================= -->

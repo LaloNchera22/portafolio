@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
   <title>How it works — Runinback</title>
-  <meta name="description" content="See how Runinback pairs players, holds entry fees in escrow, verifies the winner and pays the prize automatically." />
+  <meta name="description" content="See how Runinback tournaments work: sit &amp; go brackets of 4 or 8, entry fees in escrow, verified results and instant payouts." />
   <meta name="author" content="Runinback" />
   <meta name="robots" content="index, follow" />
   <meta name="theme-color" content="#0e100f" />
@@ -39,10 +39,10 @@
     "name": "How a Runinback match works",
     "image": "https://runinback.com/og-image.png",
     "step": [
-      { "@type": "HowToStep", "name": "Matchmaking", "text": "Players pick a game, agree the rules and pay the same entry fee." },
-      { "@type": "HowToStep", "name": "Escrow", "text": "Both entry fees are held in escrow when the match starts." },
-      { "@type": "HowToStep", "name": "Verification", "text": "Built-in games are validated move by move on the server; challenges settle when both players report the same result." },
-      { "@type": "HowToStep", "name": "Settlement", "text": "The winner receives both entry fees; a draw or a voided match refunds them." }
+      { "@type": "HowToStep", "name": "Matchmaking", "text": "Players join a sit & go tournament of 4 or 8 for the same entry fee; it starts when full." },
+      { "@type": "HowToStep", "name": "Escrow", "text": "Entry fees are held in escrow until the final is decided." },
+      { "@type": "HowToStep", "name": "Verification", "text": "Both players report each match; disputes are reviewed with in-app captures." },
+      { "@type": "HowToStep", "name": "Settlement", "text": "When the final is confirmed, 90% of the pool is paid: 70% to the champion, 30% to the runner-up." }
     ]
   }
   </script>
@@ -82,8 +82,8 @@
       <div class="backdrop" aria-hidden="true"></div>
       <div class="shell">
         <p class="eyebrow" data-reveal>How it works</p>
-        <h1 class="h-lg page-head__title" data-reveal>From challenge to payout, step by step.</h1>
-        <p class="lead" data-reveal>Every paid match on Runinback follows the same four steps. Here is exactly what happens to your entry fee, and how the winner is decided.</p>
+        <h1 class="h-lg page-head__title" data-reveal>From entry fee to payout, step by step.</h1>
+        <p class="lead" data-reveal>Every Runinback tournament follows the same four steps. Here is exactly what happens to your entry fee, how each match is decided and how the prize is paid.</p>
       </div>
     </section>
 
@@ -94,29 +94,29 @@
           <div class="step" id="matchmaking" data-reveal>
             <div class="step__num">01</div>
             <div>
-              <h2 class="step__title"><span style="color:var(--accent-match)">Matchmaking</span> — pick how you compete</h2>
-              <p class="step__text">Open a paid table in one of the six built-in games, post a 1v1 challenge for any game you play elsewhere (to the open lobby or straight to a rival), or join a tournament. The game, the rules and the entry fee are shown before you commit, and both players pay the same amount.</p>
+              <h2 class="step__title"><span style="color:var(--accent-match)">Matchmaking</span> — join a tournament</h2>
+              <p class="step__text">Pick a sit &amp; go of 4 or 8 players for your game, free or from 1 to 500 rcoin. It starts the moment it fills, the bracket is drawn at random, and each match opens a room with a private-lobby name and password for your game. Friendlies use the same rooms, for free.</p>
             </div>
           </div>
           <div class="step" id="escrow" data-reveal>
             <div class="step__num">02</div>
             <div>
               <h2 class="step__title"><span style="color:var(--accent-escrow)">Escrow</span> — hold the entry fees</h2>
-              <p class="step__text">When the match is on, both entry fees move from your available balance into escrow, shown as “In play” in your wallet. Neither player can take them back mid-match. A table nobody has joined yet can still be cancelled for a full refund.</p>
+              <p class="step__text">Your entry fee goes into the prize pool when you join. Until the tournament fills you can leave and get it back, and if it doesn't fill within 24 hours every entry fee is refunded. Once it starts, the pool stays in escrow until the final is decided.</p>
             </div>
           </div>
           <div class="step" id="verification" data-reveal>
             <div class="step__num">03</div>
             <div>
-              <h2 class="step__title"><span>Verification</span> — decide the winner fairly</h2>
-              <p class="step__text">In built-in games, the server checks every move against the rules and ends the game itself; each move has a 10-minute clock, so nobody can stall. Challenges settle when both players report the same result. Tournament results get a 24-hour review window in which any entrant can dispute them.</p>
+              <h2 class="step__title"><span>Verification</span> — decide every match fairly</h2>
+              <p class="step__text">Both players get 15 minutes to join the lobby and press Ready; a player who doesn't loses by walkover. After the match, both report the result: a matching report settles it at once, and if the opponent doesn't respond within 15 minutes, the report stands. A dispute holds a deposit of 10% of the entry fee and goes to the Runinback team with the room chat and captures taken in the app.</p>
             </div>
           </div>
           <div class="step" id="settlement" data-reveal>
             <div class="step__num">04</div>
             <div>
-              <h2 class="step__title"><span style="color:var(--accent-settle)">Settlement</span> — pay the winner</h2>
-              <p class="step__text">The winner receives both entry fees, with no cut taken from the prize. A draw refunds each player, and a challenge left without a matching result can be voided for a full refund after two hours.</p>
+              <h2 class="step__title"><span style="color:var(--accent-settle)">Settlement</span> — pay the winners</h2>
+              <p class="step__text">Winners advance on their own. When the final is confirmed, Runinback keeps 10% of the pool and pays the rest at once: 70% to the champion and 30% to the runner-up. If a tournament ends with no winner, every entry fee is refunded.</p>
             </div>
           </div>
         </div>
@@ -133,15 +133,15 @@
         <div class="grid grid--3">
           <div class="card" data-reveal>
             <h3 class="card__title">Skill, not luck</h3>
-            <p class="card__text">Paid tables are limited to games with no dice and no hidden cards, so the better player wins. Your moves are validated by the server, not by your opponent's browser.</p>
+            <p class="card__text">You win by beating your opponent in the game itself, match by match. There are no odds and no house side: Runinback never plays against you.</p>
           </div>
           <div class="card" data-reveal>
-            <h3 class="card__title">No cut on prizes</h3>
-            <p class="card__text">The only fee is 5% when you buy rcoin. Entry fees, prizes and withdrawals are free, so the winner takes the whole prize.</p>
+            <h3 class="card__title">One clear fee</h3>
+            <p class="card__text">Runinback keeps 10% of each paid tournament's pool, and 90% goes to the players. Buying rcoin has a 5% fee; withdrawals are free.</p>
           </div>
           <div class="card" data-reveal>
-            <h3 class="card__title">A record you can check</h3>
-            <p class="card__text">Every entry fee, prize and refund appears in your wallet activity. The ranking counts only server-verified games, so it can't be padded with reported results.</p>
+            <h3 class="card__title">Honesty pays, lying costs</h3>
+            <p class="card__text">A false dispute loses its deposit to the other player and counts on the record everyone sees. New accounts are capped at 25 rcoin until they finish 3 matches.</p>
           </div>
         </div>
       </div>
@@ -161,19 +161,19 @@
           </div>
           <div class="faq__item" data-faq>
             <button class="faq__q">What stops someone from faking a win? <span class="faq__icon" aria-hidden="true"></span></button>
-            <div class="faq__a"><p>In built-in games, nobody reports anything: the server applies every move and declares the result. A challenge only pays out when both players report the same winner, otherwise the entry fees stay in escrow. Tournament results can be disputed by any entrant during the 24-hour review window.</p></div>
+            <div class="faq__a"><p>A match only settles when both players agree, or when one reports and the other stays silent for 15 minutes. If you disagree, you open a dispute: the Runinback team reviews the room chat and the captures, which are taken inside the app and stamped with the match code and a one-time token. A false claim loses its deposit to the other player and counts against the player's record.</p></div>
           </div>
           <div class="faq__item" data-faq>
-            <button class="faq__q">How do I get rcoin, and what does it cost? <span class="faq__icon" aria-hidden="true"></span></button>
-            <div class="faq__a"><p>1 rcoin equals $1. You buy it in the console, and a 5% fee is charged once on the purchase (for example, $100 buys 95 rcoin). There is no fee on entry fees, prizes or withdrawals.</p></div>
+            <button class="faq__q">How much does it cost? <span class="faq__icon" aria-hidden="true"></span></button>
+            <div class="faq__a"><p>1 rcoin equals $1, and buying rcoin has a 5% fee (for example, $100 buys 95 rcoin). Each paid tournament keeps 10% of its pool as the platform fee; the other 90% is the prize, split 70/30 between the champion and the runner-up. Friendlies and withdrawals are free.</p></div>
           </div>
           <div class="faq__item" data-faq>
-            <button class="faq__q">What happens if my opponent stops playing? <span class="faq__icon" aria-hidden="true"></span></button>
-            <div class="faq__a"><p>In a built-in game, each move has a 10-minute clock. When it runs out you can claim the win, and otherwise the match is awarded to you automatically. A challenge with no matching result can be voided after two hours, refunding both players.</p></div>
+            <button class="faq__q">What happens if my opponent doesn't show up? <span class="faq__icon" aria-hidden="true"></span></button>
+            <div class="faq__a"><p>Each match room has a 15-minute ready check. If you're ready and your opponent isn't, you advance by walkover. If neither player is ready, both are out of that match.</p></div>
           </div>
           <div class="faq__item" data-faq>
             <button class="faq__q">Can I practice first? <span class="faq__icon" aria-hidden="true"></span></button>
-            <div class="faq__a"><p>Yes. All 27 games can be played free against the house bot, as many times as you like, before you open a paid table.</p></div>
+            <div class="faq__a"><p>Yes. All 27 built-in games can be played free against the house bot, and friendlies against other players are always free.</p></div>
           </div>
         </div>
       </div>
@@ -183,8 +183,8 @@
     <section class="section">
       <div class="shell cta-band" data-reveal>
         <p class="eyebrow">Get started</p>
-        <h2 class="display">Play your first match.</h2>
-        <p class="lead muted mx-auto">Create a free account, warm up against the bot, then open a paid table with test rcoin.</p>
+        <h2 class="display">Play your first tournament.</h2>
+        <p class="lead muted mx-auto">Create a free account, warm up with a friendly, then join a sit &amp; go with test rcoin.</p>
         <div class="cta-band__actions">
           <a href="signup.html" class="btn btn--cta">Create your account <span class="arrow">→</span></a>
           <a href="login.html" class="btn btn--ghost">Log in</a>

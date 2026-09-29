@@ -53,16 +53,22 @@ test.describe("console", () => {
     await expect(page.getByRole("button", { name: /^Square 1, ✕/ })).toHaveClass(/is-changed/);
   });
 
-  test("posts a challenge with a custom stake from the lobby page", async ({ page, api }) => {
-    await page.goto("/console.html");
-    await page.locator('.capp__tabs a[data-page="page-compete"], .capp__bnav a[data-page="page-compete"]').locator("visible=true").first().click();
-    await expect(page.locator(".row--lobby")).toContainText("Valorant");
+  test("creates a 4-player tournament and posts a free friendly", async ({ page, api }) => {
+    await page.goto("/console.html#page-compete");
+    await expect(page.locator(".tcard")).toContainText("Friday Cup");
+    await expect(page.locator(".tcard")).toContainText("3/4 players");
+    await page.click("#tournament-new");
+    await page.fill("#tournament-name", "Night Cup");
+    await page.fill("#tournament-game", "CS2");
+    await expect(page.locator("#tournament-prize")).toContainText("Platform (10%)");
+    await page.click("#tournament-save");
+    await expect.poll(() => api.calls.find((c) => c.path === "/rest/v1/rpc/rib_tournament_create")?.body)
+      .toMatchObject({ p_name: "Night Cup", p_game: "CS2", p_entry_fee_cents: 1000, p_size: 4 });
     await page.click("#challenge-new");
     await page.fill("#challenge-game", "Chess");
-    await page.fill("#challenge-stake-input", "15");
-    await expect(page.locator("#challenge-stake-help")).toContainText("Winner takes 30 rcoin");
     await page.click("#challenge-save");
-    await expect.poll(() => api.calls.find((c) => c.path === "/rest/v1/rpc/rib_challenge_create")?.body?.p_stake_cents).toBe(1500);
+    await expect.poll(() => api.calls.find((c) => c.path === "/rest/v1/rpc/rib_challenge_create")?.body)
+      .toEqual({ p_game: "Chess", p_mode: "1v1", p_target_username: null, p_network: null });
   });
 
   test("shows the ranking with my standing", async ({ page }) => {
