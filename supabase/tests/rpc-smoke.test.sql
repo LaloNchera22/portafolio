@@ -222,6 +222,10 @@ begin
   perform pg_temp.expect((select sum(amount_cents)::text from public.wallet_ledger where ref_id = v_tournament and kind = 'tournament_prize' and user_id = v_ya), '1080', 'the runner-up gets 30%');
   perform pg_temp.expect((select amount_cents::text from public.platform_revenue where tournament_id = v_tournament), '400', 'the platform keeps 10%');
   perform pg_temp.expect((select count(*)::text from public.rib_tournament_bracket(v_tournament)), '3', 'the bracket is public');
+  perform pg_temp.as_user(c, 'select public.rib_tournament_create(''Cup R'', ''Valorant'', 0, 4, ''riot'')');
+  perform pg_temp.expect(pg_temp.as_user(c, 'select public.rib_game_account_remove(''riot'')'), 'game_account_in_use', 'a linked account in use cannot be removed');
+  perform pg_temp.as_user(c, format('select public.rib_tournament_leave(%L)', (select id from public.tournaments where name = 'Cup R')));
+  perform pg_temp.expect(pg_temp.as_user(c, 'select public.rib_game_account_remove(''riot'')'), 'ok', 'an unused account can be removed');
 
   -- A sit & go that never fills is refunded after 24 hours.
   perform pg_temp.as_user(d, 'select public.rib_tournament_create(''Cup 2'', ''chess'', 500, 8, null)');

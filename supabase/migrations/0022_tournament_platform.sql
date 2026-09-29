@@ -69,6 +69,25 @@ begin
 end;
 $$;
 
+-- The account can't be removed while a live event or room depends on it.
+create or replace function public.rib_game_account_remove(p_network text)
+returns void
+language plpgsql security definer set search_path = ''
+as $$
+declare v_uid uuid := auth.uid();
+begin
+  if v_uid is null then raise exception 'not signed in' using hint = 'not_authenticated'; end if;
+  if exists (select 1 from public.tournaments t join public.tournament_entries e on e.tournament_id = t.id
+              where e.user_id = v_uid and t.network = p_network and t.status in ('open','active'))
+     or exists (select 1 from public.challenges c
+              where c.network = p_network and c.status in ('open','pending','active')
+                and (c.creator_id = v_uid or c.opponent_id = v_uid)) then
+    raise exception 'this account is used by a live tournament or friendly' using hint = 'game_account_in_use';
+  end if;
+  delete from public.game_accounts where user_id = v_uid and network = p_network;
+end;
+$$;
+
 -- ----------------------------------------------------------------------------
 -- 2) Reputation and paid-entry limits
 -- ----------------------------------------------------------------------------
@@ -965,6 +984,29 @@ begin
 end;
 $$;
 
+-- The friendlies lobby also says which game account a friendly requires.
+drop function if exists public.rib_open_challenges(text,bigint,bigint,timestamptz,int,uuid);
+create or replace function public.rib_open_challenges(
+  p_game text default null, p_min_cents bigint default null, p_max_cents bigint default null,
+  p_before timestamptz default null, p_limit int default 30, p_before_id uuid default null
+) returns table (id uuid, game text, mode text, stake_cents bigint, created_at timestamptz,
+                 creator_id uuid, creator_username text, network text)
+language sql stable security definer set search_path = ''
+as $$
+  select c.id, c.game, c.mode, c.stake_cents, c.created_at, c.creator_id, p.username, c.network
+    from public.challenges c
+    join public.profiles p on p.id = c.creator_id
+   where c.status = 'open'
+     and c.creator_id <> auth.uid()
+     and (p_game is null or p_game = ''
+          or c.game ilike '%' || replace(replace(replace(left(p_game, 40), '\', '\\'), '%', '\%'), '_', '\_') || '%')
+     and (p_min_cents is null or c.stake_cents >= p_min_cents)
+     and (p_max_cents is null or c.stake_cents <= p_max_cents)
+     and (p_before is null or (c.created_at, c.id) < (p_before, coalesce(p_before_id, 'ffffffff-ffff-ffff-ffff-ffffffffffff'::uuid)))
+   order by c.created_at desc, c.id desc
+   limit least(greatest(coalesce(p_limit, 30), 1), 60);
+$$;
+
 create or replace function public.rib_challenge_accept(p_challenge_id uuid)
 returns public.challenges
 language plpgsql security definer set search_path = ''
@@ -1279,13 +1321,14 @@ do $$
 declare f text;
 begin
   foreach f in array array[
-    'rib_network_valid(text)', 'rib_game_account_set(text,text)', 'rib_is_operator()', 'rib_can_see_room(uuid)',
+    'rib_network_valid(text)', 'rib_game_account_set(text,text)', 'rib_game_account_remove(text)', 'rib_is_operator()', 'rib_can_see_room(uuid)',
     'rib_player_reputation(uuid)', 'rib_tournament_rounds(int)', 'rib_platform_fee_percent()', 'rib_tournament_min_entrants()',
     'rib_room_ready(uuid)', 'rib_room_report(uuid,uuid)', 'rib_room_dispute(uuid,text)', 'rib_room_message(uuid,text)',
     'rib_room_evidence_token(uuid)', 'rib_room_evidence_add(uuid,text,text,text,text)', 'rib_room_info(uuid)', 'rib_my_rooms()',
     'rib_tournament_create(text,text,bigint,int,text)', 'rib_tournament_join(uuid)', 'rib_tournament_leave(uuid)',
     'rib_open_tournaments(text,int,int)', 'rib_my_tournaments(int)', 'rib_tournament_bracket(uuid)',
     'rib_challenge_create(text,text,text,text)', 'rib_challenge_accept(uuid)', 'rib_challenge_cancel(uuid)',
+    'rib_open_challenges(text,bigint,bigint,timestamptz,int,uuid)',
     'rib_ops_room_disputes()', 'rib_room_resolve(uuid,text,uuid,text)'
   ] loop
     execute format('revoke execute on function public.%s from public, anon', f);
