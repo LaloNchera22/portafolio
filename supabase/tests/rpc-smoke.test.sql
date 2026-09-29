@@ -276,6 +276,22 @@ begin
   perform pg_temp.expect((select count(*)::text from public.client_errors where user_id = a), '1', 'error report stored');
   perform pg_temp.expect(pg_temp.as_user(a, 'select * from public.client_errors'), '42501', 'error reports are server-only');
 
+  -- Developer API keys, projects, account closure, ops (0021).
+  insert into public.projects (id, owner_id, name, environment) values ('f0000000-0000-0000-0000-000000000001', e, 'Game', 'test');
+  insert into public.api_keys (owner_id, project_id, name, environment, key_prefix, key_hash)
+  values (e, 'f0000000-0000-0000-0000-000000000001', 'k', 'test', 'rib_test_abcd', 'hash-1');
+  perform pg_temp.expect((select project_name from public.rib_api_verify_key('hash-1')), 'Game', 'a live key resolves to its project');
+  perform pg_temp.expect((select (last_used_at is not null)::text from public.api_keys where key_hash = 'hash-1'), 'true', 'key use is recorded');
+  perform pg_temp.expect(pg_temp.as_user(e, 'select * from public.rib_api_verify_key(''hash-1'')'), '42501', 'key verification is server-only');
+  perform pg_temp.expect(pg_temp.as_user(e, $q$delete from public.projects where id = 'f0000000-0000-0000-0000-000000000001'$q$), 'ok', 'owner deletes the project');
+  perform pg_temp.expect((select (revoked_at is not null)::text from public.api_keys where key_hash = 'hash-1'), 'true', 'deleting a project revokes its keys');
+  perform pg_temp.expect((select count(*)::text from public.rib_api_verify_key('hash-1')), '0', 'revoked keys no longer authenticate');
+  perform pg_temp.expect(pg_temp.as_user(a, 'select public.rib_close_account()'), 'close_account_blocked', 'cannot close with an open challenge');
+  perform pg_temp.expect(pg_temp.as_user(e, 'select public.rib_close_account()'), 'ok', 'an idle account closes');
+  perform pg_temp.expect((select (username like 'closed_%' and closed_at is not null)::text from public.profiles where id = e), 'true', 'closed profile is anonymized');
+  perform pg_temp.expect((select (count(*) > 0)::text from public.wallet_ledger where user_id = e), 'true', 'financial history is kept');
+  perform pg_temp.expect((public.rib_ops_health() ? 'disputed_tournaments')::text, 'true', 'ops health reports counters');
+
   -- Ledger integrity: every balance equals the sum of its ledger rows.
   perform pg_temp.expect(
     (select count(*)::text from public.wallets w

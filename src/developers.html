@@ -78,58 +78,50 @@
       <div class="shell">
         <div class="section-head" data-reveal>
           <p class="eyebrow">Quickstart</p>
-          <h2 class="h1">From zero to a wagered match in three steps.</h2>
+          <h2 class="h1">From zero to your first API call in three steps.</h2>
         </div>
 
         <div class="stack-24">
           <div class="grid grid--2" style="align-items:center; gap:clamp(24px,5vw,64px);">
             <div data-reveal>
-              <div class="step__num">01 · Install</div>
-              <h3 class="h3 mt-16">Add the SDK</h3>
-              <p class="lead muted mt-16">One package for the client and server. TypeScript types included.</p>
+              <div class="step__num">01 · Key</div>
+              <h3 class="h3 mt-16">Issue a test key</h3>
+              <p class="lead muted mt-16">Create an account, open the console, go to <strong>Dev › API keys</strong> and issue a test key. You'll see it in full once; store it as a server secret, never in a browser or app bundle.</p>
+            </div>
+            <div class="terminal" data-reveal>
+              <div class="terminal__bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="terminal__file">.env</span></div>
+              <pre><code>RIB_KEY=<span class="tok-str">rib_test_…</span>
+RIB_API=<span class="tok-str">https://&lt;project&gt;.supabase.co/functions/v1/api</span></code></pre>
+            </div>
+          </div>
+
+          <div class="grid grid--2" style="align-items:center; gap:clamp(24px,5vw,64px);">
+            <div data-reveal>
+              <div class="step__num">02 · Call</div>
+              <h3 class="h3 mt-16">Check your key</h3>
+              <p class="lead muted mt-16">Every request sends the key as a bearer token. <code>/v1/status</code> returns the project and environment the key belongs to.</p>
             </div>
             <div class="terminal" data-reveal>
               <div class="terminal__bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="terminal__file">terminal</span></div>
-              <pre><code><span class="tok-com"># npm</span>
-npm install <span class="tok-str">@runinback/sdk</span>
+              <pre><code>curl <span class="tok-str">"$RIB_API/v1/status"</span> \
+  -H <span class="tok-str">"Authorization: Bearer $RIB_KEY"</span>
 
-<span class="tok-com"># or pnpm</span>
-pnpm add <span class="tok-str">@runinback/sdk</span></code></pre>
+<span class="tok-com"># {"ok":true,"environment":"test","project":{"name":"My game"},"mode":"test"}</span></code></pre>
             </div>
           </div>
 
           <div class="grid grid--2" style="align-items:center; gap:clamp(24px,5vw,64px);">
             <div data-reveal>
-              <div class="step__num">02 · Configure</div>
-              <h3 class="h3 mt-16">Initialize the client</h3>
-              <p class="lead muted mt-16">Authenticate with your sandbox key. Point at <code style="font-family:var(--font-mono);color:var(--color-light-green)">sandbox</code> until you're ready for production.</p>
+              <div class="step__num">03 · Build</div>
+              <h3 class="h3 mt-16">Read games and rankings</h3>
+              <p class="lead muted mt-16"><code>GET /v1/games</code> lists the games that can be played for stakes. <code>GET /v1/leaderboard?period=week|all&amp;limit=20</code> returns the verified ranking. Limit: 120 requests per minute per key. Match creation and settlement endpoints, and a typed SDK, are coming next.</p>
             </div>
             <div class="terminal" data-reveal>
-              <div class="terminal__bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="terminal__file">client.ts</span></div>
-              <pre><code><span class="tok-kw">import</span> { Runinback } <span class="tok-kw">from</span> <span class="tok-str">'@runinback/sdk'</span>;
-
-<span class="tok-kw">const</span> rib = <span class="tok-kw">new</span> <span class="tok-fn">Runinback</span>({
-  apiKey: process.env.RIB_KEY,
-  network: <span class="tok-str">'sandbox'</span>
-});</code></pre>
-            </div>
-          </div>
-
-          <div class="grid grid--2" style="align-items:center; gap:clamp(24px,5vw,64px);">
-            <div data-reveal>
-              <div class="step__num">03 · Ship</div>
-              <h3 class="h3 mt-16">Create, start, settle</h3>
-              <p class="lead muted mt-16">Three calls cover the whole lifecycle. The oracle pays the winner automatically.</p>
-            </div>
-            <div class="terminal" data-reveal>
-              <div class="terminal__bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="terminal__file">match.ts</span></div>
-              <pre><code><span class="tok-kw">const</span> match = <span class="tok-kw">await</span> rib.<span class="tok-fn">createMatch</span>({
-  players: [p1, p2],
-  wager: { amount: <span class="tok-num">1</span>, currency: <span class="tok-str">'USDC'</span> }
+              <div class="terminal__bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="terminal__file">server.js</span></div>
+              <pre><code><span class="tok-kw">const</span> res = <span class="tok-kw">await</span> <span class="tok-fn">fetch</span>(<span class="tok-str">`${process.env.RIB_API}/v1/leaderboard?period=week`</span>, {
+  headers: { Authorization: <span class="tok-str">`Bearer ${process.env.RIB_KEY}`</span> }
 });
-
-<span class="tok-kw">await</span> match.<span class="tok-fn">start</span>();
-<span class="tok-kw">await</span> match.<span class="tok-fn">settle</span>({ winner: p1 });</code></pre>
+<span class="tok-kw">const</span> { data } = <span class="tok-kw">await</span> res.<span class="tok-fn">json</span>();</code></pre>
             </div>
           </div>
         </div>

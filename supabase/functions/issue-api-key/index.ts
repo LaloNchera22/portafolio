@@ -9,6 +9,7 @@
 // ============================================================================
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.117.2";
 import { corsHeaders, json } from "../_shared/cors.ts";
+import { sha256Hex } from "../_shared/crypto.ts";
 import { withinRateLimit } from "../_shared/rate-limit.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
@@ -24,10 +25,6 @@ function randomKey(env: string): string {
   return `rib_${env}_${body}`;
 }
 
-async function sha256Hex(input: string): Promise<string> {
-  const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(input));
-  return Array.from(new Uint8Array(digest), (b) => b.toString(16).padStart(2, "0")).join("");
-}
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
@@ -56,6 +53,11 @@ Deno.serve(async (req) => {
   try { payload = await req.json(); } catch { /* empty body is fine */ }
 
   const environment = payload.environment === "live" ? "live" : "test";
+  // Live keys only once the platform leaves test mode (platform_settings.live_mode).
+  if (environment === "live") {
+    const { data: live } = await limiter.rpc("rib_live_mode");
+    if (live !== true) return json({ error: "live_keys_unavailable" }, 409);
+  }
   const name = (payload.name ?? "default").toString().slice(0, 60);
   const projectId = typeof payload.project_id === "string" ? payload.project_id : null;
 

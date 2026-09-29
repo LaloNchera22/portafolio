@@ -2,6 +2,7 @@
  * Runinback — console profile (profiles table, RLS owner-only).
  * ========================================================================== */
 import { byId as $, showMessage } from "../lib/dom.js";
+import { functionError } from "../lib/errors.js";
 import { formatDate } from "../lib/format.js";
 import { errorText, rememberUsername, session } from "./context.js";
 
@@ -52,5 +53,29 @@ export function initProfile() {
       })
       .catch(function () { showMessage($("profile-msg"), "Network error. Try again.", false); })
       .finally(function () { btn.disabled = false; });
+  });
+}
+
+// Permanent closure: anonymize, revoke keys, leave the ranking, disable login.
+export function initAccountClosure() {
+  const btn = $("account-close");
+  if (!btn) return;
+  btn.addEventListener("click", function () {
+    const handle = ($("profile-username").value || "").trim();
+    const typed = window.prompt("This can't be undone. Type your username (" + handle + ") to close your account.");
+    if (typed === null) return;
+    if (typed.trim() !== handle) { showMessage($("account-close-msg"), "The username didn't match. Nothing was changed.", false); return; }
+    btn.disabled = true;
+    session.client.functions.invoke("close-account", { body: {} })
+      .then(function (r) {
+        if (r.error) {
+          btn.disabled = false;
+          return functionError(r.error).then(function (err) {
+            showMessage($("account-close-msg"), errorText(err, "Couldn't close the account. Try again later."), false);
+          });
+        }
+        return session.client.auth.signOut().finally(function () { window.location.replace("index.html"); });
+      })
+      .catch(function () { btn.disabled = false; showMessage($("account-close-msg"), "Network error. Try again.", false); });
   });
 }

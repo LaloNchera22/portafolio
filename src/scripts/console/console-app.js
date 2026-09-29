@@ -14,7 +14,7 @@ import { initContext, session } from "./context.js";
 import { initDeveloperPortal, loadDeveloperMetrics, loadKeys, loadProjects } from "./developer.js";
 import { initRanking, loadProfileRecord, loadRanking } from "./leaderboard.js";
 import { goToPage, initAmountChips, initNavigation } from "./navigation.js";
-import { initProfile, loadProfile } from "./profile.js";
+import { initAccountClosure, initProfile, loadProfile } from "./profile.js";
 import { initTournaments, loadTournaments } from "./tournaments.js";
 import { handleCheckoutReturn, initWallet, loadLedger, refreshWallet, updatePurchaseQuote } from "./wallet.js";
 
@@ -75,6 +75,7 @@ export function initConsole() {
       updatePurchaseQuote();
     });
     initProfile();
+    initAccountClosure();
     initDeveloperPortal();
     initChallenges();
     initTournaments();
