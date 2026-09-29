@@ -80,7 +80,7 @@ test.describe("console", () => {
 
   test("developer portal offers test keys only while in test mode", async ({ page }) => {
     await page.goto("/console.html");
-    await page.evaluate(() => document.querySelector('a[data-page="page-developer"]').click());
+    await page.evaluate(() => document.querySelector("#switch-to-developer").click());
     await page.click('#dev-nav a[data-dev="keys"]');
     await page.click("#key-new");
     await expect(page.locator('#key-env option[value="live"]')).toBeDisabled();

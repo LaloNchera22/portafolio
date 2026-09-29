@@ -5,7 +5,7 @@
  * shows rcoin. All arithmetic stays in integer cents.
  * ========================================================================== */
 
-/** Entry commission charged once when buying rcoin (5%). Mirrors the backend. */
+/** Purchase fee charged once when buying rcoin (5%). Mirrors the backend. */
 export const PURCHASE_FEE_PERCENT = 5;
 
 export function formatUsd(cents) {

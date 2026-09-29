@@ -280,25 +280,24 @@ function renderLobby() {
   }
   drawGrid();
 
-  // your own staked tables: resume a live match, or cancel a table nobody joined
+  // Tables in play come first: resume or cancel my own, then join someone
+  // waiting. Both are free friendlies and render nothing when empty.
   var mineWrap = el("div", "games-open");
   mineWrap.id = "games-mine";
-  host.appendChild(mineWrap);
+  host.insertBefore(mineWrap, bar);
   loadMyTables();
 
-  // open online tables to join (staked, if backend live) — plain list, no decoration
   var openWrap = el("div", "games-open");
   openWrap.id = "games-open";
-  host.appendChild(openWrap);
+  host.insertBefore(openWrap, bar);
   loadOpenTables();
 }
 
 /* ---- a game screen (mode chooser) ---------------------------------------
  * A pop-up over the lobby: the game's identity up top (icon, name, the
  * side you play, a quiet "How to play"), then the two ways to play ranked
- * by hairline — free practice first, then a staked table with a live pot
- * preview. Picking a mode dismisses the pop-up and drops you into the
- * game's own sub-page (the board). Depth comes from geometry, not shadows.
+ * by hairline — free practice first, then a free online table. Picking a
+ * mode dismisses the pop-up and drops you into the game's own sub-page (the board). Depth comes from geometry, not shadows.
  * ------------------------------------------------------------------------ */
 function openGame(gameId) {
   lastOpenedGame = gameId;
@@ -496,7 +495,7 @@ function loadMyTables() {
       if (r.error) { box.innerHTML = '<p class="muted">Couldn\'t load your tables. Reopen this page to try again.</p>'; return; }
       var rows = (r.data || []).filter(function (m) { return MODULES[m.game]; });
       if (!rows.length) { box.innerHTML = ""; return; }
-      box.innerHTML = '<div class="sec__head"><h2>Your tables</h2><span class="sec__note">paid, in progress</span></div>';
+      box.innerHTML = '<div class="sec__head"><h2>Your tables</h2><span class="sec__note">free friendlies in progress</span></div>';
       var panel = el("div", "panel");
       rows.forEach(function (m) {
         var mod = MODULES[m.game];

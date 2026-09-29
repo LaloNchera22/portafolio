@@ -2,9 +2,10 @@
  * Runinback — console profile (profiles table, RLS owner-only).
  * ========================================================================== */
 import { byId as $, escapeHtml as esc, showMessage } from "../lib/dom.js";
-import { functionError } from "../lib/errors.js";
+import { functionError, toast } from "../lib/errors.js";
 import { formatDate } from "../lib/format.js";
 import { errorText, rememberUsername, session } from "./context.js";
+import { goToPage } from "./navigation.js";
 import { NETWORKS, networkLabel } from "./networks.js";
 
 export const USERNAME_PATTERN = /^[a-zA-Z0-9_]{3,24}$/;
@@ -117,6 +118,23 @@ export function loadGameAccounts() {
     });
 }
 
+// Came from "Link X to join": after linking, offer the way back.
+let returnTo = null;
+
+/** Preselect a network to link (route arg "link/<network>/<tournament id>"). */
+export function prepareLink(arg) {
+  const parts = String(arg || "").split("/");
+  if (parts[0] !== "link" || !parts[1]) return;
+  const select = $("game-account-network");
+  if (!select) return;
+  select.value = parts[1];
+  select.dispatchEvent(new Event("change"));
+  returnTo = parts[2] || null;
+  const sec = $("game-accounts-sec");
+  if (sec && sec.scrollIntoView) sec.scrollIntoView({ block: "start" });
+  $("game-account-handle").focus({ preventScroll: true });
+}
+
 export function initGameAccounts() {
   const form = $("game-account-form");
   if (!form) return;
@@ -140,6 +158,12 @@ export function initGameAccounts() {
         $("game-account-handle").value = "";
         showMessage($("game-account-msg"), networkLabel(select.value) + " linked.", true);
         loadGameAccounts();
+        if (returnTo) {
+          const id = returnTo;
+          returnTo = null;
+          toast(networkLabel(select.value) + " linked. You can join now.", "ok",
+            { label: "Back to the tournament", onClick: function () { goToPage("page-compete", { arg: "t/" + id }); } });
+        }
       })
       .catch(function () { showMessage($("game-account-msg"), "Network error. Try again.", false); })
       .finally(function () { btn.disabled = false; });

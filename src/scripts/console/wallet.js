@@ -12,8 +12,9 @@ import { byId as $, escapeHtml as esc, showMessage } from "../lib/dom.js";
 import {
   centsToRcoin, formatDate, formatRcoin, formatUsd, parseDollarsToCents, parseRcoinToCents, quotePurchase,
 } from "../lib/format.js";
-import { functionError } from "../lib/errors.js";
+import { functionError, toast } from "../lib/errors.js";
 import { errorText, session } from "./context.js";
+import { goToPage } from "./navigation.js";
 
 const MIN_PURCHASE_CENTS = 100;
 const MAX_PURCHASE_CENTS = 200000;
@@ -31,6 +32,30 @@ let payMethod = config.stripeEnabled ? "card" : (config.cryptoEnabled ? "crypto"
 function setText(id, text) {
   const node = $(id);
   if (node) node.textContent = text;
+}
+
+// What's committed but not spendable: entry fees in tournaments I'm still
+// playing (they sit in the prize pool) and deposits held on disputes.
+let inTournamentsCents = 0;
+function renderCommitted() {
+  const el = $("wallet-locked");
+  if (!el) return;
+  const parts = [];
+  if (inTournamentsCents > 0) parts.push("In tournaments: " + formatRcoin(inTournamentsCents));
+  if (session.lockedCents > 0) parts.push("Held: " + formatRcoin(session.lockedCents));
+  el.textContent = parts.join(" · ");
+  el.hidden = parts.length === 0;
+}
+
+function loadCommitted() {
+  return session.client.rpc("rib_my_tournaments", { p_limit: 60 }).then(function (r) {
+    const rows = Array.isArray(r && r.data) ? r.data : [];
+    inTournamentsCents = rows.reduce(function (sum, t) {
+      const playing = t.status === "open" || (t.status === "active" && !t.eliminated);
+      return sum + (playing ? Number(t.entry_fee_cents) || 0 : 0);
+    }, 0);
+    renderCommitted();
+  }).catch(function () { /* the line just stays as it was */ });
 }
 
 export function refreshWallet() {
@@ -58,13 +83,15 @@ export function refreshWallet() {
         setText("dev-balance", formatRcoin(cents));
       });
       if (previous != null && previous !== w.test_balance_cents) replayClass($("wallet-chip"), "is-bumped");
-      setText("wallet-locked", "In play: " + formatRcoin(w.test_locked_cents));
+      session.lockedCents = w.test_locked_cents || 0;
+      renderCommitted();
       return w;
     })
     .catch(function () { return null; });
 }
 
 export function loadLedger() {
+  loadCommitted();
   session.client.from("wallet_ledger")
     .select("kind, amount_cents, balance_after_cents, memo, created_at")
     .order("created_at", { ascending: false })
@@ -73,7 +100,12 @@ export function loadLedger() {
       const box = $("wallet-ledger");
       const rows = r.data || [];
       if (r.error) { box.innerHTML = '<p class="muted">Couldn\'t load your activity.</p>'; return; }
-      if (!rows.length) { box.innerHTML = '<div class="empty"><h3>No activity yet</h3><p>Buy some rcoin to get started.</p></div>'; return; }
+      if (!rows.length) {
+        box.innerHTML = session.balanceCents > 0
+          ? '<div class="empty"><h3>No activity yet</h3><p>You have ' + esc(formatRcoin(session.balanceCents)) + '. Enter a tournament to put it to work.</p><p><button type="button" class="btn btn--cta btn--sm" data-go-compete>Find a tournament</button></p></div>'
+          : '<div class="empty"><h3>No activity yet</h3><p>Buy rcoin above to enter your first tournament.</p></div>';
+        return;
+      }
       box.innerHTML = '<div class="panel">' + rows.map(function (m) {
         const positive = m.amount_cents >= 0;
         return '<div class="row row--led"><div><div class="row__name">' + esc(m.memo || m.kind) +
@@ -164,6 +196,24 @@ function withdraw(amountInput, msgNode, btn, onDone) {
     .finally(function () { btn.disabled = false; });
 }
 
+// Came from "Add rcoin to join": prefill what's missing, offer the way back.
+let returnTo = null;
+
+/** Prefill a top-up (route arg "buy/<missing cents>/<tournament id>"). */
+export function prepareTopUp(arg) {
+  const parts = String(arg || "").split("/");
+  if (parts[0] !== "buy") return;
+  const missing = parseInt(parts[1], 10) || 0;
+  // Gross up for the 5% purchase fee so the credit covers the entry fee.
+  const dollars = Math.max(1, Math.ceil(missing / 0.95 / 100));
+  $("buy-amount").value = String(dollars);
+  document.querySelectorAll('[data-chips="buy-amount"] button').forEach(function (x) { x.classList.remove("on"); });
+  updatePurchaseQuote();
+  returnTo = parts[2] || null;
+  showMessage($("wallet-msg"), "Add at least " + formatRcoin(missing) + " to join. We've filled in the amount.", true);
+  $("buy-amount").focus();
+}
+
 export function initWallet() {
   if (!$("buy-submit")) return;
   // Coming back from a hosted checkout via the back button restores this page
@@ -198,13 +248,18 @@ export function initWallet() {
         showMessage($("wallet-msg"), "Purchase complete.", true);
         refreshWallet();
         loadLedger();
+        if (returnTo) {
+          const id = returnTo;
+          returnTo = null;
+          toast("rcoin added. You can join now.", "ok", { label: "Back to the tournament", onClick: function () { goToPage("page-compete", { arg: "t/" + id }); } });
+        }
       })
       .catch(function () { showMessage($("wallet-msg"), "Network error.", false); })
       .finally(function () { btn.disabled = false; updatePurchaseQuote(); });
   });
 
   $("withdraw-submit").addEventListener("click", function () {
-    withdraw($("withdraw-amount"), $("wallet-msg"), $("withdraw-submit"), function () {
+    withdraw($("withdraw-amount"), $("withdraw-msg"), $("withdraw-submit"), function () {
       updateWithdrawQuote();
       refreshWallet();
       loadLedger();

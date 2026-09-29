@@ -25,7 +25,7 @@
         </a>
         <nav class="capp__tabs only-desktop" aria-label="Main">
           <a href="#page-games" data-page="page-games" aria-current="page">Play</a>
-          <a href="#page-compete" data-page="page-compete">Compete</a>
+          <a href="#page-compete" data-page="page-compete">Compete<span class="nav-badge" data-live-badge hidden></span></a>
           <a href="#page-ranking" data-page="page-ranking">Ranking</a>
           <a href="#page-wallet" data-page="page-wallet">Wallet</a>
         </nav>
@@ -49,6 +49,8 @@
     </div>
 
     <main class="capp__wrap">
+      <!-- your matches, on every page: filled by live.js -->
+      <div class="live-rooms" id="live-rooms" hidden aria-live="polite"></div>
       <!-- ============================ PLAY ============================ -->
       <section class="page" id="page-games">
         <div class="head">
@@ -60,6 +62,14 @@
         <p class="games-lead">Every game, two ways: <strong>practice free</strong> against the house bot, or
           <strong>play online</strong> against another player, also free. Playing for a prize happens in
           <a href="#page-compete" data-page="page-compete">tournaments</a>.</p>
+        <aside class="onboard" id="onboard" hidden aria-label="How tournaments work">
+          <ol>
+            <li><strong>Link your game account</strong><span>Riot ID, Epic, Steam or console, in Profile.</span></li>
+            <li><strong>Join a 4 or 8 player tournament</strong><span>It starts the moment the last seat fills.</span></li>
+            <li><strong>Win your matches</strong><span>The champion takes 70% of the prize pool, the runner-up 30%.</span></li>
+          </ol>
+          <button type="button" class="onboard__x" id="onboard-dismiss" aria-label="Hide these steps">×</button>
+        </aside>
         <div id="games-root"><p class="muted is-loading">Loading games…</p></div>
       </section>
 
@@ -73,8 +83,6 @@
           </div>
         </div>
 
-        <!-- your matches that need you right now -->
-        <div class="live-rooms" id="live-rooms" hidden></div>
 
         <div class="seg" id="compete-seg" role="group" aria-label="Compete">
           <button type="button" data-seg="tournaments" aria-pressed="true">Tournaments</button>
@@ -142,6 +150,7 @@
 
         <!-- tournaments waiting for players -->
         <div id="compete-tournaments">
+          <div class="tournament-invite" id="tournament-invite" hidden></div>
           <form class="lobby-filters" id="tournament-filters">
             <input type="search" id="tournament-search" placeholder="Search a game" aria-label="Search a game" maxlength="40" autocomplete="off" />
             <div class="chips" data-tsize role="group" aria-label="Players">
@@ -199,7 +208,7 @@
           <div class="hero-bal__main">
             <span class="lbl">Available balance</span>
             <span class="num" id="wallet-balance">0 rcoin</span>
-            <span class="sub" id="wallet-locked">In play: 0 rcoin</span>
+            <span class="sub" id="wallet-locked" hidden></span>
           </div>
           <div class="hero-bal__stats">
             <div><span class="n" id="wallet-usd">$0.00</span><span class="k">value at withdrawal</span></div>
@@ -218,7 +227,7 @@
             </div>
             <div class="buy-brk">
               <div class="row"><span>You pay</span><span id="buy-pay">$100.00</span></div>
-              <div class="row"><span>Entry commission (5%)</span><span id="buy-fee">$5.00</span></div>
+              <div class="row"><span>Purchase fee (5%)</span><span id="buy-fee">$5.00</span></div>
               <div class="row tot"><span>You receive</span><span id="buy-receive">95 rcoin</span></div>
             </div>
             <div class="paymethod" id="pay-method" hidden>
@@ -240,10 +249,11 @@
               <select id="withdraw-destination"><option>USDT (Base network)</option><option>USD (bank transfer)</option></select>
             </div>
             <div class="buy-brk">
-              <div class="row"><span>Exit commission</span><span style="color:var(--c-good)">$0.00</span></div>
+              <div class="row"><span>Withdrawal fee</span><span style="color:var(--c-good)">$0.00</span></div>
               <div class="row tot"><span>You receive</span><span id="withdraw-receive">$0.00</span></div>
             </div>
             <button type="button" class="btn btn--wide" id="withdraw-submit">Withdraw</button>
+            <p class="msg" id="withdraw-msg" hidden></p>
             <p class="hint">No fee on the way out. 1 rcoin = $1.</p>
           </div>
         </div>
@@ -313,7 +323,7 @@
       <!-- ============================= OPS ============================= -->
       <section class="page" id="page-ops" hidden>
         <div class="head"><div><p class="eyebrow">Runinback team</p><h1>Dispute queue.</h1></div></div>
-        <p class="muted sec__lead">Review both players' reports, the room chat and the evidence, then award the prize or refund both. A rejected dispute's deposit goes to the other player.</p>
+        <p class="muted sec__lead">Oldest first. Read both reports, the room chat and the captures, then award the match to one player (the bracket advances) or void it (both are out). A rejected dispute's deposit goes to the other player.</p>
         <div id="ops-root"><p class="muted is-loading">Loading…</p></div>
       </section>
 
@@ -420,13 +430,13 @@
       <a href="#page-games" data-page="page-games" aria-current="page">
         <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="M8 12h4M10 10v4"/><circle cx="16" cy="11" r="1"/><circle cx="17.5" cy="13.5" r="1"/></svg><span>Play</span></a>
       <a href="#page-compete" data-page="page-compete">
-        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 21h8M12 17v4M6 4h12v5a6 6 0 0 1-12 0zM6 6H3v2a3 3 0 0 0 3 3M18 6h3v2a3 3 0 0 1-3 3"/></svg><span>Compete</span></a>
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 21h8M12 17v4M6 4h12v5a6 6 0 0 1-12 0zM6 6H3v2a3 3 0 0 0 3 3M18 6h3v2a3 3 0 0 1-3 3"/></svg><span>Compete</span><span class="nav-badge" data-live-badge hidden></span></a>
       <a href="#page-ranking" data-page="page-ranking">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20V11h4v9M10 20V5h4v15M16 20v-6h4v6"/></svg><span>Ranking</span></a>
       <a href="#page-wallet" data-page="page-wallet">
         <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="6" width="18" height="13" rx="2.5"/><path d="M3 10h18"/><circle cx="16.5" cy="14" r="1.2"/></svg><span>Wallet</span></a>
-      <a href="#page-developer" data-page="page-developer">
-        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 8l-4 4 4 4M15 8l4 4-4 4"/></svg><span>Dev</span></a>
+      <a href="#page-profile" data-page="page-profile">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg><span>Profile</span></a>
     </nav>
   </div>
 

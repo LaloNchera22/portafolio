@@ -13,12 +13,28 @@ import { fillNetworkSelect, initChallenges, loadChallenges } from "./challenges.
 import { initContext, session } from "./context.js";
 import { initDeveloperPortal, loadDeveloperMetrics, loadKeys, loadProjects } from "./developer.js";
 import { initRanking, loadProfileRecord, loadRanking } from "./leaderboard.js";
-import { goToPage, initAmountChips, initNavigation, initialPage } from "./navigation.js";
+import { currentRouteArg, goToPage, initAmountChips, initNavigation, initialPage } from "./navigation.js";
 import { initOps, loadOps } from "./ops.js";
-import { initAccountClosure, initGameAccounts, initProfile, loadGameAccounts, loadProfile } from "./profile.js";
-import { initRoom, loadRoom } from "./room.js";
+import { initAccountClosure, initGameAccounts, initProfile, loadGameAccounts, loadProfile, prepareLink } from "./profile.js";
+import { initLiveWatch, urgentRoom } from "./live.js";
+import { initRoom, loadRoom, openRoom } from "./room.js";
 import { initTournaments, loadTournaments } from "./tournaments.js";
-import { handleCheckoutReturn, initWallet, loadLedger, refreshWallet, updatePurchaseQuote } from "./wallet.js";
+import { handleCheckoutReturn, initWallet, loadLedger, prepareTopUp, refreshWallet, updatePurchaseQuote } from "./wallet.js";
+
+// Three steps from "just signed up" to "playing for a prize", on the Play
+// page until the player hides them. Remembered per browser only.
+const ONBOARD_KEY = "rib:onboard-hidden";
+function initOnboarding() {
+  const box = $("onboard");
+  if (!box) return;
+  let hidden = false;
+  try { hidden = window.localStorage.getItem(ONBOARD_KEY) === "1"; } catch (e) { /* storage blocked */ }
+  setVisible(box, !hidden);
+  $("onboard-dismiss").addEventListener("click", function () {
+    setVisible(box, false);
+    try { window.localStorage.setItem(ONBOARD_KEY, "1"); } catch (e) { /* storage blocked */ }
+  });
+}
 
 function redirectToLanding() {
   window.location.replace("index.html");
@@ -52,9 +68,12 @@ const PAGE_LOADERS = {
   "page-compete": function () { loadTournaments(); loadChallenges(); loadGameAccountSelects(); },
   "page-room": loadRoom,
   "page-ops": loadOps,
-  "page-wallet": function () { refreshWallet(); loadLedger(); },
+  "page-wallet": function () { refreshWallet(); loadLedger(); if (currentRouteArg()) prepareTopUp(currentRouteArg()); },
   "page-ranking": loadRanking,
-  "page-profile": function () { loadProfile(); loadProfileRecord(); loadGameAccountSelects(); },
+  "page-profile": function () {
+    loadProfile(); loadProfileRecord();
+    loadGameAccountSelects().then(function () { if (currentRouteArg()) prepareLink(currentRouteArg()); });
+  },
   "page-developer": function () { loadProjects(); loadKeys(); loadDeveloperMetrics(); refreshWallet(); },
 };
 
@@ -96,14 +115,22 @@ export function initConsole() {
     initTournaments();
     initRanking();
     initWallet();
+    initOnboarding();
 
     refreshWallet();
     loadProfile();
     // Honor a deep link (#page-wallet) and give the first page a history state.
     const start = initialPage() || "page-games";
-    try { window.history.replaceState({ page: start }, "", window.location.href); } catch (e) { /* ignore */ }
+    try { window.history.replaceState({ page: start, arg: currentRouteArg() }, "", window.location.href); } catch (e) { /* ignore */ }
     if (start === "page-games") loadGames();
-    else goToPage(start, { fromHistory: true });
+    else goToPage(start, { fromHistory: true, arg: currentRouteArg() });
+    // Live matches on every page; a returning player with a match that needs
+    // them right now lands in that room instead of the games list.
+    const deepLinked = !!initialPage();
+    initLiveWatch().then(function () {
+      const urgent = urgentRoom();
+      if (urgent && !deepLinked) openRoom(urgent.id);
+    });
     handleCheckoutReturn(goToPage);
   }).catch(function (e) {
     // A bug during boot must not look like "signed out" without a trace.
