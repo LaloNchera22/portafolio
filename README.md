@@ -1,9 +1,12 @@
 # Runinback
 
-A skill-based competition platform for video games: casual multiplayer
-games, 1v1 challenges and tournaments where players pay a fixed entry fee in
-**rcoin** (1 rcoin = 1 USD; 5% fee on the way in, none on the way out) and
-the best player wins the prize, held in escrow until the result is verified.
+A skill-based tournament platform for video games. Paid competition happens
+in sit & go tournaments of 4 or 8 players with a fixed entry fee in **rcoin**
+(1 rcoin = 1 USD; 5% fee when buying rcoin, none on withdrawals). The pool is
+held in escrow; when the final is confirmed Runinback keeps 10% and pays 70%
+of the rest to the champion and 30% to the runner-up. Every match is played
+through a room (lobby details, ready check, chat, reports, disputes with
+in-app captures). 1v1 friendlies and the 27 built-in games' practice are free.
 
 > **Vocabulary.** Runinback is competition, not betting. User-facing copy says
 > *entry fee*, *prize* and *paid match/table*, never wager, bet, stake or pot.
