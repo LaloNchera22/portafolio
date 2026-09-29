@@ -34,6 +34,7 @@ export function goToPage(id, options) {
     else a.removeAttribute("aria-current");
   });
   closeAccountMenu();
+  document.dispatchEvent(new CustomEvent("rib:page", { detail: id }));
   if (pageLoaders[id]) pageLoaders[id]();
   window.scrollTo(0, 0);
 }
@@ -85,7 +86,7 @@ export function initNavigation(loaders) {
   if (toPlayer) toPlayer.addEventListener("click", function () { goToPage("page-games"); });
 
   wireSegment("#compete-seg button[data-seg]", "data-seg",
-    { lobby: "compete-lobby", mine: "compete-mine", tournaments: "compete-tournaments" }, "aria-pressed",
+    { tournaments: "compete-tournaments", mine: "compete-mine", friendlies: "compete-friendlies" }, "aria-pressed",
     function () { const msg = byId("challenge-msg"); if (msg) msg.hidden = true; });
   wireSegment("#dev-nav a[data-dev]", "data-dev",
     { projects: "dev-projects", keys: "dev-keys", payouts: "dev-payouts" }, "aria-current");

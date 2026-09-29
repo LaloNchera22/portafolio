@@ -412,3 +412,126 @@ html.gmodal-open { overflow: hidden; }
 @media (prefers-reduced-motion: no-preference) {
   .is-loading { animation: c-pulse 1.4s ease-in-out infinite; }
 }
+
+/* ==========================================================================
+   Tournaments, match rooms and the dispute queue (migration 0022)
+   Taxonomy: blue = matchmaking (lobby, bracket), orange = escrow (entry fees,
+   deposits), pink = settlement (prizes, wins). Depth from panels and
+   hairlines only.
+   ========================================================================== */
+.capp .field__hint { font-size: 13px; color: var(--c-dim); line-height: 1.5; margin: 6px 0 0; }
+.capp .field__label { display: block; font-size: 13px; color: var(--c-dim); margin-bottom: 7px; }
+.capp .sec__lead { max-width: 66ch; line-height: 1.55; margin: 0 0 16px; }
+.capp .tag--good { color: var(--c-good); border-color: rgba(53,208,127,.4); }
+
+/* "Your match is ready" banners */
+.capp .live-rooms { display: grid; gap: 8px; margin: 0 0 22px; }
+.capp .live-room { display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 14px 16px; border-radius: 12px; background: var(--c-panel); border: 1px solid rgba(0,186,226,.45); }
+.capp .live-room__dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--c-match); margin-right: 10px; vertical-align: middle; }
+@media (prefers-reduced-motion: no-preference) {
+  .capp .live-room__dot { animation: c-pulse 1.6s ease-in-out infinite; }
+}
+
+/* tournament lobby */
+.capp .tgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px; }
+.capp .tcard__name { margin: 0; }
+.capp .tcard__pool .v { color: var(--c-escrow); }
+.capp .tcard__fill { height: 4px; border-radius: 4px; background: var(--c-hairline); overflow: hidden; }
+.capp .tcard__fill > span { display: block; height: 100%; background: var(--c-match); transition: width .4s var(--m-ease, ease-out); }
+.capp .tcard__mid { flex-wrap: wrap; gap: 6px 14px; }
+.capp .tcard__mid span:last-child { color: var(--c-settle); }
+
+/* prize preview on the create form */
+.capp .tprize { display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 1px; margin: 4px 0 12px; background: var(--c-hairline); border: 1px solid var(--c-hairline); border-radius: 10px; overflow: hidden; }
+.capp .tprize > div { background: var(--c-canvas); padding: 10px 12px; }
+.capp .tprize dt { font-size: 12px; color: var(--c-dim); }
+.capp .tprize dd { margin: 2px 0 0; font-size: 17px; font-weight: 600; }
+.capp .tprize > div:nth-child(2) dd, .capp .tprize > div:nth-child(3) dd { color: var(--c-settle); }
+
+/* bracket */
+.capp .row--tmine { grid-template-columns: 1fr auto; align-items: start; }
+.capp .bracket { margin-top: 14px; }
+.capp .bracket__cols { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(170px, 1fr); gap: 14px; overflow-x: auto; padding-bottom: 4px; }
+.capp .bracket__col { display: flex; flex-direction: column; justify-content: space-around; gap: 10px; }
+.capp .bracket__col h4 { margin: 0 0 4px; font-size: 12px; font-weight: 500; color: var(--c-dim); }
+.capp .bracket__m { display: grid; gap: 1px; border: 1px solid var(--c-hairline); border-radius: 10px; overflow: hidden; background: var(--c-hairline); }
+.capp .bracket__p { background: var(--c-canvas); padding: 8px 10px; font-size: 13.5px; }
+.capp .bracket__p.is-tbd { color: var(--c-dim); }
+.capp .bracket__p.is-win { color: var(--c-settle); font-weight: 600; }
+.capp .bracket__p.is-out { color: var(--c-dim); text-decoration: line-through; text-decoration-color: var(--c-hairline); }
+.capp .bracket__p.is-me { border-left: 2px solid var(--c-match); }
+.capp .bracket__note { background: var(--c-canvas); padding: 4px 10px; font-size: 12px; color: var(--c-dim); }
+.capp .bracket__m .btn { margin: 6px; justify-self: start; }
+
+/* match room */
+.capp .room-context { margin: -10px 0 18px; color: var(--c-dim); font-size: 14px; }
+.capp .room { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 18px; align-items: start; }
+.capp .room__main { display: grid; gap: 14px; min-width: 0; }
+.capp .room__h { font-size: 15px; font-weight: 600; margin: 0 0 10px; }
+.capp .room-players { display: grid; grid-template-columns: 1fr auto 1fr; gap: 12px; align-items: center; }
+.capp .room-players__vs { color: var(--c-dim); font-size: 13px; }
+.capp .room-player { background: var(--c-panel); border: 1px solid transparent; border-radius: 12px; padding: 14px 16px; display: grid; gap: 4px; }
+.capp .room-player.is-me { border-color: rgba(0,186,226,.45); }
+.capp .room-player__name { font-size: 16px; font-weight: 600; }
+.capp .room-player__handle { font-size: 13.5px; }
+.capp .room-player__rec { font-size: 12.5px; color: var(--c-dim); }
+.capp .room-lobby { border: 1px solid var(--c-hairline); border-radius: 12px; padding: 16px; display: grid; gap: 12px; }
+.capp .room-lobby__code .k { display: block; font-size: 12px; color: var(--c-dim); }
+.capp .room-lobby__code .v { font-family: var(--c-mono); font-size: clamp(26px, 5vw, 34px); font-weight: 500; letter-spacing: .06em; color: var(--c-match); }
+.capp .room-lobby__creds { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 10px; margin: 0; }
+.capp .room-lobby__creds dt { font-size: 12px; color: var(--c-dim); }
+.capp .room-lobby__creds dd { margin: 4px 0 0; display: flex; align-items: center; gap: 10px; }
+.capp .room-lobby__how { font-size: 13px; margin: 0; }
+.capp .room-copy.is-done { color: var(--c-good); border-color: var(--c-good); }
+.capp .room-state { background: var(--c-panel); border-radius: 12px; padding: 18px; }
+.capp .room-state h2 { font-size: 20px; font-weight: 600; letter-spacing: -.01em; margin: 0 0 8px; }
+.capp .room-state h2.is-win { color: var(--c-settle); }
+.capp .room-state h2.is-loss { color: var(--c-dim); }
+.capp .room-state p { margin: 0 0 10px; color: var(--c-dim); line-height: 1.55; max-width: 62ch; }
+.capp .room-checks { list-style: none; margin: 0 0 10px; padding: 0; display: grid; gap: 6px; font-size: 14px; }
+.capp .room-checks li::before { content: ""; display: inline-block; width: 10px; height: 10px; margin-right: 10px; border-radius: 50%; border: 1px solid var(--c-control); vertical-align: -1px; }
+.capp .room-checks li.is-done::before { background: var(--c-good); border-color: var(--c-good); }
+.capp .room-timer strong { font-variant-numeric: tabular-nums; color: var(--c-cream); }
+.capp .room-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 4px; }
+.capp .room-dispute { display: grid; gap: 8px; margin-top: 14px; }
+.capp .room-dispute textarea { font-family: var(--c-font); font-size: 15px; color: var(--c-cream); background: var(--c-canvas); border: 1px solid var(--c-control); border-radius: 10px; padding: 11px 13px; resize: vertical; }
+.capp .room-dispute textarea:focus-visible { outline: 2px solid var(--c-cream); outline-offset: 2px; }
+.capp .room-evidence p { font-size: 13px; margin: 0 0 10px; max-width: 62ch; }
+.capp .room-evidence__list { list-style: none; margin: 12px 0 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; }
+.capp .room-evidence__list li { display: grid; gap: 4px; font-size: 12px; color: var(--c-dim); }
+.capp .room-evidence__list img { width: 100%; aspect-ratio: 16 / 10; object-fit: cover; border-radius: 8px; background: var(--c-panel); outline: 1px solid rgba(255,255,255,.1); outline-offset: -1px; }
+.capp .room__chat { position: sticky; top: 76px; background: var(--c-panel); border-radius: 12px; padding: 14px; display: grid; grid-template-rows: auto minmax(180px, 46vh) auto; }
+.capp .room-chat { list-style: none; margin: 0 0 10px; padding: 0; overflow-y: auto; display: grid; align-content: start; gap: 8px; }
+.capp .room-chat li { display: grid; gap: 2px; font-size: 14px; }
+.capp .room-chat li.is-me { justify-items: end; text-align: right; }
+.capp .room-chat__who { font-size: 12px; color: var(--c-dim); }
+.capp .room-chat__body { background: var(--c-canvas); border-radius: 10px; padding: 7px 10px; max-width: 90%; overflow-wrap: anywhere; }
+.capp .room-chat li.is-me .room-chat__body { background: var(--c-elevated); }
+.capp .room-chat__empty { color: var(--c-dim); font-size: 13px; }
+.capp .room-chat__form { display: flex; gap: 8px; }
+.capp .room-chat__form input { flex: 1; min-width: 0; font-family: var(--c-font); font-size: 15px; color: var(--c-cream); background: var(--c-canvas); border: 1px solid var(--c-control); border-radius: 100px; padding: 9px 14px; }
+.capp .room-chat__form input:focus-visible { outline: 2px solid var(--c-cream); outline-offset: 2px; }
+.capp .room-chat__closed { font-size: 13px; }
+@media (max-width: 860px) {
+  .capp .room { grid-template-columns: 1fr; }
+  .capp .room__chat { position: static; grid-template-rows: auto minmax(160px, 40vh) auto; }
+}
+@media (max-width: 560px) {
+  .capp .room-players { grid-template-columns: 1fr; }
+  .capp .room-players__vs { justify-self: center; }
+  .capp .live-room { flex-direction: column; align-items: stretch; }
+}
+
+/* dispute queue */
+.capp .ops-case { background: var(--c-panel); border-radius: 14px; padding: 18px; margin-bottom: 14px; display: grid; gap: 10px; }
+.capp .ops-case header h2 { font-size: 17px; margin: 0; }
+.capp .ops-case ul { margin: 0; padding-left: 18px; color: var(--c-dim); font-size: 14px; }
+.capp .ops-case__reason { margin: 0; font-size: 14px; line-height: 1.55; }
+.capp .ops-case__evidence { display: flex; flex-wrap: wrap; gap: 8px; color: var(--c-dim); font-size: 13px; }
+.capp .ops-case__evidence img { width: 180px; aspect-ratio: 16 / 10; object-fit: cover; border-radius: 8px; }
+.capp .ops-case__chat summary { cursor: pointer; font-size: 14px; }
+.capp .ops-case__chat ol { margin: 8px 0 0; padding-left: 18px; font-size: 13.5px; color: var(--c-dim); display: grid; gap: 4px; }
+.capp .game-account-form { margin-top: 12px; }
+.capp .room-state p, .capp .room-state li { font-size: 15px; }
+.capp .tournament-form .chips, .capp .challenge-form .chips { align-items: flex-start; }
+.capp .tournament-form, .capp .challenge-form { margin-bottom: 22px; }

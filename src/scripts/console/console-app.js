@@ -9,12 +9,14 @@
 import { isBackendConfigured } from "../lib/config.js";
 import { byId as $, setVisible } from "../lib/dom.js";
 import { getClient, getSession } from "../lib/supabase-client.js";
-import { initChallenges, loadChallenges } from "./challenges.js";
+import { fillNetworkSelect, initChallenges, loadChallenges } from "./challenges.js";
 import { initContext, session } from "./context.js";
 import { initDeveloperPortal, loadDeveloperMetrics, loadKeys, loadProjects } from "./developer.js";
 import { initRanking, loadProfileRecord, loadRanking } from "./leaderboard.js";
 import { goToPage, initAmountChips, initNavigation, initialPage } from "./navigation.js";
-import { initAccountClosure, initProfile, loadProfile } from "./profile.js";
+import { initOps, loadOps } from "./ops.js";
+import { initAccountClosure, initGameAccounts, initProfile, loadGameAccounts, loadProfile } from "./profile.js";
+import { initRoom, loadRoom } from "./room.js";
 import { initTournaments, loadTournaments } from "./tournaments.js";
 import { handleCheckoutReturn, initWallet, loadLedger, refreshWallet, updatePurchaseQuote } from "./wallet.js";
 
@@ -37,12 +39,22 @@ function loadGames() {
     });
 }
 
+// Tournament and friendly forms offer only the game accounts this player linked.
+function loadGameAccountSelects() {
+  return loadGameAccounts().then(function (rows) {
+    fillNetworkSelect($("tournament-network"), rows);
+    fillNetworkSelect($("challenge-network"), rows);
+  });
+}
+
 const PAGE_LOADERS = {
   "page-games": loadGames,
-  "page-compete": function () { loadChallenges(); loadTournaments(); },
+  "page-compete": function () { loadTournaments(); loadChallenges(); loadGameAccountSelects(); },
+  "page-room": loadRoom,
+  "page-ops": loadOps,
   "page-wallet": function () { refreshWallet(); loadLedger(); },
   "page-ranking": loadRanking,
-  "page-profile": function () { loadProfile(); loadProfileRecord(); },
+  "page-profile": function () { loadProfile(); loadProfileRecord(); loadGameAccountSelects(); },
   "page-developer": function () { loadProjects(); loadKeys(); loadDeveloperMetrics(); refreshWallet(); },
 };
 
@@ -75,6 +87,9 @@ export function initConsole() {
       updatePurchaseQuote();
     });
     initProfile();
+    initGameAccounts();
+    initRoom();
+    initOps();
     initAccountClosure();
     initDeveloperPortal();
     initChallenges();

@@ -9,7 +9,10 @@ const USER = { id: "00000000-0000-0000-0000-0000000000e2", email: "e2e@example.t
 export const data = {
   wallet: { test_balance_cents: 12000, test_locked_cents: 0 },
   lobby: [
-    { id: "c-1", game: "Valorant", mode: "1v1", stake_cents: 1000, created_at: new Date().toISOString(), creator_id: "u-2", creator_username: "neo" },
+    { id: "c-1", game: "Valorant", mode: "1v1", stake_cents: 0, created_at: new Date().toISOString(), creator_id: "u-2", creator_username: "neo", network: null },
+  ],
+  tournaments: [
+    { id: "t-1", name: "Friday Cup", game: "Valorant", network: null, entry_fee_cents: 1000, size: 4, entrants: 3, created_at: new Date().toISOString(), creator_username: "neo", joined: false },
   ],
   leaderboard: [
     { rank: 1, user_id: "u-2", username: "neo", net_cents: 5000, won_cents: 9000, wins: 4, losses: 1 },
@@ -41,6 +44,8 @@ export const test = base.extend({
       if (path.startsWith("/rest/v1/rpc/")) {
         const fn = path.slice("/rest/v1/rpc/".length);
         if (fn === "rib_open_challenges") return json(route, data.lobby);
+        if (fn === "rib_open_tournaments") return json(route, data.tournaments);
+        if (fn === "rib_my_tournaments" || fn === "rib_my_rooms") return json(route, []);
         if (fn === "rib_leaderboard") return json(route, data.leaderboard);
         if (fn === "rib_my_standing") return json(route, [{ rank: 2, net_cents: 700, won_cents: 1400, wins: 1, losses: 0 }]);
         return json(route, {});
