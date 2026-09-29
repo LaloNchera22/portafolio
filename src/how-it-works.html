@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-  <title>How it works — Runinback trustless match engine</title>
+  <title>How it works — Runinback</title>
   <meta name="description" content="See how Runinback pairs players, holds entry fees in escrow, verifies the winner and pays the prize automatically." />
   <meta name="author" content="Runinback" />
   <meta name="robots" content="index, follow" />
@@ -13,7 +13,7 @@
 
   <meta property="og:type" content="website" />
   <meta property="og:site_name" content="Runinback" />
-  <meta property="og:title" content="How Runinback works — the trustless match engine" />
+  <meta property="og:title" content="How Runinback works" />
   <meta property="og:description" content="Pairing, escrow, verification and automatic payout: how a skill-based match on Runinback works." />
   <meta property="og:url" content="https://runinback.com/how-it-works.html" />
   <meta property="og:image" content="https://runinback.com/og-image.png" />
@@ -41,8 +41,8 @@
     "step": [
       { "@type": "HowToStep", "name": "Matchmaking", "text": "Players pick a game, agree the rules and pay the same entry fee." },
       { "@type": "HowToStep", "name": "Escrow", "text": "Both entry fees are held in escrow when the match starts." },
-      { "@type": "HowToStep", "name": "Verification", "text": "The game server submits a signed result the oracle validates." },
-      { "@type": "HowToStep", "name": "Settlement", "text": "The verified winner is paid out automatically in about a second." }
+      { "@type": "HowToStep", "name": "Verification", "text": "Built-in games are validated move by move on the server; challenges settle when both players report the same result." },
+      { "@type": "HowToStep", "name": "Settlement", "text": "The winner receives both entry fees; a draw or a voided match refunds them." }
     ]
   }
   </script>
@@ -81,9 +81,9 @@
     <section class="page-head">
       <div class="backdrop" aria-hidden="true"></div>
       <div class="shell">
-        <p class="eyebrow" data-reveal>The engine</p>
-        <h1 class="h-lg page-head__title" data-reveal>A trustless loop from pairing to payout.</h1>
-        <p class="lead" data-reveal>No manual payouts and no treasury on your side. Runinback runs every paid match through the same verifiable four-step path, designed to settle on-chain on Base.</p>
+        <p class="eyebrow" data-reveal>How it works</p>
+        <h1 class="h-lg page-head__title" data-reveal>From challenge to payout, step by step.</h1>
+        <p class="lead" data-reveal>Every paid match on Runinback follows the same four steps. Here is exactly what happens to your entry fee, and how the winner is decided.</p>
       </div>
     </section>
 
@@ -94,57 +94,54 @@
           <div class="step" id="matchmaking" data-reveal>
             <div class="step__num">01</div>
             <div>
-              <h2 class="step__title"><span style="color:var(--accent-match)">Matchmaking</span> — pair &amp; agree</h2>
-              <p class="step__text">Both players connect a wallet (any Base wallet or an embedded account) and confirm the game, rules and entry fee through a challenge overlay. Anti-collusion heuristics run before a match is ever created.</p>
+              <h2 class="step__title"><span style="color:var(--accent-match)">Matchmaking</span> — pick how you compete</h2>
+              <p class="step__text">Open a paid table in one of the six built-in games, post a 1v1 challenge for any game you play elsewhere (to the open lobby or straight to a rival), or join a tournament. The game, the rules and the entry fee are shown before you commit, and both players pay the same amount.</p>
             </div>
           </div>
           <div class="step" id="escrow" data-reveal>
             <div class="step__num">02</div>
             <div>
               <h2 class="step__title"><span style="color:var(--accent-escrow)">Escrow</span> — hold the entry fees</h2>
-              <p class="step__text">When the match starts, both entry fees move into an escrow contract. The funds are provably locked on-chain — neither player, nor your game, nor Runinback can move them until a verified result arrives.</p>
+              <p class="step__text">When the match is on, both entry fees move from your available balance into escrow, shown as “In play” in your wallet. Neither player can take them back mid-match. A table nobody has joined yet can still be cancelled for a full refund.</p>
             </div>
           </div>
           <div class="step" id="verification" data-reveal>
             <div class="step__num">03</div>
             <div>
-              <h2 class="step__title"><span>Verification</span> — prove the result</h2>
-              <p class="step__text">Your game server submits a signed result. The Runinback oracle validates the signature and opens a short dispute window backed by cryptographic evidence, so a bad actor can't fake an outcome.</p>
+              <h2 class="step__title"><span>Verification</span> — decide the winner fairly</h2>
+              <p class="step__text">In built-in games, the server checks every move against the rules and ends the game itself; each move has a 10-minute clock, so nobody can stall. Challenges settle when both players report the same result. Tournament results get a 24-hour review window in which any entrant can dispute them.</p>
             </div>
           </div>
           <div class="step" id="settlement" data-reveal>
             <div class="step__num">04</div>
             <div>
               <h2 class="step__title"><span style="color:var(--accent-settle)">Settlement</span> — pay the winner</h2>
-              <p class="step__text">Once verified, the escrow releases the full prize to the winner automatically — typically in about a second. If a match is voided, funds are refunded to both players along the same trustless path.</p>
+              <p class="step__text">The winner receives both entry fees, with no cut taken from the prize. A draw refunds each player, and a challenge left without a matching result can be voided for a full refund after two hours.</p>
             </div>
           </div>
         </div>
       </div>
     </section>
 
-    <!-- Why trustless -->
+    <!-- Why it's fair -->
     <section class="section">
       <div class="shell">
         <div class="section-head" data-reveal>
-          <p class="eyebrow">Why trustless matters</p>
-          <h2 class="h1">You keep the players. We remove the risk.</h2>
+          <p class="eyebrow">Why it's fair</p>
+          <h2 class="h1">Skill decides. The rules are the same for everyone.</h2>
         </div>
         <div class="grid grid--3">
           <div class="card" data-reveal>
-            <div class="card__icon"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg></div>
-            <h3 class="card__title">Non-custodial by design</h3>
-            <p class="card__text">You never touch player funds, so you avoid money-transmitter exposure and the operational weight of a payments stack.</p>
+            <h3 class="card__title">Skill, not luck</h3>
+            <p class="card__text">Paid tables are limited to games with no dice and no hidden cards, so the better player wins. Your moves are validated by the server, not by your opponent's browser.</p>
           </div>
           <div class="card" data-reveal>
-            <div class="card__icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h12v18l-3-2-3 2-3-2-3 2Z"/><path d="M9 8h6M9 12h5"/></svg></div>
-            <h3 class="card__title">Verifiable on-chain</h3>
-            <p class="card__text">Every held prize and payout is a public, auditable transaction. Players can confirm the prize is real before they ever queue up.</p>
+            <h3 class="card__title">No cut on prizes</h3>
+            <p class="card__text">The only fee is 5% when you buy rcoin. Entry fees, prizes and withdrawals are free, so the winner takes the whole prize.</p>
           </div>
           <div class="card" data-reveal>
-            <div class="card__icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M13 2L4 14h6l-1 8 9-12h-6Z"/></svg></div>
-            <h3 class="card__title">Instant &amp; automatic</h3>
-            <p class="card__text">No support tickets, no batch payouts. The oracle settles the moment a result is verified, paid out on Base.</p>
+            <h3 class="card__title">A record you can check</h3>
+            <p class="card__text">Every entry fee, prize and refund appears in your wallet activity. The ranking counts only server-verified games, so it can't be padded with reported results.</p>
           </div>
         </div>
       </div>
@@ -159,20 +156,24 @@
         </div>
         <div data-reveal>
           <div class="faq__item" data-faq>
-            <button class="faq__q">Do you ever hold player money? <span class="faq__icon" aria-hidden="true"></span></button>
-            <div class="faq__a"><p>In production, entry fees are designed to sit in an on-chain escrow contract on Base that neither player nor Runinback can move until the result is verified. Today the platform runs in test mode: rcoin balances are simulated, have no cash value and are recorded in Runinback's own ledger.</p></div>
+            <button class="faq__q">Is this real money? <span class="faq__icon" aria-hidden="true"></span></button>
+            <div class="faq__a"><p>Not yet. Runinback runs in test mode: rcoin balances are simulated, have no cash value and are recorded in Runinback's own ledger. Real-money play will open only after legal review, with entry fees and prizes planned to settle in USDC on Base.</p></div>
           </div>
           <div class="faq__item" data-faq>
             <button class="faq__q">What stops someone from faking a win? <span class="faq__icon" aria-hidden="true"></span></button>
-            <div class="faq__a"><p>Results are submitted as signed messages from your authenticated game server, then validated by the oracle with a dispute window. Unsigned or contradictory results are rejected before any payout.</p></div>
+            <div class="faq__a"><p>In built-in games, nobody reports anything: the server applies every move and declares the result. A challenge only pays out when both players report the same winner, otherwise the entry fees stay in escrow. Tournament results can be disputed by any entrant during the 24-hour review window.</p></div>
           </div>
           <div class="faq__item" data-faq>
-            <button class="faq__q">Which chains and currencies are supported? <span class="faq__icon" aria-hidden="true"></span></button>
-            <div class="faq__a"><p>Runinback is built for Base: entry fees and prizes will settle in USDC on Base. Today the platform runs in test mode with simulated rcoin (1 rcoin = $1), and card or crypto top-ups are in test mode until legal review clears real-money play.</p></div>
+            <button class="faq__q">How do I get rcoin, and what does it cost? <span class="faq__icon" aria-hidden="true"></span></button>
+            <div class="faq__a"><p>1 rcoin equals $1. You buy it in the console, and a 5% fee is charged once on the purchase (for example, $100 buys 95 rcoin). There is no fee on entry fees, prizes or withdrawals.</p></div>
           </div>
           <div class="faq__item" data-faq>
-            <button class="faq__q">What happens if a match is interrupted? <span class="faq__icon" aria-hidden="true"></span></button>
-            <div class="faq__a"><p>If a match is voided or times out without a valid result, the escrow follows its refund path and returns each entry fee to the original player automatically.</p></div>
+            <button class="faq__q">What happens if my opponent stops playing? <span class="faq__icon" aria-hidden="true"></span></button>
+            <div class="faq__a"><p>In a built-in game, each move has a 10-minute clock. When it runs out you can claim the win, and otherwise the match is awarded to you automatically. A challenge with no matching result can be voided after two hours, refunding both players.</p></div>
+          </div>
+          <div class="faq__item" data-faq>
+            <button class="faq__q">Can I practice first? <span class="faq__icon" aria-hidden="true"></span></button>
+            <div class="faq__a"><p>Yes. All 27 games can be played free against the house bot, as many times as you like, before you open a paid table.</p></div>
           </div>
         </div>
       </div>
@@ -182,11 +183,11 @@
     <section class="section">
       <div class="shell cta-band" data-reveal>
         <p class="eyebrow">Get started</p>
-        <h2 class="display">See it in your game.</h2>
-        <p class="lead muted mx-auto">Create a free test account, get an API key from the console and run a test match in minutes.</p>
+        <h2 class="display">Play your first match.</h2>
+        <p class="lead muted mx-auto">Create a free account, warm up against the bot, then open a paid table with test rcoin.</p>
         <div class="cta-band__actions">
           <a href="signup.html" class="btn btn--cta">Create your account <span class="arrow">→</span></a>
-          <a href="developers.html" class="btn btn--ghost">Read the quickstart</a>
+          <a href="login.html" class="btn btn--ghost">Log in</a>
         </div>
       </div>
     </section>
@@ -212,7 +213,7 @@
           <ul>
             <li><a href="developers.html">Overview</a></li>
             <li><a href="developers.html#quickstart">Quickstart</a></li>
-            <li><a href="developers.html#waitlist">SDK preview</a></li>
+            <li><a href="developers.html#contact">Talk to the team</a></li>
           </ul>
         </div>
         <div class="footer__col">

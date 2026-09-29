@@ -129,7 +129,7 @@
         <div class="story-triad">
           <div class="move" data-rise>
             <h3 class="h3">Win on skill, not luck.</h3>
-            <p class="muted">Every match is decided by how you play. No dice and no house odds: the server checks every move, and the better player takes the prize.</p>
+            <p class="muted">Paid tables are games with no dice and no hidden cards. The server checks every move, so the better player takes the prize.</p>
           </div>
           <div class="move" data-rise style="--d:.12s">
             <h3 class="h3">Great matches deserve real prizes.</h3>
@@ -137,7 +137,7 @@
           </div>
           <div class="move" data-rise style="--d:.24s">
             <h3 class="h3">No middlemen. No trust required.</h3>
-            <p class="muted">Entry fees are held in escrow that neither player can touch. The result is verified, and the winner is paid in about a second.</p>
+            <p class="muted">Entry fees are held in escrow that neither player can pull back mid-match. The result is verified, and the winner is paid the moment the game ends.</p>
           </div>
         </div>
       </div>
@@ -165,7 +165,7 @@
             <ul class="feature__list">
               <li>Open lobby and direct 1v1 challenges</li>
               <li>Fixed entry fees from 1 rcoin, the same for both players</li>
-              <li>Anti-collusion checks built into pairing</li>
+              <li>Tournaments with a 24-hour result review</li>
             </ul>
             <a href="how-it-works.html#matchmaking" class="text-link">Explore matchmaking <span class="arrow">→</span></a>
           </div>
@@ -178,11 +178,11 @@
             <h3 class="h2">Entry fees held safe from the first move.</h3>
           </div>
           <div class="feature__body" data-rise="left" style="--d:.12s">
-            <p class="lead muted">Both entry fees go into escrow when the match starts. Neither player, nor Runinback, can move them until the result is verified.</p>
+            <p class="lead muted">Both entry fees move into escrow when the match starts, shown as “In play” in your wallet. Neither player can take them back until the result is settled.</p>
             <ul class="feature__list">
               <li>Nobody can pull out mid-match</li>
-              <li>A transparent record of every prize held</li>
-              <li>Automatic refund if a match is voided</li>
+              <li>Every entry fee and prize in your wallet activity</li>
+              <li>Full refund for a draw, a voided match or an unjoined table</li>
             </ul>
             <a href="how-it-works.html#escrow" class="text-link">Explore escrow <span class="arrow">→</span></a>
           </div>
@@ -195,15 +195,51 @@
             <h3 class="h2">The result is verified and the winner is paid.</h3>
           </div>
           <div class="feature__body" data-rise="right" style="--d:.12s">
-            <p class="lead muted">Games played on Runinback are checked move by move on the server. Matches in other games report a signed result with a dispute window. Then the prize goes to the winner in about a second.</p>
+            <p class="lead muted">Built-in games are checked move by move on the server, which ends the game and pays the winner. Challenges in other games settle when both players report the same result.</p>
             <ul class="feature__list">
-              <li>Server-verified moves in built-in games</li>
-              <li>A dispute window for reported results</li>
-              <li>Automatic payout, no support tickets</li>
+              <li>Server-verified moves and a 10-minute turn clock</li>
+              <li>Challenges pay out only when both reports match</li>
+              <li>No cut taken from the prize</li>
             </ul>
             <a href="how-it-works.html#settlement" class="text-link">Explore settlement <span class="arrow">→</span></a>
           </div>
         </article>
+      </div>
+    </section>
+
+    <!-- Available today -->
+    <section class="section" data-band aria-labelledby="today-heading">
+      <div class="shell">
+        <div class="section-head">
+          <p class="eyebrow" data-rise>In your console today</p>
+          <h2 class="h1" id="today-heading" data-clip>Everything you need to compete.</h2>
+        </div>
+        <div class="grid grid--3">
+          <div class="card" data-rise>
+            <h3 class="card__title">27 games, free practice</h3>
+            <p class="card__text">Warm up against the house bot in any game, as often as you like. Six of them — Tic-Tac-Toe, Connect Four, Reversi, Checkers, Dots &amp; Boxes and Mancala — also have paid tables.</p>
+          </div>
+          <div class="card" data-rise style="--d:.08s">
+            <h3 class="card__title">1v1 challenges</h3>
+            <p class="card__text">Post a challenge to the open lobby or send it straight to a rival, for any game you play, with an entry fee from 1 to 1,000 rcoin.</p>
+          </div>
+          <div class="card" data-rise style="--d:.16s">
+            <h3 class="card__title">Tournaments</h3>
+            <p class="card__text">Create or join events with a shared entry fee. The prize is paid after a 24-hour review window in which entrants can dispute the result.</p>
+          </div>
+          <div class="card" data-rise>
+            <h3 class="card__title">Weekly and all-time ranking</h3>
+            <p class="card__text">Climb a leaderboard of net rcoin won that counts only server-verified games. The weekly board resets every Monday.</p>
+          </div>
+          <div class="card" data-rise style="--d:.08s">
+            <h3 class="card__title">Your rcoin wallet</h3>
+            <p class="card__text">Buy rcoin with a 5% fee on the way in, see every entry fee and prize in your activity, and withdraw with no fee.</p>
+          </div>
+          <div class="card" data-rise style="--d:.16s">
+            <h3 class="card__title">Developer tools</h3>
+            <p class="card__text">Create projects, issue and revoke API keys, and call the REST API for the game catalog and the verified ranking.</p>
+          </div>
+        </div>
       </div>
     </section>
 
@@ -214,7 +250,7 @@
           <div data-rise>
             <p class="eyebrow">For developers</p>
             <h2 class="h1 mt-16">Add competitive play to your game.</h2>
-            <p class="lead muted mt-24">The Runinback API already serves games and the verified ranking; match creation and a typed SDK are in preview. You build the game, and we handle entry fees, prizes and payouts.</p>
+            <p class="lead muted mt-24">Issue an API key in the console and read the game catalog and the verified ranking from your server today. Match creation and settlement endpoints are next.</p>
             <div class="actions mt-32">
               <a href="signup.html" class="btn btn--cta">Get a test key <span class="arrow">→</span></a>
               <a href="developers.html#quickstart" class="btn btn--ghost">Read the quickstart</a>
@@ -269,7 +305,7 @@
           <ul>
             <li><a href="developers.html">Overview</a></li>
             <li><a href="developers.html#quickstart">Quickstart</a></li>
-            <li><a href="developers.html#waitlist">SDK preview</a></li>
+            <li><a href="developers.html#contact">Talk to the team</a></li>
           </ul>
         </div>
         <div class="footer__col">
