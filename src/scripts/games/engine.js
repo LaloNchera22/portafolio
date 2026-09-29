@@ -101,11 +101,26 @@ function mountModal(backdrop, panel, labelEl) {
 // the same square across re-renders, so a move doesn't drop focus to <body>.
 // Symbols that mean something on a board but read out badly on their own.
 var GLYPH_NAMES = { "☠": "poison", "✳": "hit", "·": "miss" };
+// What a square shows: its content plus any piece classes (p0/p1). Hover
+// and "legal move" hints are left out so only real board changes animate.
+function squareKey(b) {
+  return b.innerHTML + "|" + (b.className.match(/\bp\d\b/g) || []).join(",");
+}
 function boardFocusIndex(board) {
-  return Array.prototype.indexOf.call(board.querySelectorAll("button"), document.activeElement);
+  var buttons = board.querySelectorAll("button");
+  // Snapshot before the re-render so afterBoardRender can mark what changed.
+  board._squares = Array.prototype.map.call(buttons, squareKey);
+  return Array.prototype.indexOf.call(buttons, document.activeElement);
 }
 function afterBoardRender(board, focusIndex) {
   var buttons = board.querySelectorAll("button");
+  var before = board._squares;
+  if (before && before.length === buttons.length) {
+    Array.prototype.forEach.call(buttons, function (b, i) {
+      if (before[i] !== squareKey(b)) b.classList.add("is-changed"); // CSS plays a short "placed" pop
+    });
+  }
+  board._squares = null;
   Array.prototype.forEach.call(buttons, function (b, i) {
     if (b.type !== "button") b.type = "button";
     if (b.hasAttribute("aria-label")) return;

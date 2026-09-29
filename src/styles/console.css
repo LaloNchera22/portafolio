@@ -357,3 +357,58 @@ html.gmodal-open { overflow: hidden; }
   .capp .acct-avatar { width: 44px; height: 44px; }
   .capp .acct-menu { top: calc(60px + env(safe-area-inset-top, 0px)); }
 }
+
+/* ==========================================================================
+   Micro-interactions
+   Motion answers the player's own actions: pressing, opening, a value that
+   changed. Enters are short (≤320ms), exits shorter, every transition names
+   its properties, and the reduced-motion rule above turns all of it off.
+   ========================================================================== */
+.capp { --m-fast: 120ms; --m: 200ms; --m-slow: 320ms; --m-ease: cubic-bezier(.2, .8, .2, 1); }
+
+@keyframes c-enter { from { opacity: 0; transform: translateY(6px); } }
+@keyframes c-pop { from { opacity: 0; transform: translateY(-4px) scale(.98); } }
+@keyframes c-bump { 40% { transform: scale(1.06); } }
+@keyframes c-pulse { 50% { opacity: .45; } }
+
+/* Tactile press on every control (transitions keep hover colors intact). */
+.capp .btn { transition: background-color .3s, color .3s, border-color .3s, transform var(--m-fast) var(--m-ease); }
+.capp .chips button { transition: border-color .2s, color .2s, background-color .2s, transform var(--m-fast) var(--m-ease); }
+.capp .seg button { transition: color .2s, background-color .2s, transform var(--m-fast) var(--m-ease); }
+.capp .wallet-chip, .capp .acct-avatar { transition: border-color .2s, transform var(--m-fast) var(--m-ease); }
+.capp .btn:active:not(:disabled),
+.capp .chips button:active,
+.capp .seg button:active,
+.capp .wallet-chip:active,
+.capp .acct-avatar:active { transform: scale(.96); }
+
+/* Switching console pages: the new page settles in instead of snapping. */
+.capp .page:not([hidden]) { animation: c-enter var(--m-slow) var(--m-ease) backwards; }
+
+/* Menus, forms and inline messages appear where they were asked for. */
+.capp .acct-menu:not([hidden]) { transform-origin: top right; animation: c-pop var(--m) var(--m-ease) backwards; }
+.capp .card-box:not([hidden]),
+.capp .msg:not([hidden]) { animation: c-enter var(--m) var(--m-ease) backwards; }
+
+/* Lists land in a short cascade (first eight rows; the rest arrive together). */
+.capp .panel > .row,
+.capp .row--lobby,
+.capp .ranking > .rank,
+.capp .tcard { animation: c-enter var(--m-slow) var(--m-ease) backwards; }
+.capp .panel > .row:nth-child(2), .capp .ranking > .rank:nth-child(2), .capp .tcard:nth-child(2) { animation-delay: 30ms; }
+.capp .panel > .row:nth-child(3), .capp .ranking > .rank:nth-child(3), .capp .tcard:nth-child(3) { animation-delay: 60ms; }
+.capp .panel > .row:nth-child(4), .capp .ranking > .rank:nth-child(4), .capp .tcard:nth-child(4) { animation-delay: 90ms; }
+.capp .panel > .row:nth-child(5), .capp .ranking > .rank:nth-child(5), .capp .tcard:nth-child(5) { animation-delay: 120ms; }
+.capp .panel > .row:nth-child(6), .capp .ranking > .rank:nth-child(6), .capp .tcard:nth-child(6) { animation-delay: 150ms; }
+.capp .panel > .row:nth-child(7), .capp .ranking > .rank:nth-child(7), .capp .tcard:nth-child(7) { animation-delay: 180ms; }
+.capp .panel > .row:nth-child(n+8), .capp .ranking > .rank:nth-child(n+8), .capp .tcard:nth-child(n+8) { animation-delay: 210ms; }
+
+/* A changed value confirms itself once: the balance chip, the entry fee. */
+.capp .wallet-chip.is-bumped,
+.capp .stake__value input.is-bumped { animation: c-bump var(--m-slow) var(--m-ease); }
+.capp #key-copy.is-done { color: var(--c-good); border-color: var(--c-good); }
+
+/* Loading placeholders breathe so a slow network doesn't look frozen. */
+@media (prefers-reduced-motion: no-preference) {
+  .is-loading { animation: c-pulse 1.4s ease-in-out infinite; }
+}

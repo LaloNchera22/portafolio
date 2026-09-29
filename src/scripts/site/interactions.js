@@ -208,6 +208,32 @@ export function initSiteInteractions() {
     });
   });
 
+  /* --- Copy buttons on code blocks ------------------------------------- */
+  // The label cross-fades to "Copied" and back, so the click is confirmed
+  // right where it happened.
+  if (navigator.clipboard) {
+    document.querySelectorAll(".terminal").forEach((term) => {
+      const bar = term.querySelector(".terminal__bar");
+      const code = term.querySelector("code");
+      if (!bar || !code) return;
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "terminal__copy";
+      btn.setAttribute("aria-label", "Copy code");
+      btn.innerHTML = '<span class="terminal__copy-idle">Copy</span><span class="terminal__copy-done" aria-hidden="true">Copied</span>';
+      bar.appendChild(btn);
+      let reset = 0;
+      btn.addEventListener("click", () => {
+        navigator.clipboard.writeText(code.textContent).then(() => {
+          btn.classList.add("is-done");
+          btn.setAttribute("aria-label", "Copied");
+          clearTimeout(reset);
+          reset = setTimeout(() => { btn.classList.remove("is-done"); btn.setAttribute("aria-label", "Copy code"); }, 1600);
+        }).catch(() => {});
+      });
+    });
+  }
+
   /* --- Footer year ------------------------------------------------------ */
   const yearEl = document.querySelector("[data-year]");
   if (yearEl) yearEl.textContent = new Date().getFullYear();

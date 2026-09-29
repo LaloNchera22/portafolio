@@ -233,3 +233,26 @@
   .capp .ghelp-btn, .capp .ghelp__x, .capp .gplay__x { width: 44px; height: 44px; }
   .capp .gfilter { min-height: 44px; }
 }
+
+/* ---- Micro-interactions (see console.css for the shared keyframes) ------ */
+@keyframes g-fade { from { opacity: 0; } }
+@keyframes g-rise { from { opacity: 0; transform: translateY(10px) scale(.985); } }
+@keyframes g-place { from { transform: scale(.72); opacity: .35; } }
+@keyframes g-turn { from { opacity: .3; transform: translateY(3px); } }
+
+/* Game cards press like buttons. */
+.capp .gcard:active { transform: scale(.985); }
+.capp .gfilter { transition: color .2s, border-color .2s, background-color .2s, transform var(--m-fast) var(--m-ease); }
+.capp .gfilter:active, .capp .gplay__stake:active { transform: scale(.96); }
+
+/* Pop-ups: the backdrop fades, the panel rises. */
+.capp .gmodal-back, .capp .ghelp-back { animation: g-fade var(--m) ease-out backwards; }
+.capp .gplay--modal, .capp .ghelp { animation: g-rise var(--m-slow) var(--m-ease) backwards; }
+
+/* The square that just changed (your move, the bot's, a flip) pops in. */
+.capp .gboard button.is-changed { animation: g-place 220ms var(--m-ease) backwards; }
+.capp .gboard button:not(:disabled):active { transform: scale(.94); }
+
+/* "Your turn" draws the eye when it becomes your turn; the result panel rises. */
+.capp .gturn.you { animation: g-turn var(--m-slow) var(--m-ease); }
+.capp .gover:not([hidden]) { animation: g-rise var(--m-slow) var(--m-ease) backwards; }

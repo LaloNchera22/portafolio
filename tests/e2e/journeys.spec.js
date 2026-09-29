@@ -49,6 +49,8 @@ test.describe("console", () => {
     const first = page.getByRole("button", { name: /^Square 1, empty/ });
     await first.click();
     await expect(page.getByRole("button", { name: /^Square 1, ✕/ })).toBeVisible();
+    // the square that just changed gets the "placed" animation hook
+    await expect(page.getByRole("button", { name: /^Square 1, ✕/ })).toHaveClass(/is-changed/);
   });
 
   test("posts a challenge with a custom stake from the lobby page", async ({ page, api }) => {
@@ -78,4 +80,14 @@ test.describe("console", () => {
     await expect(page.locator('#key-env option[value="live"]')).toBeDisabled();
     await expect(page.locator("#page-developer")).not.toContainText("SDK integration");
   });
+});
+
+test("code blocks copy and confirm in place", async ({ page, context }) => {
+  await context.grantPermissions(["clipboard-read", "clipboard-write"]);
+  await page.goto("/developers.html");
+  const copy = page.locator(".terminal__copy").first();
+  await copy.click();
+  await expect(copy).toHaveClass(/is-done/);
+  expect(await page.evaluate(() => navigator.clipboard.readText())).toContain("RIB_KEY=");
+  await expect(copy).not.toHaveClass(/is-done/, { timeout: 4000 });
 });
