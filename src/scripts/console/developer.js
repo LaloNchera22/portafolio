@@ -101,7 +101,7 @@ export function loadKeys() {
       if (r.error) { list.innerHTML = '<p class="muted">Couldn\'t load keys.</p>'; return; }
       const rows = r.data || [];
       if (!rows.length) {
-        list.innerHTML = '<div class="empty"><h3>No API keys yet</h3><p>Issue one to authenticate your SDK integration. You\'ll see it in full once.</p></div>';
+        list.innerHTML = '<div class="empty"><h3>No API keys yet</h3><p>Issue a test key to call the API from your server. You\'ll see it in full once.</p></div>';
         return;
       }
       list.innerHTML = '<div class="panel">' + rows.map(function (k) {

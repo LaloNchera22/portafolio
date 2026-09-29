@@ -21,7 +21,7 @@ export default [
     },
   },
   {
-    files: ["tests/integration/**/*.js"],
+    files: ["tests/integration/**/*.js", "tests/e2e/**/*.js"],
     languageOptions: {
       ecmaVersion: 2022,
       sourceType: "module",

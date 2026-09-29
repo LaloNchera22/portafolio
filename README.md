@@ -34,6 +34,7 @@ npm run dev        # http://localhost:5173
 | `npm run lint` | ESLint |
 | `npm test` | Unit + game-rule property tests (Vitest) |
 | `npm run test:db` | Apply all migrations to a scratch Postgres and run the RPC regression suite (`PSQL=...`) |
+| `npm run test:e2e` | Playwright journeys (desktop + mobile) against the production build with a mocked Supabase |
 | `npm run check` | lint + test + build |
 
 ## Repository layout

@@ -243,5 +243,8 @@ Never commit `.env` (it is git-ignored); `.env.example` shows the shape.
 | 0013 | Per-user rate limits; `@steam.local` identities reserved for `steam-auth`; case-insensitive usernames; handles readable, roles not |
 | 0014–0017 | Player stats, ranking and challenge lobby RPCs (authenticated only) |
 | 0018 | Ranking snapshot is server-only and single-flight; ranking counts only server-validated games; 10-minute turn clock (a stalled player loses instead of forcing a refund) |
+| 0019 | Tournaments: organizers can't enter paid events, 3-entrant minimum, 24-hour prize review with entrant disputes, operator resolution |
+| 0020 | Console error reports (server-only, rate-limited, 14-day retention) |
+| 0021 | Developer API keys verified by hash for the public API; live keys blocked in test mode; deleting a project revokes its keys; account closure anonymizes and disables login while keeping financial records; ops health counters |
 
 `supabase/tests/rpc-smoke.test.sql` asserts these properties on every CI run.
