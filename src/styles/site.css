@@ -2151,6 +2151,7 @@ body[data-auth-scope] .nav {
 
 /* Inline code in running copy: small, cream, hairline-boxed. */
 .step__text code,
+.card__text code,
 .lead code {
   font-family: var(--font-mono);
   font-size: 0.85em;

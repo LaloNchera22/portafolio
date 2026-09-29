@@ -4,8 +4,8 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-  <title>Developers — Runinback SDK, docs &amp; waitlist</title>
-  <meta name="description" content="Add skill-based competitions to your game with the Runinback API: quickstart, REST endpoints and the SDK preview waitlist." />
+  <title>Developers — Runinback API &amp; quickstart</title>
+  <meta name="description" content="Build on Runinback with API keys and a REST API for the game catalog and the verified ranking. Quickstart included." />
   <meta name="author" content="Runinback" />
   <meta name="robots" content="index, follow" />
   <meta name="theme-color" content="#0e100f" />
@@ -13,8 +13,8 @@
 
   <meta property="og:type" content="website" />
   <meta property="og:site_name" content="Runinback" />
-  <meta property="og:title" content="Runinback for Developers — SDK, docs &amp; waitlist" />
-  <meta property="og:description" content="Add match escrow and automated settlement to your game with the Runinback API." />
+  <meta property="og:title" content="Runinback for Developers — API &amp; quickstart" />
+  <meta property="og:description" content="API keys and a REST API for the Runinback game catalog and verified ranking." />
   <meta property="og:url" content="https://runinback.com/developers.html" />
   <meta property="og:image" content="https://runinback.com/og-image.png" />
   <meta property="og:image:type" content="image/png" />
@@ -23,7 +23,7 @@
   <meta property="og:image:alt" content="Runinback — competitive gaming where skill pays" />
   <meta name="twitter:card" content="summary_large_image" />
   <meta name="twitter:title" content="Runinback for Developers" />
-  <meta name="twitter:description" content="SDK, docs and developer preview waitlist." />
+  <meta name="twitter:description" content="API keys, REST API and quickstart." />
   <meta name="twitter:image" content="https://runinback.com/og-image.png" />
   <meta name="twitter:image:alt" content="Runinback — competitive gaming where skill pays" />
   <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png" />
@@ -67,8 +67,8 @@
       <div class="backdrop" aria-hidden="true"></div>
       <div class="shell">
         <p class="eyebrow" data-reveal>Developer experience</p>
-        <h1 class="h-lg page-head__title" data-reveal>Monetize competition, not your roadmap.</h1>
-        <p class="lead" data-reveal>Issue a test key, call the API, read games and the verified ranking. Runinback handles wallets, escrow and payouts so you can stay focused on the game.</p>
+        <h1 class="h-lg page-head__title" data-reveal>Build on the Runinback API.</h1>
+        <p class="lead" data-reveal>Create a project, issue a test key in your console and read the game catalog and the verified ranking from your server. It takes about five minutes.</p>
         <div class="hero__actions mt-32" data-reveal>
           <a href="signup.html" class="btn btn--cta">Get a test key <span class="arrow">→</span></a>
           <a href="#quickstart" class="btn btn--ghost">Read the quickstart</a>
@@ -119,7 +119,7 @@ RIB_API=<span class="tok-str">https://&lt;project&gt;.supabase.co</span>\
             <div data-reveal>
               <div class="step__num">03 · Build</div>
               <h3 class="h3 mt-16">Read games and rankings</h3>
-              <p class="step__text mt-16"><code>GET /v1/games</code> lists the games available for paid matches. <code>GET /v1/leaderboard</code> returns the verified ranking (<code>period=week|all</code>, <code>limit</code> up to 20). Limit: 120 requests per minute per key. Match creation and settlement endpoints, and a typed SDK, are coming next.</p>
+              <p class="step__text mt-16"><code>GET /v1/games</code> lists the games available for paid matches. <code>GET /v1/leaderboard</code> returns the verified ranking (<code>period=week|all</code>, <code>limit</code> from 1 to 100, 20 by default). Each key can make 120 requests per minute.</p>
             </div>
             <div class="terminal" data-reveal>
               <div class="terminal__bar"><span class="terminal__file">server.js</span></div>
@@ -139,54 +139,61 @@ RIB_API=<span class="tok-str">https://&lt;project&gt;.supabase.co</span>\
     <section class="section">
       <div class="shell">
         <div class="section-head" data-reveal>
-          <p class="eyebrow">What's in the box</p>
-          <h2 class="h1">A complete competition toolkit.</h2>
+          <p class="eyebrow">Available today</p>
+          <h2 class="h1">What you can use right now.</h2>
         </div>
         <div class="grid grid--3">
           <div class="card" data-reveal>
             <h3 class="card__title">REST API</h3>
-            <p class="card__text">Key status, playable games and the verified ranking over HTTPS today, at 120 requests per minute per key.</p>
+            <p class="card__text"><code>/v1/status</code>, <code>/v1/games</code> and <code>/v1/leaderboard</code> over HTTPS, server to server, at 120 requests per minute per key.</p>
           </div>
           <div class="card" data-reveal>
-            <h3 class="card__title">SDK preview</h3>
-            <p class="card__text">A typed TypeScript client and a hosted challenge overlay, in preview with early partners.</p>
+            <h3 class="card__title">Projects and keys</h3>
+            <p class="card__text">Group keys by project, issue and revoke them in the console, and see when each key was last used. Keys are stored only as a hash.</p>
           </div>
           <div class="card" data-reveal>
             <h3 class="card__title">Test mode</h3>
-            <p class="card__text">Run the full entry-to-payout loop with simulated rcoin before any real money is involved.</p>
-          </div>
-          <div class="card" data-reveal>
-            <h3 class="card__title">Developer console</h3>
-            <p class="card__text">Create projects, issue and revoke keys, and keep test and live environments apart.</p>
-          </div>
-          <div class="card" data-reveal>
-            <h3 class="card__title">Webhooks, next</h3>
-            <p class="card__text">Signed match lifecycle events — created, funded, settled, refunded — are next on the roadmap.</p>
-          </div>
-          <div class="card" data-reveal>
-            <h3 class="card__title">Audit before launch</h3>
-            <p class="card__text">Escrow contracts will be independently audited before real-money launch, with a public transaction proof for every prize.</p>
+            <p class="card__text">Everything runs on simulated rcoin, so you can try the full player flow in the console before any real money is involved. Live keys unlock at launch.</p>
           </div>
         </div>
       </div>
     </section>
 
-    <!-- Waitlist -->
-    <section class="section" id="waitlist">
+    <!-- Roadmap -->
+    <section class="section">
+      <div class="shell">
+        <div class="section-head" data-reveal>
+          <p class="eyebrow">Next</p>
+          <h2 class="h1">What we're building next.</h2>
+        </div>
+        <div class="grid grid--3">
+          <div class="card" data-reveal>
+            <h3 class="card__title">Match endpoints</h3>
+            <p class="card__text">Create a match with an entry fee from your server and report the result, so players can compete inside your own game.</p>
+          </div>
+          <div class="card" data-reveal>
+            <h3 class="card__title">Webhooks</h3>
+            <p class="card__text">Signed events for the match lifecycle — created, started, settled, refunded — so your backend doesn't have to poll.</p>
+          </div>
+          <div class="card" data-reveal>
+            <h3 class="card__title">Real-money launch</h3>
+            <p class="card__text">After legal review and an independent audit of the escrow contracts, entry fees and prizes are planned to settle in USDC on Base.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Contact -->
+    <section class="section" id="contact">
       <div class="shell">
         <div class="grid grid--2" style="gap:clamp(32px,6vw,80px); align-items:start;">
           <div data-reveal>
-            <p class="eyebrow">Developer preview</p>
-            <h2 class="h1 mt-16">Join the waitlist.</h2>
-            <p class="lead muted mt-24">Tell us about your game and we'll get you early SDK access, test credits and a direct line for integration help. No spam — just your access details.</p>
-            <ul class="feature__list mt-32">
-              <li>Early access to the typed SDK preview</li>
-              <li>Test-mode rcoin to run full matches</li>
-              <li>Priority integration support</li>
-            </ul>
+            <p class="eyebrow">Talk to the team</p>
+            <h2 class="h1 mt-16">Building something with Runinback?</h2>
+            <p class="lead muted mt-24">Tell us about your game and what you need from the API. It helps us decide what ships next, and we'll reply with integration help.</p>
           </div>
           <div data-reveal>
-            <form class="form form--wide" data-form="dev@runinback.com" data-form-subject="SDK preview access request" novalidate>
+            <form class="form form--wide" data-form="dev@runinback.com" data-form-subject="Building with the Runinback API" novalidate>
               <div class="form__row">
                 <div class="field">
                   <label for="name">Name</label>
@@ -212,13 +219,13 @@ RIB_API=<span class="tok-str">https://&lt;project&gt;.supabase.co</span>\
                 </select>
               </div>
               <div class="field">
-                <label for="notes">What are you building? (optional)</label>
+                <label for="notes">What do you need from the API? (optional)</label>
                 <textarea id="notes" name="notes"></textarea>
               </div>
-              <button type="submit" class="btn btn--cta">Request access <span class="arrow">→</span></button>
-              <p class="form__note">We reply from dev@runinback.com and only use your details for the preview.</p>
+              <button type="submit" class="btn btn--cta">Email the team <span class="arrow">→</span></button>
+              <p class="form__note">Opens your email app with the message ready. We reply from dev@runinback.com.</p>
               <div class="form__success" data-form-success>
-                Your email app should open with the request ready to send. If it didn't, write to <a href="mailto:dev@runinback.com">dev@runinback.com</a>.
+                Your email app should open with the message ready to send. If it didn't, write to <a href="mailto:dev@runinback.com">dev@runinback.com</a>.
               </div>
             </form>
           </div>
@@ -247,7 +254,7 @@ RIB_API=<span class="tok-str">https://&lt;project&gt;.supabase.co</span>\
           <ul>
             <li><a href="developers.html">Overview</a></li>
             <li><a href="developers.html#quickstart">Quickstart</a></li>
-            <li><a href="developers.html#waitlist">SDK preview</a></li>
+            <li><a href="developers.html#contact">Talk to the team</a></li>
           </ul>
         </div>
         <div class="footer__col">
