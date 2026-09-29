@@ -8,7 +8,9 @@
 insert into auth.users (id, email, raw_user_meta_data) values
   ('aaaaaaaa-0000-0000-0000-000000000001', 'alice@example.test', '{"username":"alice"}'),
   ('bbbbbbbb-0000-0000-0000-000000000002', 'bob@example.test',   '{"username":"bob"}'),
-  ('cccccccc-0000-0000-0000-000000000003', 'carol@example.test', '{"username":"carol","role":"dev"}');
+  ('cccccccc-0000-0000-0000-000000000003', 'carol@example.test', '{"username":"carol","role":"dev"}'),
+  ('dddddddd-0000-0000-0000-000000000005', 'dave@example.test',  '{"username":"dave"}'),
+  ('eeeeeeee-0000-0000-0000-000000000006', 'erin@example.test',  '{"username":"erin"}');
 
 -- Run a statement as a signed-in user; returns the SQL error hint (or 'ok').
 create function pg_temp.as_user(p_uid uuid, p_sql text) returns text
@@ -47,6 +49,8 @@ declare
   a uuid := 'aaaaaaaa-0000-0000-0000-000000000001';
   b uuid := 'bbbbbbbb-0000-0000-0000-000000000002';
   c uuid := 'cccccccc-0000-0000-0000-000000000003';
+  d uuid := 'dddddddd-0000-0000-0000-000000000005';
+  e uuid := 'eeeeeeee-0000-0000-0000-000000000006';
   v_challenge uuid;
   v_tournament uuid;
   v_match uuid;
@@ -78,6 +82,8 @@ begin
   perform pg_temp.expect(pg_temp.as_user(a, 'select public.rib_buy_rcoin_test(10000)'), 'ok', 'alice buys');
   perform pg_temp.expect(pg_temp.as_user(b, 'select public.rib_buy_rcoin_test(10000)'), 'ok', 'bob buys');
   perform pg_temp.expect(pg_temp.as_user(c, 'select public.rib_buy_rcoin_test(10000)'), 'ok', 'carol buys');
+  perform pg_temp.as_user(d, 'select public.rib_buy_rcoin_test(10000)');
+  perform pg_temp.as_user(e, 'select public.rib_buy_rcoin_test(10000)');
   perform pg_temp.expect(pg_temp.balance(a)::text, '9500', '5% entry fee applied');
 
   -- Challenge escrow: create, accept, agree on the winner, settle.
@@ -95,14 +101,37 @@ begin
   perform pg_temp.expect(pg_temp.as_user(b, 'select public.rib_withdraw_test(999999)'), 'insufficient_balance', 'overdraw rejected');
   perform pg_temp.expect(pg_temp.as_user(b, 'select public.rib_challenge_create(''chess'', ''1v1'', 100000, null)'), 'insufficient_balance', 'stake above balance rejected');
 
-  -- Tournaments: the organizer can't award the pool to themself.
-  perform pg_temp.as_user(a, 'select public.rib_tournament_create(''Cup'', ''chess'', 1000, 4, null)');
+  -- Tournaments (0019): no self-entry, minimum entrants, held prize, disputes.
+  perform pg_temp.as_user(a, 'select public.rib_tournament_create(''Cup'', ''chess'', 1000, 8, null)');
   select id into v_tournament from public.tournaments where creator_id = a order by created_at desc limit 1;
-  perform pg_temp.expect(pg_temp.as_user(a, format('select public.rib_tournament_join(%L)', v_tournament)), 'ok', 'organizer joins');
+  perform pg_temp.expect(pg_temp.as_user(a, format('select public.rib_tournament_join(%L)', v_tournament)), 'organizer_cannot_join', 'organizer cannot enter a paid tournament');
   perform pg_temp.expect(pg_temp.as_user(c, format('select public.rib_tournament_join(%L)', v_tournament)), 'ok', 'carol joins');
+  perform pg_temp.expect(pg_temp.as_user(d, format('select public.rib_tournament_join(%L)', v_tournament)), 'ok', 'dave joins');
+  perform pg_temp.expect(pg_temp.as_user(a, format('select public.rib_tournament_finish(%L, %L)', v_tournament, c)), 'not_enough_entrants', 'needs the minimum entrants');
+  perform pg_temp.expect(pg_temp.as_user(e, format('select public.rib_tournament_join(%L)', v_tournament)), 'ok', 'erin joins');
   perform pg_temp.expect(pg_temp.as_user(a, format('select public.rib_tournament_finish(%L, %L)', v_tournament, a)), 'organizer_cannot_win', 'organizer cannot win');
-  perform pg_temp.expect(pg_temp.as_user(a, format('select public.rib_tournament_finish(%L, %L)', v_tournament, c)), 'ok', 'organizer awards carol');
-  perform pg_temp.expect(pg_temp.balance(c)::text, '10500', 'carol receives the pool');
+  perform pg_temp.expect(pg_temp.as_user(a, format('select public.rib_tournament_finish(%L, %L)', v_tournament, c)), 'ok', 'organizer declares carol');
+  perform pg_temp.expect((select status from public.tournaments where id = v_tournament), 'payout_pending', 'prize is held for review');
+  perform pg_temp.expect(pg_temp.balance(c)::text, '8500', 'no payout during the review window');
+  perform pg_temp.expect(pg_temp.as_user(b, format('select public.rib_tournament_dispute(%L, ''x'')', v_tournament)), 'not_an_entrant', 'outsiders cannot dispute');
+  perform pg_temp.expect(pg_temp.as_user(c, format('select public.rib_tournament_dispute(%L, ''x'')', v_tournament)), 'not_an_entrant', 'the winner cannot dispute');
+  perform pg_temp.expect(pg_temp.as_user(d, format('select public.rib_tournament_dispute(%L, ''carol left early'')', v_tournament)), 'ok', 'an entrant disputes');
+  perform pg_temp.expect((select status from public.tournaments where id = v_tournament), 'disputed', 'dispute freezes the prize');
+  perform pg_temp.expect(public.rib_tournament_payouts()::text, '0', 'payout job skips disputed prizes');
+  perform pg_temp.expect(pg_temp.as_user(a, format('select public.rib_tournament_resolve(%L, ''pay'', null)', v_tournament)), '42501', 'only operators resolve disputes');
+  perform public.rib_tournament_resolve(v_tournament, 'refund', null);
+  perform pg_temp.expect(pg_temp.balance(d)::text, '9500', 'refund returns every entry fee');
+  -- An undisputed prize is paid by the job once the window closes.
+  perform pg_temp.as_user(a, 'select public.rib_tournament_create(''Cup 2'', ''chess'', 1000, 8, null)');
+  select id into v_tournament from public.tournaments where creator_id = a and name = 'Cup 2';
+  perform pg_temp.as_user(c, format('select public.rib_tournament_join(%L)', v_tournament));
+  perform pg_temp.as_user(d, format('select public.rib_tournament_join(%L)', v_tournament));
+  perform pg_temp.as_user(e, format('select public.rib_tournament_join(%L)', v_tournament));
+  perform pg_temp.as_user(a, format('select public.rib_tournament_finish(%L, %L)', v_tournament, c));
+  update public.tournaments set payout_at = now() - interval '1 minute' where id = v_tournament;
+  perform pg_temp.expect(pg_temp.as_user(d, format('select public.rib_tournament_dispute(%L, null)', v_tournament)), 'dispute_window_closed', 'no disputes after the window');
+  perform pg_temp.expect(public.rib_tournament_payouts()::text, '1', 'payout job pays the undisputed prize');
+  perform pg_temp.expect(pg_temp.balance(c)::text, '11500', 'carol receives the pool');
 
   -- Escrow expiry: an open challenge older than 24h is refunded by the sweep.
   perform pg_temp.as_user(b, 'select public.rib_challenge_create(''chess'', ''1v1'', 500, null)');
