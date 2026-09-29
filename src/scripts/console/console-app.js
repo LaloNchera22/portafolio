@@ -9,7 +9,6 @@
 import { isBackendConfigured } from "../lib/config.js";
 import { byId as $, setVisible } from "../lib/dom.js";
 import { getClient, getSession } from "../lib/supabase-client.js";
-import { initGames } from "../games/engine.js";
 import { initChallenges, loadChallenges } from "./challenges.js";
 import { initContext, session } from "./context.js";
 import { initDeveloperPortal, loadDeveloperMetrics, loadKeys, loadProjects } from "./developer.js";
@@ -23,9 +22,19 @@ function redirectToLanding() {
   window.location.replace("index.html");
 }
 
+// The games engine (27 games) is its own chunk, fetched when Play opens.
+let gamesEngine = null;
 function loadGames() {
   if (!$("games-root")) return;
-  initGames({ client: session.client, UID: session.uid, refreshWallet: refreshWallet, configured: true });
+  gamesEngine = gamesEngine || import("../games/engine.js");
+  gamesEngine
+    .then(function (engine) {
+      engine.initGames({ client: session.client, UID: session.uid, refreshWallet: refreshWallet, configured: true });
+    })
+    .catch(function () {
+      gamesEngine = null; // let the next visit retry
+      $("games-root").innerHTML = '<p class="muted">Couldn\'t load the games. Check your connection and open Play again.</p>';
+    });
 }
 
 const PAGE_LOADERS = {

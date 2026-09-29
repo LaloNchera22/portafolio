@@ -1,6 +1,7 @@
 /* ============================================================================
- * Runinback — core game rules: the original six (tic-tac-toe, connect four,
- * reversi, mancala, checkers, crazy eights).
+ * Runinback — core games: tic-tac-toe, connect four, reversi, mancala,
+ * checkers (stakeable; their rules live in supabase/functions/_shared/
+ * game-rules) and crazy eights (practice only: shuffled deck, hidden hands).
  *
  * Each module is { id, name, icon, tag, blurb, init, legal, apply, result, bot,
  * view }. Rules (init/legal/apply/result/bot) are pure and DOM-free; only

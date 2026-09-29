@@ -6,8 +6,9 @@
  *   • Play for rcoin — a staked 1v1 over Supabase Realtime. Both players stake
  *     the same amount, the winner takes the whole pot (no rake: the 5% is
  *     charged once when you buy rcoin, never on the table). Board state syncs
- *     over Realtime; the payout is settled server-side only when both players
- *     report the same result, so no one can pay themselves.
+ *     over Realtime; every move is validated by the game-move Edge Function,
+ *     and the pot settles automatically when the rules say the game is over,
+ *     on resign, or when a player's turn clock runs out.
  *
  * Game rules live in ./catalog (one module per game: init/legal/apply/result/
  * bot/view). This engine runs the lobby, the turn loop, the bot, the result
