@@ -106,6 +106,30 @@ describe("games page", () => {
     document.querySelector(".gplay__x").click();
   });
 
+  it("makes the game modal accessible: labelled, focused, Escape returns focus", () => {
+    const card = [...document.querySelectorAll(".gcard")].find((c) => /Connect Four/.test(c.textContent));
+    card.focus();
+    card.click();
+    const dialog = document.querySelector(".gplay--modal");
+    expect(dialog.getAttribute("aria-labelledby")).toBeTruthy();
+    expect(document.getElementById(dialog.getAttribute("aria-labelledby")).textContent).toBe("Connect Four");
+    expect(dialog.contains(document.activeElement)).toBe(true);
+    dialog.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true }));
+    expect(document.querySelector(".gplay--modal")).toBeNull();
+    expect(document.activeElement).toBe(card);
+  });
+
+  it("labels board squares for screen readers", () => {
+    const card = [...document.querySelectorAll(".gcard")].find((c) => /Tic-Tac-Toe/.test(c.textContent));
+    card.click();
+    [...document.querySelectorAll(".gplay__act")].find((b) => b.textContent === "Play free").click();
+    const squares = document.querySelectorAll("#g-board button");
+    expect(squares.length).toBe(9);
+    expect(squares[0].getAttribute("aria-label")).toBe("Square 1, empty, available");
+    expect(document.getElementById("g-turn").getAttribute("role")).toBe("status");
+    document.querySelector("#games-root .gscreen__top button").click(); // Leave
+  });
+
   it("keeps a board in progress when the games page is opened again", async () => {
     const card = [...document.querySelectorAll(".gcard")].find((c) => /Tic-Tac-Toe/.test(c.textContent));
     card.click();

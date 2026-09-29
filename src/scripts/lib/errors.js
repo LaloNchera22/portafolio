@@ -66,6 +66,10 @@ const HINTS = {
   turn_timed_out: "Your time for this move ran out.",
   not_timed_out: "Your opponent still has time to move.",
   use_timeout_claim: "Timed matches are decided by the turn clock.",
+  organizer_cannot_join: "Organizers can't enter their own paid tournament.",
+  not_enough_entrants: "A tournament needs at least 3 entrants before you can finish it.",
+  not_an_entrant: "Only other entrants can dispute this result.",
+  dispute_window_closed: "The review window for this prize has closed.",
   wallet_frozen: "Your wallet is on hold after a reversed payment. Contact support to restore it.",
 };
 

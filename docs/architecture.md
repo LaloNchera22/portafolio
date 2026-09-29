@@ -35,6 +35,9 @@ Vercel serves dist/ with CSP + HSTS; hashed assets are cached immutably.
 - **Stable error codes.** RPCs raise English messages with a `hint` code; the
   client maps hints to copy (`lib/errors.js`), so wording and language can change
   without breaking the UI.
+- **Chain: Base.** Stakes and payouts are designed to settle in USDC on Base,
+  matching the Coinbase Commerce rail already in use; today everything runs
+  in test mode on the off-chain ledger.
 - **Pure game rules.** Each game exposes `init/legal/apply/result/bot`
   without DOM access. The stakeable ones live in
   `supabase/functions/_shared/game-rules` (imported by the web app through the
@@ -55,17 +58,19 @@ Vercel serves dist/ with CSP + HSTS; hashed assets are cached immutably.
    `postgres_changes` for now on purpose: the transport only carries
    server-validated state, and switching it must be verified on a staging
    project first.
-3. **Tournament results.** Add a dispute / verification flow; the organizer can
-   no longer award themself, but collusion through a second account is possible.
+3. ~~**Tournament results.**~~ Done in 0019: no self-entry in paid events,
+   minimum 3 entrants, 24-hour review window with entrant disputes, payout
+   job, and operator resolution (`rib_tournament_resolve`).
 4. ~~**Refunds and chargebacks.**~~ Done in 0011: Stripe refunds / disputes
    reverse the top-up and freeze the wallet on a shortfall. Crypto (Coinbase)
    payments are not reversible on-chain; handle them with manual review.
 5. **Data lifecycle.** Escrow expiry and batched match cleanup run on
    pg_cron since 0011. Still to do: partition or archive `wallet_ledger`, and
    keyset pagination for the console lists.
-6. **Operability.** Error tracking (hidden source maps are already emitted),
-   uptime checks, Supabase branching for preview deployments, and Playwright
-   end-to-end tests against a seeded staging project.
+6. **Operability.** Browser errors from the console are captured in
+   `client_errors` (0020, 14-day retention). Still to do: alerting on those
+   and on Edge Function logs, uptime checks, Supabase branching for preview
+   deployments, and Playwright end-to-end tests (plan in the audit notes).
 7. **Account closure vs. financial records (decision needed).** Deleting an
    `auth.users` row cascades to `wallets`, `wallet_ledger` and
    `rcoin_purchases`. Switching those foreign keys to `RESTRICT` preserves the

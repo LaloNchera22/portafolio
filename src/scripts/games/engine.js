@@ -38,6 +38,63 @@ var host = null;  // container element for the games page
 
 function h(id) { return document.getElementById(id); }
 
+/* ---- accessibility helpers -------------------------------------------------- */
+// Accessible modal: labelled by its title, focus moves in and stays trapped,
+// Escape closes only this (top-most) modal, and focus returns to the opener.
+var FOCUSABLE = 'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea, [tabindex]:not([tabindex="-1"])';
+var modalSeq = 0;
+function mountModal(backdrop, panel, labelEl) {
+  var opener = document.activeElement;
+  if (labelEl) {
+    labelEl.id = labelEl.id || "gmodal-title-" + (++modalSeq);
+    panel.setAttribute("aria-labelledby", labelEl.id);
+  }
+  panel.tabIndex = -1;
+  var closed = false;
+  function close(restoreFocus) {
+    if (closed) return;
+    closed = true;
+    if (backdrop.parentNode) backdrop.parentNode.removeChild(backdrop);
+    if (restoreFocus !== false && opener && opener.focus && document.contains(opener)) opener.focus();
+  }
+  panel.addEventListener("keydown", function (e) {
+    if (e.key === "Escape") { e.stopPropagation(); close(); return; }
+    if (e.key !== "Tab") return;
+    var items = panel.querySelectorAll(FOCUSABLE);
+    if (!items.length) { e.preventDefault(); return; }
+    var first = items[0], last = items[items.length - 1];
+    if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+    else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+  });
+  backdrop.addEventListener("click", function (e) { if (e.target === backdrop) close(); });
+  // Mount inside the .capp shell so the overlay picks up the console styles.
+  var root = (host && host.closest && host.closest(".capp")) || document.querySelector(".capp") || document.body;
+  root.appendChild(backdrop);
+  var firstItem = panel.querySelector(FOCUSABLE);
+  (firstItem || panel).focus();
+  return close;
+}
+
+// Board cells are buttons drawn by each game's view. Give unlabelled ones a
+// spoken name ("Square 5, X" / "Square 5, empty") and keep keyboard focus on
+// the same square across re-renders, so a move doesn't drop focus to <body>.
+function boardFocusIndex(board) {
+  return Array.prototype.indexOf.call(board.querySelectorAll("button"), document.activeElement);
+}
+function afterBoardRender(board, focusIndex) {
+  var buttons = board.querySelectorAll("button");
+  Array.prototype.forEach.call(buttons, function (b, i) {
+    if (b.type !== "button") b.type = "button";
+    if (b.hasAttribute("aria-label")) return;
+    var text = (b.textContent || "").trim();
+    b.setAttribute("aria-label", "Square " + (i + 1) + ", " + (text || "empty") + (b.disabled ? "" : ", available"));
+  });
+  if (focusIndex >= 0) {
+    var target = buttons[focusIndex] && !buttons[focusIndex].disabled ? buttons[focusIndex] : board.querySelector("button:not([disabled])");
+    if (target) target.focus();
+  }
+}
+
 /* ---- how-to-play overlay ------------------------------------------------ */
 function getHelp(id) { return GAME_HELP[id] || null; }
 
@@ -64,7 +121,7 @@ function showHelp(gameId) {
   var head = el("div", "ghelp__head");
   head.innerHTML = '<span class="ghelp__ic">' + esc(meta.icon || "?") + '</span>' +
     '<span class="ghelp__title">' + esc(meta.name) + '</span>';
-  var x = el("button", "ghelp__x", "✕"); x.setAttribute("aria-label", "Close");
+  var x = el("button", "ghelp__x", "✕"); x.type = "button"; x.setAttribute("aria-label", "Close");
   head.appendChild(x);
   panel.appendChild(head);
 
@@ -94,18 +151,9 @@ function showHelp(gameId) {
   foot.appendChild(ok); panel.appendChild(foot);
 
   back.appendChild(panel);
-  function close() { if (back.parentNode) back.parentNode.removeChild(back); document.removeEventListener("keydown", onKey); }
-  function onKey(e) { if (e.key === "Escape") close(); }
-  x.addEventListener("click", close);
-  ok.addEventListener("click", close);
-  back.addEventListener("click", function (e) { if (e.target === back) close(); });
-  document.addEventListener("keydown", onKey);
-  // Mount inside the .capp shell: the overlay's styles (fixed positioning,
-  // backdrop, panel) and the color variables all live under .capp, so
-  // appending to document.body would leave it unstyled — a raw block of
-  // text dumped at the foot of the page instead of a centered modal.
-  var root = (host && host.closest && host.closest(".capp")) || document.querySelector(".capp") || document.body;
-  root.appendChild(back);
+  var close = mountModal(back, panel, head.querySelector(".ghelp__title"));
+  x.addEventListener("click", function () { close(); });
+  ok.addEventListener("click", function () { close(); });
 }
 
 export function initGames(ctx) {
@@ -223,10 +271,10 @@ function openGame(gameId) {
   panel.setAttribute("role", "dialog");
   panel.setAttribute("aria-modal", "true");
 
-  function close() { if (backdrop.parentNode) backdrop.parentNode.removeChild(backdrop); document.removeEventListener("keydown", onKey); }
-  function onKey(e) { if (e.key === "Escape") close(); }
-  // launch a mode: dismiss the pop-up, then render the game's sub-page
-  function launch(fn) { close(); fn(); }
+  var closeModal = null;
+  function close(restoreFocus) { if (closeModal) closeModal(restoreFocus); }
+  // launch a mode: dismiss the pop-up (focus moves to the new screen), then render it
+  function launch(fn) { close(false); fn(); }
 
   // identity header
   var head = el("div", "gplay__head");
@@ -238,7 +286,7 @@ function openGame(gameId) {
   var how = el("button", "btn btn--sm gplay__how", "How to play");
   how.addEventListener("click", function () { showHelp(gameId); });
   head.appendChild(how);
-  var x = el("button", "gplay__x", "✕"); x.setAttribute("aria-label", "Close");
+  var x = el("button", "gplay__x", "✕"); x.type = "button"; x.setAttribute("aria-label", "Close");
   x.addEventListener("click", close);
   head.appendChild(x);
   panel.appendChild(head);
@@ -314,10 +362,7 @@ function openGame(gameId) {
   panel.appendChild(coin);
 
   backdrop.appendChild(panel);
-  backdrop.addEventListener("click", function (e) { if (e.target === backdrop) close(); });
-  document.addEventListener("keydown", onKey);
-  var root = (host && host.closest && host.closest(".capp")) || document.querySelector(".capp") || document.body;
-  root.appendChild(backdrop);
+  closeModal = mountModal(backdrop, panel, panel.querySelector(".gplay__name"));
 }
 
 /* ---- practice loop (seat 0 = you, seat 1 = bot) ------------------------- */
@@ -337,6 +382,7 @@ function startPractice(gameId) {
   var legend = getHelp(gameId);
   if (legend && legend.you) stageWrap.appendChild(el("p", "gyou", legend.you));
   var turnbar = el("div", "gturn"); turnbar.id = "g-turn";
+  turnbar.setAttribute("role", "status");
   var board = el("div", "gboard"); board.id = "g-board";
   var over = el("div", "gover"); over.id = "g-over"; over.hidden = true;
   stageWrap.appendChild(turnbar); stageWrap.appendChild(board); stageWrap.appendChild(over);
@@ -344,10 +390,12 @@ function startPractice(gameId) {
 
   api.oppName = "Bot";
   function draw() {
+    var focusIndex = boardFocusIndex(board);
     board.innerHTML = "";
     var res = mod.result(state);
     api.canMove = !res && state.turn === 0;
     mod.view(state, apiFor(board));
+    afterBoardRender(board, focusIndex);
     if (res) return finishPractice(res);
     turnbar.textContent = state.turn === 0 ? "Your turn." : "Bot is thinking…";
     turnbar.className = "gturn " + (state.turn === 0 ? "you" : "opp");
@@ -373,6 +421,7 @@ function startPractice(gameId) {
   function finishPractice(res) {
     api.canMove = false;
     board.innerHTML = ""; mod.view(state, apiFor(board));
+    afterBoardRender(board, -1);
     turnbar.textContent = "";
     over.hidden = false;
     var won = res.winner === 0, draw2 = res.winner == null;
@@ -382,6 +431,7 @@ function startPractice(gameId) {
     var again = el("button", "btn btn--cta", "Play again"); again.addEventListener("click", function () { startPractice(gameId); });
     var leave = el("button", "btn", "All games"); leave.addEventListener("click", renderLobby);
     acts.appendChild(again); acts.appendChild(leave); over.appendChild(acts);
+    again.focus();
   }
   // wire move through api
   api.move = move;
@@ -620,6 +670,11 @@ function enterOnline(match, mod, seat, waitMsg) {
   online.channel = ch;
 
   online.render = function () {
+    var focusIndex = boardFocusIndex(board);
+    paint();
+    afterBoardRender(board, focusIndex);
+  };
+  function paint() {
     var st = online.state, m = online.match;
     board.innerHTML = "";
     over.hidden = true;
@@ -637,7 +692,7 @@ function enterOnline(match, mod, seat, waitMsg) {
     turnbar.textContent = st.turn === online.seat ? "Your turn." : "Opponent's turn…";
     turnbar.className = "gturn " + (st.turn === online.seat ? "you" : "opp");
     mod.view(st, onlineApi(board, yourTurn));
-  };
+  }
   online.render();
 }
 
@@ -682,6 +737,7 @@ function onlineUpdate(row) {
 function finishOnline(m) {
   var board = h("g-board"), turnbar = h("g-turn"), over = h("g-over");
   board.innerHTML = ""; online.mod.view(online.state, onlineApi(board, false));
+  afterBoardRender(board, -1);
   turnbar.textContent = "";
   over.hidden = false;
   if (m.status === "cancelled") {
@@ -698,5 +754,6 @@ function finishOnline(m) {
   var acts = el("div", "gover__acts");
   var leave = el("button", "btn btn--cta", "Back to games"); leave.addEventListener("click", function () { stopOnline(); renderLobby(); });
   acts.appendChild(leave); over.appendChild(acts);
+  leave.focus();
   if (CTX.refreshWallet) CTX.refreshWallet();
 }
