@@ -22,6 +22,18 @@ function parseHash(hash) {
 /** The argument of the current route (e.g. the room id), if any. */
 export function currentRouteArg() { return routeArg; }
 
+/**
+ * Forget a one-shot route arg (e.g. "join this tier") once it's been acted
+ * on, so a reload or Back doesn't act on it again.
+ */
+export function clearRouteArg() {
+  routeArg = null;
+  const id = parseHash(location.hash).id;
+  if (isPage(id)) {
+    try { history.replaceState({ page: id, arg: null }, "", "#" + id); } catch (e) { /* ignore */ }
+  }
+}
+
 export function closeAccountMenu() {
   const menu = byId("acct-menu");
   const avatar = byId("acct-avatar");
@@ -61,19 +73,14 @@ export function goToPage(id, options) {
   window.scrollTo(0, 0);
 }
 
-function wireSegment(buttonsSelector, attr, panels, currentAttr, onSwitch) {
+function wireSegment(buttonsSelector, attr, panels) {
   const buttons = document.querySelectorAll(buttonsSelector);
   buttons.forEach(function (b) {
     b.addEventListener("click", function (e) {
       e.preventDefault();
       const which = b.getAttribute(attr);
-      buttons.forEach(function (x) {
-        if (currentAttr === "aria-pressed") x.setAttribute("aria-pressed", String(x === b));
-        else if (x === b) x.setAttribute("aria-current", "page");
-        else x.removeAttribute("aria-current");
-      });
+      buttons.forEach(function (x) { x.setAttribute("aria-pressed", String(x === b)); });
       Object.keys(panels).forEach(function (key) { setVisible(byId(panels[key]), key === which); });
-      if (onSwitch) onSwitch(which);
     });
   });
 }
@@ -143,7 +150,7 @@ export function initNavigation(loaders) {
 
   window.addEventListener("popstate", function (e) {
     const parsed = parseHash(location.hash);
-    const id = (e.state && e.state.page) || parsed.id || "page-games";
+    const id = (e.state && e.state.page) || parsed.id || "page-compete";
     goToPage(id, { fromHistory: true, arg: (e.state && e.state.arg) || parsed.arg });
   });
 
@@ -158,16 +165,9 @@ export function initNavigation(loaders) {
     menu.addEventListener("click", function (e) { e.stopPropagation(); });
     document.addEventListener("click", closeAccountMenu);
   }
-  const toDeveloper = byId("switch-to-developer");
-  const toPlayer = byId("switch-to-player");
-  if (toDeveloper) toDeveloper.addEventListener("click", function (e) { e.preventDefault(); goToPage("page-developer"); });
-  if (toPlayer) toPlayer.addEventListener("click", function () { goToPage("page-games"); });
 
   wireSegment("#compete-seg button[data-seg]", "data-seg",
-    { tournaments: "compete-tournaments", mine: "compete-mine", friendlies: "compete-friendlies" }, "aria-pressed",
-    function () { const msg = byId("challenge-msg"); if (msg) msg.hidden = true; });
-  wireSegment("#dev-nav a[data-dev]", "data-dev",
-    { projects: "dev-projects", keys: "dev-keys", payouts: "dev-payouts" }, "aria-current");
+    { play: "compete-play", mine: "compete-mine", custom: "compete-custom" });
 }
 
 /** The page named by the URL hash on load, if it is a console page. */

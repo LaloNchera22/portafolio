@@ -1,10 +1,16 @@
 /* ============================================================================
  * Runinback — match room: where two players who may not know each other meet
- * for a bracket match or a friendly. They set up a private lobby in their
- * game, confirm they're ready, report the result and, if they disagree,
- * dispute it with captures taken in the app.
+ * for a Wild Rift 1v1. Player A hosts a custom game and invites B's Riot ID;
+ * both press Ready, report the result and upload the end screen.
  *
- * The database decides everything (migrations 0022–0023): ready and
+ * The end screen is evidence, never a verdict: right after a screenshot is
+ * registered the room asks verify-result to read it. When it clearly shows
+ * the uploader's reported win with both Riot IDs, the confirm window shrinks
+ * to 3 minutes (fast track); the opponent can still dispute. Anything else
+ * leaves the room as it is and stays attached for review. Each screenshot
+ * shows its check from the response and from Realtime (room_evidence UPDATE).
+ *
+ * The database decides everything (migrations 0022–0026): ready and
  * confirmation deadlines, silence-confirms, walkovers, deposits, advancement
  * and payouts. This module renders the state and stays live through Realtime.
  *
@@ -14,23 +20,27 @@
  * survive the opponent's actions. Events are delegated on the root.
  * ========================================================================== */
 import { byId as $, escapeHtml as esc, showMessage } from "../lib/dom.js";
+import { functionError } from "../lib/errors.js";
 import { formatRcoin } from "../lib/format.js";
 import { replayClass, tweenNumber } from "../lib/motion.js";
 import { prizeSplit, roundName } from "../lib/tournament.js";
 import { errorText, session } from "./context.js";
 import { refreshLive } from "./live.js";
 import { currentRouteArg, goToPage } from "./navigation.js";
-import { networkLabel } from "./networks.js";
 import { refreshWallet } from "./wallet.js";
 
 const LAST_ROOM_KEY = "rib-last-room";
 const EVIDENCE_BUCKET = "room-evidence";
-const WINDOW_SECONDS = 900; // both the ready check and the confirmation window
+const READY_SECONDS = 300;   // rib_ready_window()
+const CONFIRM_SECONDS = 600; // rib_confirm_window()
+const FAST_SECONDS = 180;    // rib_verified_confirm_window(): after a verified end screen
+const CHECK_FRESH_MS = 120000; // a pending check older than this isn't running
+const MAX_WIDTH = 1600;      // screenshots are read at this size (verify-result skips > 3.75 MB)
 const STEPS = ["Lobby", "Ready", "Playing", "Report", "Result"];
 
 const room = {
   id: null, r: null, info: null, messages: [], evidence: [], channel: null, timer: 0,
-  busy: false, shellFor: null, lastStatus: null, celebrated: {},
+  busy: false, shellFor: null, lastStatus: null, celebrated: {}, checking: {},
 };
 
 function rememberRoom(id) {
@@ -63,7 +73,7 @@ export function loadRoom() {
   const id = currentRouteArg() || room.id || lastRoom();
   if (!id) {
     $("room-title").textContent = "Match room.";
-    $("room-root").innerHTML = emptyState("No room open", "Rooms open from your tournaments and friendlies once a match is ready.", "Find a tournament");
+    $("room-root").innerHTML = emptyState("No room open", "Rooms open from your tournaments once a match is ready.", "Find a tournament");
     return Promise.resolve();
   }
   if (room.id !== id) closeRoom();
@@ -91,12 +101,12 @@ function fetchRoom() {
     session.client.from("match_rooms").select("*").eq("id", id).single(),
     session.client.rpc("rib_room_info", { p_room_id: id }),
     session.client.from("room_messages").select("id, user_id, body, created_at").eq("room_id", id).order("id", { ascending: true }).limit(200),
-    session.client.from("room_evidence").select("id, user_id, storage_path, source, created_at").eq("room_id", id).order("id", { ascending: true }),
+    session.client.from("room_evidence").select("id, room_id, user_id, storage_path, source, created_at, check_status, checked_at").eq("room_id", id).order("id", { ascending: true }),
   ]).then(function (res) {
     if (id !== room.id) return;
     if (res[0].error || !res[0].data) {
       $("room-title").textContent = "Match room.";
-      $("room-root").innerHTML = emptyState("Room not found", "This room doesn't exist or isn't yours.", "Back to Compete");
+      $("room-root").innerHTML = emptyState("Room not found", "This room doesn't exist or isn't yours.", "Back to Play");
       room.shellFor = null;
       return;
     }
@@ -132,6 +142,10 @@ function subscribe(id) {
       if (room.evidence.some(function (e) { return e.id === payload.new.id; })) return;
       room.evidence.push(payload.new);
       renderEvidence();
+    })
+    .on("postgres_changes", { event: "UPDATE", schema: "public", table: "room_evidence", filter: "room_id=eq." + id }, function (payload) {
+      if (id !== room.id || !payload.new) return;
+      patchEvidence(payload.new);
     })
     .subscribe();
 }
@@ -170,7 +184,7 @@ function countdown(deadline) {
 }
 
 function clock(deadline, note, kind) {
-  return '<div class="room-clock room-clock--' + kind + '" data-deadline="' + esc(deadline) + '" data-total="' + WINDOW_SECONDS + '">' +
+  return '<div class="room-clock room-clock--' + kind + '" data-deadline="' + esc(deadline) + '" data-total="' + (kind === "ready" ? READY_SECONDS : room.r && room.r.fast_tracked ? FAST_SECONDS : CONFIRM_SECONDS) + '">' +
     '<svg viewBox="0 0 40 40" aria-hidden="true"><circle class="room-clock__track" cx="20" cy="20" r="18"/>' +
     '<circle class="room-clock__arc" cx="20" cy="20" r="18" pathLength="100"/></svg>' +
     '<strong class="room-clock__t">' + countdown(deadline) + '</strong><span class="room-clock__k">' + note + "</span></div>";
@@ -202,7 +216,8 @@ function renderShell() {
         '<p class="muted room-chat__closed" id="room-chat-closed" hidden>This room is closed.</p>' +
       "</aside>" +
     "</div>" +
-    '<input type="file" accept="image/*" capture="environment" id="room-camera" hidden />';
+    '<input type="file" accept="image/*" capture="environment" id="room-camera" hidden />' +
+    '<input type="file" accept="image/png,image/jpeg,image/webp" id="room-upload" hidden />';
   wireShell();
 }
 
@@ -214,7 +229,7 @@ function update() {
   $("room-context").innerHTML = contextLine(r, i);
   renderSteps(r);
   renderPlayers(r, i);
-  $("room-lobby").innerHTML = live && r.room_code ? lobbyBox(r) : "";
+  $("room-lobby").innerHTML = live && r.room_code ? lobbyBox(r, i) : "";
   renderState(r);
   renderEvidence();
   $("room-chat-form").hidden = !live;
@@ -264,7 +279,7 @@ function playerChip(r, uid) {
 }
 
 function renderPlayers(r, i) {
-  const network = r.network ? networkLabel(r.network) : "";
+  const network = r.network === "riot" ? "Riot ID" : "";
   const box = $("room-players");
   const prev = {};
   box.querySelectorAll("[data-seat]").forEach(function (el) {
@@ -290,17 +305,25 @@ function renderPlayers(r, i) {
   });
 }
 
-function lobbyBox(r) {
+// Wild Rift custom 1v1: player A hosts and invites B's Riot ID.
+function lobbyBox(r, i) {
   const copy = function (value, label) {
     return '<button type="button" class="btn btn--sm room-copy" data-copy="' + esc(value) + '" aria-label="Copy ' + label + '">Copy</button>';
   };
+  const iHost = r.player_a === me();
+  const guestId = i.b_handle;
+  const how = iHost
+    ? "<strong>You host.</strong> In Wild Rift, create a custom game with this lobby name and password, then invite " +
+      (guestId ? "<strong>" + esc(guestId) + "</strong>" + copy(guestId, "your opponent's Riot ID") : "your opponent's Riot ID") + "."
+    : "<strong>" + esc(nameOf(r.player_a)) + " hosts.</strong> They create the custom game and invite your Riot ID" +
+      (i.b_handle ? " (<strong>" + esc(i.b_handle) + "</strong>)" : "") + ". Accept the invite in Wild Rift, or join the custom game with this name and password.";
   return '<div class="room-lobby">' +
     '<div class="room-lobby__code"><span class="k">Match code</span><span class="v">' + esc(r.room_code) + "</span></div>" +
     '<dl class="room-lobby__creds">' +
       "<div><dt>Lobby name</dt><dd><code>" + esc(r.lobby_name) + "</code>" + copy(r.lobby_name, "lobby name") + "</dd></div>" +
       "<div><dt>Password</dt><dd><code>" + esc(r.lobby_password) + "</code>" + copy(r.lobby_password, "password") + "</dd></div>" +
     "</dl>" +
-    '<p class="muted room-lobby__how">One of you creates a private or custom match with this name and password; the other joins it. Keep the match code in the lobby name: it ties your captures to this match.</p>' +
+    '<p class="muted room-lobby__how">' + how + " Play 1v1 to the end, then screenshot the end screen: with both Riot IDs on it, it backs up your result.</p>" +
   "</div>";
 }
 
@@ -352,7 +375,7 @@ function stateHtml(r) {
   if (r.status === "waiting") return "<h2>Waiting for your opponent</h2><p>This match opens when the previous round decides who you play.</p>";
   if (r.status === "void") {
     return "<h2>No result</h2><p>" + esc(r.resolution_note || "This match ended without a winner.") + "</p>" +
-      nextActions(['<button type="button" class="btn btn--sm" data-go="page-compete">Back to Compete</button>']);
+      nextActions(['<button type="button" class="btn btn--sm" data-go="page-compete">Back to Play</button>']);
   }
   if (r.status === "done") {
     const won = r.winner_id === me();
@@ -382,7 +405,8 @@ function stateHtml(r) {
     return "<h2>In review</h2><p>" + (byMe ? "You disputed " + opp + "'s report." : opp + " disputed your report.") +
       " The Runinback team will check the chat and the captures and decide." +
       (r.dispute_deposit_cents ? " The " + formatRcoin(r.dispute_deposit_cents) + " deposit comes back if the dispute holds and goes to the other player if it doesn't." : "") +
-      "</p><p>Add captures of the final score below.</p>";
+      "</p><p>Add the end screen if you haven't: it's the strongest evidence.</p>" +
+      nextActions(['<button type="button" class="btn btn--sm" data-act="upload">Upload the end screen</button>']);
   }
   if (r.status === "ready_check") {
     const mine = myReady(); const theirs = theirReady();
@@ -390,19 +414,23 @@ function stateHtml(r) {
       ? "If only one of you is ready, that player advances. If neither is, you're both out."
       : "If it runs out, the friendly closes.";
     return "<h2>Get into the lobby</h2>" +
-      "<p>Set up the private match with the details below, then press Ready. The match starts when both of you are ready.</p>" +
+      "<p>Set up the Wild Rift custom game with the details below, then press Ready. The match starts when both of you are ready.</p>" +
       clock(r.ready_deadline, (mine ? "You're ready. " + (theirs ? "" : "Waiting for " + opp + ". ") : "") + rule, "ready") +
       (mine ? "" : nextActions(['<button type="button" class="btn btn--cta" data-act="ready">I\'m in the lobby, ready</button>']));
   }
   // live
   const mineR = myReport(); const theirsR = theirReport();
   if (!mineR && !theirsR) {
-    return "<h2>Match on</h2><p>Play the match. When it ends, report the result: if " + opp +
+    return "<h2>Match on</h2><p>Play the match. When it ends, screenshot the end screen and report the result: if " + opp +
       " reports the same, it's settled right away.</p>" +
       nextActions(['<button type="button" class="btn btn--cta" data-act="won">I won</button>', '<button type="button" class="btn" data-act="lost">I lost</button>']);
   }
   if (mineR && !theirsR) {
-    return "<h2>Waiting for " + opp + "</h2><p>You reported that " + (mineR === me() ? "you" : opp) + " won.</p>" +
+    return "<h2>Waiting for " + opp + "</h2><p>You reported that " + (mineR === me() ? "you" : opp) + " won. " +
+      (r.fast_tracked
+        ? "Your end screen was verified, so the result confirms when the clock runs out unless " + opp + " disputes it.</p>"
+        : "Upload the end screen: when it clearly shows your result, it confirms in 3 minutes unless " + opp + " disputes it.</p>") +
+      nextActions(['<button type="button" class="btn btn--cta" data-act="upload">Upload the end screen</button>']) +
       clock(r.confirm_deadline, opp + " can confirm or dispute it. If they don't respond, your result stands.", "confirm");
   }
   const theySayIWon = theirsR === me();
@@ -410,16 +438,35 @@ function stateHtml(r) {
     ? "Disputing holds a deposit of " + formatRcoin(depositCents()) + ". You get it back if the team agrees with you; otherwise it goes to " + opp + "."
     : r.kind === "friendly" ? "A disputed friendly ends with no result." : "The Runinback team reviews disputed matches.";
   return "<h2>" + opp + " reported " + (theySayIWon ? "that you won" : "that they won") + "</h2>" +
+    (r.fast_tracked ? "<p>Their end screen was verified automatically. If it's wrong, dispute it before the clock runs out.</p>" : "") +
     clock(r.confirm_deadline, "to respond. After that, their result stands.", "confirm") +
     (theySayIWon
       ? nextActions(['<button type="button" class="btn btn--cta" data-act="confirm-me">Confirm my win</button>'])
       : nextActions(['<button type="button" class="btn" data-act="confirm-them">Confirm they won</button>', '<button type="button" class="btn btn--danger" data-act="dispute-open">Dispute</button>']) +
         '<form class="room-dispute" id="room-dispute" hidden novalidate>' +
           '<label for="room-dispute-reason">What happened?</label>' +
-          '<textarea id="room-dispute-reason" maxlength="500" rows="3" placeholder="For example: I won 13-9, the final scoreboard is in my capture."></textarea>' +
+          '<textarea id="room-dispute-reason" maxlength="500" rows="3" placeholder="For example: I won, the end screen is in my screenshot."></textarea>' +
           '<p class="field__hint">' + disputeNote + "</p>" +
           nextActions(['<button type="submit" class="btn btn--danger">Open dispute</button>', '<button type="button" class="btn" data-act="dispute-cancel">Cancel</button>']) +
         "</form>");
+}
+
+function checkChip(e) {
+  const status = e.check_status;
+  const fresh = Date.now() - new Date(e.created_at).getTime() < CHECK_FRESH_MS;
+  if (room.checking[e.id] || (status === "pending" && fresh)) return '<span class="chip chip--match is-live">Checking…</span>';
+  if (status === "verified") return '<span class="chip chip--good">Verified</span>';
+  if (status === "contradicts") return '<span class="chip chip--escrow">Doesn\'t match</span>';
+  if (status === "unreadable") return '<span class="chip">Couldn\'t read it</span>';
+  if (status === "duplicate") return '<span class="chip chip--escrow">Used in another match</span>';
+  if (status === "pending" || status === "skipped") return '<span class="chip">Not checked</span>';
+  return "";
+}
+
+function evidenceItem(e) {
+  return '<li data-ev="' + esc(e.id) + '"><a data-evidence="' + esc(e.storage_path) + '" target="_blank" rel="noopener">' +
+    '<img alt="Screenshot by ' + esc(nameOf(e.user_id)) + '" /></a><span>' + esc(nameOf(e.user_id)) + " · " + (e.source === "screen" ? "screen" : "screenshot") + "</span>" +
+    '<span class="room-evidence__check" aria-live="polite">' + checkChip(e) + "</span></li>";
 }
 
 function renderEvidence() {
@@ -430,16 +477,70 @@ function renderEvidence() {
   box.hidden = !canAdd && !room.evidence.length;
   if (box.hidden) return;
   const hasScreen = !!(navigator.mediaDevices && navigator.mediaDevices.getDisplayMedia);
-  box.innerHTML = '<h2 class="room__h">Captures</h2>' +
-    '<p class="muted">Captures are taken in the app and stamped with the match code, a one-time token and the server time, so an image made elsewhere can\'t pass as one.</p>' +
+  box.innerHTML = '<h2 class="room__h">End screen</h2>' +
+    '<p class="muted">Upload the Wild Rift end screen with both Riot IDs on it. It\'s stamped with the match code and a one-time token, read automatically, and a screenshot used in another match is refused.</p>' +
     (canAdd ? '<div class="room-actions">' +
+      '<button type="button" class="btn btn--sm" data-act="upload">Upload a screenshot</button>' +
       (hasScreen ? '<button type="button" class="btn btn--sm" data-act="capture-screen">Capture my screen</button>' : "") +
       '<button type="button" class="btn btn--sm" data-act="capture-camera">Take a photo</button></div>' : "") +
-    '<ul class="room-evidence__list" id="room-evidence-list">' + room.evidence.map(function (e) {
-      return '<li><a data-evidence="' + esc(e.storage_path) + '" target="_blank" rel="noopener">' +
-        '<img alt="Capture by ' + esc(nameOf(e.user_id)) + '" /></a><span>' + esc(nameOf(e.user_id)) + " · " + (e.source === "screen" ? "screen" : "photo") + "</span></li>";
-    }).join("") + "</ul>";
+    '<ul class="room-evidence__list" id="room-evidence-list">' + room.evidence.map(evidenceItem).join("") + "</ul>";
   loadEvidenceThumbs();
+}
+
+// A check result: update that screenshot's chip in place (no thumbnail reload).
+function patchEvidence(row) {
+  const e = room.evidence.find(function (x) { return String(x.id) === String(row.id); });
+  if (!e) return;
+  Object.assign(e, row);
+  if (row.check_status && row.check_status !== "pending") delete room.checking[e.id];
+  const slot = document.querySelector('#room-evidence-list [data-ev="' + String(e.id).replace(/"/g, "") + '"] .room-evidence__check');
+  if (slot) slot.innerHTML = checkChip(e);
+}
+
+const CHECK_TEXT = {
+  contradicts: "Doesn't match this match. It stays attached for review.",
+  unreadable: "We couldn't read that screenshot. It stays attached; your opponent can still confirm the result.",
+  duplicate: "This screenshot was already used in another match.",
+};
+
+function checkMessage(out) {
+  if (out.status === "verified") {
+    return out.fast_tracked ? "Verified. The result confirms in 3 minutes unless your opponent disputes it." : "Verified. It stays attached as evidence.";
+  }
+  return CHECK_TEXT[out.status] || "Screenshot added.";
+}
+
+// Read a just-added screenshot. The chip says "Checking…" until the answer
+// (or the Realtime update, whichever lands first). A screenshot never
+// settles a match; a fast track only shortens the confirm window.
+function checkEvidence(id) {
+  if (!session.client.functions) return Promise.resolve();
+  room.checking[id] = true;
+  patchEvidence({ id: id });
+  const roomId = room.id;
+  return session.client.functions.invoke("verify-result", { body: { evidence_id: id } }).then(function (r) {
+    if (r.error) {
+      return functionError(r.error).catch(function () { return {}; }).then(function (err) {
+        delete room.checking[id];
+        patchEvidence({ id: id, check_status: err.hint === "evidence_not_pending" ? undefined : "skipped" });
+        if (roomId === room.id) flash("Screenshot added. The automatic check isn't available right now; your opponent can still confirm the result.", true);
+      });
+    }
+    const out = r.data || {};
+    delete room.checking[id];
+    patchEvidence({ id: id, check_status: out.status || "skipped" });
+    if (roomId !== room.id) return;
+    flash(checkMessage(out), out.status === "verified" || !CHECK_TEXT[out.status]);
+    // The shorter confirm deadline also arrives by Realtime; read it now so
+    // the clock is right even if that event is late.
+    if (out.fast_tracked || out.settled) {
+      if (out.settled) { refreshWallet(); refreshLive(); }
+      return fetchRoom();
+    }
+  }).catch(function () {
+    delete room.checking[id];
+    patchEvidence({ id: id });
+  });
 }
 
 function messageHtml(m) {
@@ -491,7 +592,7 @@ function loadEvidenceThumbs() {
 function tick() {
   document.querySelectorAll("#room-state .room-clock").forEach(function (el) {
     const ms = new Date(el.getAttribute("data-deadline")).getTime() - Date.now();
-    const total = (parseInt(el.getAttribute("data-total"), 10) || WINDOW_SECONDS) * 1000;
+    const total = (parseInt(el.getAttribute("data-total"), 10) || CONFIRM_SECONDS) * 1000;
     el.style.setProperty("--p", String(Math.max(0, Math.min(1, ms / total))));
     el.classList.toggle("is-low", ms > 0 && ms < 60000);
     el.querySelector(".room-clock__t").textContent = countdown(el.getAttribute("data-deadline"));
@@ -539,7 +640,7 @@ function onAction(name) {
   const r = room.r;
   if (name === "ready") return act("rib_room_ready", { p_room_id: r.id }, "You're ready.");
   if (name === "won") {
-    if (!window.confirm("Report that you won? If your opponent confirms, or doesn't respond in 15 minutes, the win is yours.")) return;
+    if (!window.confirm("Report that you won? If your opponent confirms, the end screen shows it, or they don't respond in 10 minutes, the win is yours.")) return;
     return act("rib_room_report", { p_room_id: r.id, p_winner_id: me() }, "Result sent.");
   }
   if (name === "lost") {
@@ -555,6 +656,7 @@ function onAction(name) {
   if (name === "dispute-cancel") { $("room-dispute").hidden = true; return; }
   if (name === "capture-screen") return captureScreen();
   if (name === "capture-camera") return $("room-camera").click();
+  if (name === "upload") return $("room-upload").click();
 }
 
 function wireShell() {
@@ -612,10 +714,10 @@ function wireShell() {
     }
   });
   root.addEventListener("change", function (e) {
-    if (e.target.id !== "room-camera") return;
-    const camera = e.target;
-    if (camera.files && camera.files[0]) capturePhoto(camera.files[0]);
-    camera.value = "";
+    if (e.target.id !== "room-camera" && e.target.id !== "room-upload") return;
+    const input = e.target;
+    if (input.files && input.files[0]) capturePhoto(input.files[0]);
+    input.value = "";
   });
   root.addEventListener("scroll", function (e) {
     if (e.target.id !== "room-chat") return;
@@ -625,10 +727,18 @@ function wireShell() {
 }
 
 /* ---- captures --------------------------------------------------------------
- * The image comes from the screen or the camera at capture time, gets a
- * server token stamped into its pixels, is hashed, stored under
- * <room>/<user>/ and registered with that token (single use, 15 minutes).
+ * A screenshot (uploaded, or taken from the screen or the camera) gets a
+ * server token stamped under it, is scaled to 1600 px, stored under
+ * <room>/<user>/ and registered with that token (single use, 15 minutes),
+ * then read by verify-result. An uploaded file is fingerprinted by its
+ * original bytes, so the same screenshot can't be reused in another match.
  * -------------------------------------------------------------------------- */
+function sha256Hex(buf) {
+  return crypto.subtle.digest("SHA-256", buf).then(function (digest) {
+    return Array.prototype.map.call(new Uint8Array(digest), function (b) { return b.toString(16).padStart(2, "0"); }).join("");
+  });
+}
+
 function captureScreen() {
   navigator.mediaDevices.getDisplayMedia({ video: true, audio: false }).then(function (stream) {
     const video = document.createElement("video");
@@ -637,33 +747,42 @@ function captureScreen() {
     return video.play().then(function () {
       return new Promise(function (resolve) { requestAnimationFrame(resolve); });
     }).then(function () {
-      return stampAndUpload({ image: video, width: video.videoWidth, height: video.videoHeight }, "screen")
+      return stampAndUpload({ image: video, width: video.videoWidth, height: video.videoHeight }, "screen", null)
         .finally(function () { stream.getTracks().forEach(function (t) { t.stop(); }); });
     });
   }).catch(function (err) {
     if (err && err.name === "NotAllowedError") return; // the player cancelled the picker
-    flash("Couldn't capture the screen. Try the photo option instead.", false);
+    flash("Couldn't capture the screen. Upload a screenshot instead.", false);
   });
 }
 
 function capturePhoto(file) {
-  if (!/^image\//.test(file.type)) { flash("Take a photo of the final score.", false); return; }
+  if (!/^image\//.test(file.type)) { flash("Upload an image of the end screen.", false); return Promise.resolve(); }
   const url = URL.createObjectURL(file);
-  const img = new Image();
-  img.onload = function () {
-    stampAndUpload({ image: img, width: img.naturalWidth, height: img.naturalHeight }, "camera").finally(function () { URL.revokeObjectURL(url); });
-  };
-  img.onerror = function () { URL.revokeObjectURL(url); flash("That photo couldn't be read.", false); };
-  img.src = url;
+  return Promise.all([
+    file.arrayBuffer().then(sha256Hex),
+    new Promise(function (resolve, reject) {
+      const img = new Image();
+      img.onload = function () { resolve(img); };
+      img.onerror = reject;
+      img.src = url;
+    }),
+  ]).then(function (res) {
+    const img = res[1];
+    return stampAndUpload({ image: img, width: img.naturalWidth, height: img.naturalHeight }, "camera", res[0]);
+  }, function () {
+    flash("That image couldn't be read. Try another screenshot.", false);
+  }).finally(function () { URL.revokeObjectURL(url); });
 }
 
-function stampAndUpload(source, kind) {
+function stampAndUpload(source, kind, fingerprint) {
   const r = room.r;
-  flash("Uploading your capture…", true);
+  let path = null;
+  flash("Uploading your screenshot…", true);
   return session.client.rpc("rib_room_evidence_token", { p_room_id: r.id }).then(function (res) {
     if (res.error || !Array.isArray(res.data) || !res.data[0]) throw res.error || new Error("no token");
     const t = res.data[0];
-    const scale = Math.min(1, 1920 / (source.width || 1920));
+    const scale = Math.min(1, MAX_WIDTH / (source.width || MAX_WIDTH));
     const w = Math.round((source.width || 1280) * scale);
     const h = Math.round((source.height || 720) * scale);
     const bar = Math.max(36, Math.round(h * 0.05));
@@ -678,25 +797,33 @@ function stampAndUpload(source, kind) {
     ctx.font = Math.round(bar * 0.45) + "px ui-monospace, monospace";
     ctx.textBaseline = "middle";
     ctx.fillText(t.room_code + "  ·  token " + t.token + "  ·  " + new Date(t.issued_at).toISOString() + "  ·  " + nameOf(me()), 12, h + bar / 2);
-    return new Promise(function (resolve) { canvas.toBlob(resolve, "image/jpeg", 0.9); }).then(function (blob) {
-      return blob.arrayBuffer().then(function (buf) { return crypto.subtle.digest("SHA-256", buf); }).then(function (digest) {
-        const sha = Array.prototype.map.call(new Uint8Array(digest), function (b) { return b.toString(16).padStart(2, "0"); }).join("");
-        const path = r.id + "/" + me() + "/" + t.token + ".jpg";
+    return new Promise(function (resolve) { canvas.toBlob(resolve, "image/jpeg", 0.85); }).then(function (blob) {
+      return (fingerprint ? Promise.resolve(fingerprint) : blob.arrayBuffer().then(sha256Hex)).then(function (sha) {
+        path = r.id + "/" + me() + "/" + t.token + ".jpg";
         return session.client.storage.from(EVIDENCE_BUCKET).upload(path, blob, { contentType: "image/jpeg", upsert: false }).then(function (up) {
-          if (up.error) throw up.error;
+          if (up.error) { path = null; throw up.error; }
           return session.client.rpc("rib_room_evidence_add", { p_room_id: r.id, p_token: t.token, p_path: path, p_sha256: sha, p_source: kind });
         });
       });
     });
   }).then(function (res) {
     if (res && res.error) throw res.error;
-    if (res && res.data && res.data.id && !room.evidence.some(function (e) { return e.id === res.data.id; })) {
-      room.evidence.push(res.data);
+    // The RPC returns the row; accept a bare id too.
+    const data = Array.isArray(res && res.data) ? res.data[0] : res && res.data;
+    const row = data && typeof data === "object" ? data : { id: data };
+    if (row.id == null) { flash("Screenshot added.", true); return; }
+    if (!room.evidence.some(function (e) { return String(e.id) === String(row.id); })) {
+      room.evidence.push(Object.assign({ user_id: me(), storage_path: path, source: kind, created_at: new Date().toISOString(), check_status: "pending" }, row));
       renderEvidence();
     }
-    flash("Capture added.", true);
+    flash("Screenshot added. Checking it…", true);
+    return checkEvidence(row.id);
   }).catch(function (err) {
-    flash(errorText(err, "Couldn't add the capture. Try again."), false);
+    // A refused screenshot shouldn't stay in storage.
+    if (path && err && err.hint) {
+      try { Promise.resolve(session.client.storage.from(EVIDENCE_BUCKET).remove([path])).catch(function () {}); } catch (e) { /* best effort */ }
+    }
+    flash(errorText(err, "Couldn't add the screenshot. Try again."), false);
   });
 }
 

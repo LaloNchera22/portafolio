@@ -7,16 +7,15 @@
  * on-chain on Base (contracts + audit, Phase 3+).
  * ========================================================================== */
 import { isBackendConfigured } from "../lib/config.js";
-import { byId as $, setVisible, escapeHtml as esc } from "../lib/dom.js";
+import { byId as $, setVisible } from "../lib/dom.js";
 import { getClient, getSession } from "../lib/supabase-client.js";
 import { initContext } from "./context.js";
 import { initRanking, loadProfileRecord, loadRanking } from "./leaderboard.js";
 import { currentRouteArg, goToPage, initAmountChips, initNavigation, initialPage } from "./navigation.js";
 import { initOps, loadOps } from "./ops.js";
 import { initPlayer, loadPlayer } from "./player.js";
-import { NETWORKS } from "./networks.js";
 import {
-  initAccountClosure, initGameAccounts, initProfile, loadGameAccounts, loadProfile, prepareLink, setGameAccountsListener, showProfileSection,
+  initAccountClosure, initGameAccounts, initProfile, loadGameAccounts, loadProfile, prepareLink, showProfileSection,
 } from "./profile.js";
 import { initSecurity, loadSecurity } from "./security.js";
 import { initSettings, loadSettings } from "./settings.js";
@@ -25,8 +24,8 @@ import { initRoom, loadRoom, openRoom } from "./room.js";
 import { initTournaments, loadTournaments } from "./tournaments.js";
 import { handleCheckoutReturn, initWallet, loadLedger, prepareTopUp, refreshWallet, updatePurchaseQuote } from "./wallet.js";
 
-// Three steps from "just signed up" to "playing for a prize", on the Play
-// page until the player hides them. Remembered per browser only.
+// Three steps from "just signed up" to "playing for a prize", on Play until
+// the player hides them. Remembered per browser only.
 const ONBOARD_KEY = "rib:onboard-hidden";
 function initOnboarding() {
   const box = $("onboard");
@@ -44,29 +43,8 @@ function redirectToLanding() {
   window.location.replace("index.html");
 }
 
-function fillNetworkSelect(select, linked) {
-  if (!select) return;
-  const keep = select.value;
-  const have = (linked || []).map(function (a) { return a.network; });
-  select.innerHTML = '<option value="">Not required</option>' + NETWORKS.filter(function (n) { return have.indexOf(n.id) !== -1; })
-    .map(function (n) { return '<option value="' + n.id + '">' + esc(n.label) + "</option>"; }).join("");
-  if (have.indexOf(keep) !== -1) select.value = keep;
-}
-
-// Tournament and friendly forms offer only the game accounts this player
-// linked. A failed read (null) keeps whatever the selects already offer.
-function fillAccountSelects(rows) {
-  if (!rows) return;
-  fillNetworkSelect($("tournament-network"), rows);
-}
-function loadGameAccountSelects(opts) {
-  return loadGameAccounts(opts).then(fillAccountSelects);
-}
-
 const PAGE_LOADERS = {
-  "page-compete": function () {
-    loadTournaments(); loadGameAccountSelects({ cached: true });
-  },
+  "page-compete": loadTournaments,
   "page-room": loadRoom,
   "page-ops": loadOps,
   "page-wallet": function () { refreshWallet(); loadLedger(); if (currentRouteArg()) prepareTopUp(currentRouteArg()); },
@@ -76,7 +54,7 @@ const PAGE_LOADERS = {
     if (section === "settings") { loadSettings(); return; }
     if (section === "security") { loadSecurity(); return; }
     loadProfile(); loadProfileRecord();
-    loadGameAccountSelects().then(function () { if (currentRouteArg()) prepareLink(currentRouteArg()); });
+    loadGameAccounts().then(function () { if (currentRouteArg()) prepareLink(currentRouteArg()); });
   },
   "page-player": function () { loadPlayer(currentRouteArg()); },
 };
@@ -111,7 +89,6 @@ export function initConsole() {
     });
     initProfile();
     initGameAccounts();
-    setGameAccountsListener(fillAccountSelects);
     initSettings();
     initSecurity();
     initPlayer();
@@ -130,7 +107,7 @@ export function initConsole() {
     try { window.history.replaceState({ page: start, arg: currentRouteArg() }, "", window.location.href); } catch (e) { /* ignore */ }
     goToPage(start, { fromHistory: true, arg: currentRouteArg() });
     // Live matches on every page; a returning player with a match that needs
-    // them right now lands in that room instead of the games list.
+    // them right now lands in that room instead of Play.
     const deepLinked = !!initialPage();
     initLiveWatch().then(function () {
       const urgent = urgentRoom();

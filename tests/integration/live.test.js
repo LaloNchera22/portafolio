@@ -1,7 +1,8 @@
 // @vitest-environment jsdom
 // Live match watcher and in-place fixes for blocked joins: a match that needs
 // the player shows on every page (strip, badge, title, toast), and a missing
-// game account or a short balance is solved from the tournament card.
+// Riot ID or a short balance is solved from the tier or the tournament card,
+// with a way back to the same join.
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { beforeAll, describe, expect, it, vi } from "vitest";
@@ -14,19 +15,21 @@ let myRooms = [];
 const calls = [];
 const rpcData = {
   rib_open_tournaments: () => [
-    { id: "t1", name: "Friday Cup", game: "Valorant", network: "riot", entry_fee_cents: 1000, size: 4, entrants: 3, created_at: new Date().toISOString(), creator_username: "neo", joined: false },
-    { id: "t2", name: "Big Cup", game: "CS2", network: null, entry_fee_cents: 5000, size: 8, entrants: 2, created_at: new Date().toISOString(), creator_username: "neo", joined: false },
+    { id: "0b7c3a52-6c1e-4b1e-9d0a-3f7a1c2b4d5e", name: "Friday Cup", game: "Wild Rift", network: "riot", entry_fee_cents: 1000, size: 4, entrants: 3, created_at: new Date().toISOString(), creator_username: "neo", joined: false },
+    { id: "t2", name: "Big Cup", game: "Wild Rift", network: "riot", entry_fee_cents: 5000, size: 8, entrants: 2, created_at: new Date().toISOString(), creator_username: "neo", joined: false },
   ],
   rib_my_rooms: () => myRooms,
   rib_my_tournaments: () => [],
+  rib_quick_tiers: () => [],
 };
+let riotRows = []; // the player's linked game accounts
 
 function query(table) {
   let single = false;
   const builder = new Proxy({}, {
     get(_, prop) {
       if (prop === "then") {
-        const rows = table === "wallets" ? [{ test_balance_cents: 2000, test_locked_cents: 0 }] : [];
+        const rows = table === "wallets" ? [{ test_balance_cents: 2000, test_locked_cents: 0 }] : table === "game_accounts" ? riotRows : [];
         return (res, rej) => Promise.resolve({ data: single ? rows[0] || null : rows, error: null }).then(res, rej);
       }
       if (prop === "single") return () => { single = true; return builder; };
@@ -43,14 +46,15 @@ const client = {
 };
 const $ = (id) => document.getElementById(id);
 
-let live, tournaments;
+let live, tournaments, nav, profile;
 beforeAll(async () => {
   document.documentElement.innerHTML = HTML.replace(/^[\s\S]*?<html[^>]*>/i, "").replace(/<\/html>\s*$/i, "");
   document.title = "Console — Runinback";
   window.scrollTo = () => {};
   vi.spyOn(window, "confirm").mockReturnValue(true);
   const ctx = await import("../../src/scripts/console/context.js");
-  const nav = await import("../../src/scripts/console/navigation.js");
+  nav = await import("../../src/scripts/console/navigation.js");
+  profile = await import("../../src/scripts/console/profile.js");
   const wallet = await import("../../src/scripts/console/wallet.js");
   live = await import("../../src/scripts/console/live.js");
   tournaments = await import("../../src/scripts/console/tournaments.js");
@@ -92,17 +96,71 @@ describe("live match watcher", () => {
 });
 
 describe("joining without what it takes", () => {
-  it("offers to link the required account instead of a join that fails", async () => {
-    await tournaments.loadTournaments();
+  const tap = async (key) => {
+    document.querySelector('#play-tiers [data-tier="' + key + '"]').click();
     await tick(30);
-    const card = document.querySelector('[data-tid="t1"]');
-    expect(card.querySelector("[data-join]")).toBeNull();
-    expect(card.querySelector('[data-link="riot"]').textContent).toBe("Link Riot ID to join");
+  };
+
+  it("sends a player without a Riot ID to link it, remembering the tier", async () => {
+    await tournaments.loadTournaments();
+    await tap("1000:4");
+    expect(calls.some((c) => c[0] === "rib_quick_join")).toBe(false);
+    expect(location.hash).toMatch(/^#page-profile\//);
+    expect(nav.currentRouteArg()).toBe("link/riot/q/1000/4");
   });
 
-  it("offers exactly the missing rcoin when the balance is short", () => {
+  it("offers to link the Riot ID from a custom tournament card", async () => {
+    nav.goToPage("page-compete");
+    document.querySelector('#compete-seg [data-seg="custom"]').click();
+    await tick(30);
+    const card = document.querySelector('[data-tid="0b7c3a52-6c1e-4b1e-9d0a-3f7a1c2b4d5e"]');
+    expect(card.querySelector("[data-join]")).toBeNull();
+    expect(card.querySelector("[data-link]").textContent).toBe("Link Riot ID to join");
+    card.querySelector("[data-link]").click();
+    expect(nav.currentRouteArg()).toBe("link/riot/t/0b7c3a52-6c1e-4b1e-9d0a-3f7a1c2b4d5e");
+  });
+
+  it("offers exactly the missing rcoin when the balance is short", async () => {
+    riotRows = [{ network: "riot", handle: "Me#NA1", verified_at: null }];
+    await profile.loadGameAccounts();
+    nav.goToPage("page-compete");
+    document.querySelector('#compete-seg [data-seg="custom"]').click();
+    await tick(30);
     const card = document.querySelector('[data-tid="t2"]');
     expect(card.querySelector("[data-topup]").getAttribute("data-topup")).toBe("3000");
     expect(card.textContent).toContain("You need 50 rcoin, you have 20 rcoin.");
+    document.querySelector('#compete-seg [data-seg="play"]').click();
+    await tap("5000:8");
+    expect(calls.some((c) => c[0] === "rib_quick_join")).toBe(false);
+    expect(nav.currentRouteArg()).toBe("buy/3000/q/5000/8");
+  });
+
+  it("comes back to the tier and joins it", async () => {
+    nav.goToPage("page-compete", { arg: "q/1000/4" });
+    await tournaments.loadTournaments();
+    await tick(30);
+    expect(calls.filter((c) => c[0] === "rib_quick_join").pop()[1]).toEqual({ p_entry_fee_cents: 1000, p_size: 4 });
+    // One-shot: the route no longer asks to join.
+    expect(nav.currentRouteArg()).toBeNull();
+    expect(location.hash).toBe("#page-compete");
+  });
+
+  it("refreshes the counts every 20 s while Play is on screen, and stops once it isn't", async () => {
+    Object.defineProperty(document, "visibilityState", { value: "visible", configurable: true });
+    nav.goToPage("page-wallet"); // leaving Play stops the poll started earlier
+    vi.useFakeTimers();
+    try {
+      nav.goToPage("page-compete");
+      tournaments.loadTournaments();
+      const shown = calls.filter((c) => c[0] === "rib_quick_tiers").length;
+      vi.advanceTimersByTime(20000);
+      expect(calls.filter((c) => c[0] === "rib_quick_tiers").length).toBe(shown + 1);
+      nav.goToPage("page-wallet");
+      const before = calls.filter((c) => c[0] === "rib_quick_tiers").length;
+      vi.advanceTimersByTime(65000);
+      expect(calls.filter((c) => c[0] === "rib_quick_tiers").length).toBe(before);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });

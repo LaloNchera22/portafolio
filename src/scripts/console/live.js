@@ -1,7 +1,7 @@
 /* ============================================================================
  * Runinback — live match watcher. Wherever the player is in the console,
  * a match that needs them (a ready check, an opponent's report to confirm)
- * shows up in a strip under the bar, as a badge on Compete, in the tab
+ * shows up in a strip under the bar, as a badge on Play, in the tab
  * title and, the first time, as a toast with "Open room". Without it a
  * player on another page loses by walkover.
  *

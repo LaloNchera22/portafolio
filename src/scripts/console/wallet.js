@@ -13,6 +13,7 @@ import {
   centsToRcoin, formatDate, formatRcoin, formatUsd, parseDollarsToCents, parseRcoinToCents, quotePurchase,
 } from "../lib/format.js";
 import { functionError, toast } from "../lib/errors.js";
+import { playReturn } from "../lib/wild-rift.js";
 import { errorText, session } from "./context.js";
 import { goToPage } from "./navigation.js";
 
@@ -199,7 +200,7 @@ function withdraw(amountInput, msgNode, btn, onDone) {
 // Came from "Add rcoin to join": prefill what's missing, offer the way back.
 let returnTo = null;
 
-/** Prefill a top-up (route arg "buy/<missing cents>/<tournament id>"). */
+/** Prefill a top-up (route arg "buy/<missing cents>/<way back to Play>"). */
 export function prepareTopUp(arg) {
   const parts = String(arg || "").split("/");
   if (parts[0] !== "buy") return;
@@ -209,7 +210,7 @@ export function prepareTopUp(arg) {
   $("buy-amount").value = String(dollars);
   document.querySelectorAll('[data-chips="buy-amount"] button').forEach(function (x) { x.classList.remove("on"); });
   updatePurchaseQuote();
-  returnTo = parts[2] || null;
+  returnTo = playReturn(parts.slice(2).join("/"));
   showMessage($("wallet-msg"), "Add at least " + formatRcoin(missing) + " to join. We've filled in the amount.", true);
   $("buy-amount").focus();
 }
@@ -249,9 +250,9 @@ export function initWallet() {
         refreshWallet();
         loadLedger();
         if (returnTo) {
-          const id = returnTo;
+          const target = returnTo;
           returnTo = null;
-          toast("rcoin added. You can join now.", "ok", { label: "Back to the tournament", onClick: function () { goToPage("page-compete", { arg: "t/" + id }); } });
+          toast("rcoin added. You can join now.", "ok", { label: target.indexOf("q/") === 0 ? "Join now" : "Back to the tournament", onClick: function () { goToPage("page-compete", { arg: target }); } });
         }
       })
       .catch(function () { showMessage($("wallet-msg"), "Network error.", false); })

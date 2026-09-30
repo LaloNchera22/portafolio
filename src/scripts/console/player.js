@@ -8,9 +8,9 @@ import { avatarInner, avatarUrl } from "../lib/avatar.js";
 import { countryName } from "../lib/countries.js";
 import { byId as $, escapeHtml as esc } from "../lib/dom.js";
 import { formatDate, formatRcoin } from "../lib/format.js";
+import { RIOT_NETWORK } from "../lib/wild-rift.js";
 import { session } from "./context.js";
 import { goToPage } from "./navigation.js";
-import { networkLabel } from "./networks.js";
 
 const CACHE_MS = 60 * 1000;
 const cache = new Map(); // lower(username) -> { at, data }
@@ -60,11 +60,10 @@ function render(p) {
   }
   html += "</div>";
 
-  if (p.game_accounts && p.game_accounts.length) {
-    html += '<div class="sec"><div class="sec__head"><h2>Game accounts</h2></div><div class="panel">' +
-      p.game_accounts.map(function (g) {
-        return '<div class="row"><div><div class="row__name">' + esc(g.handle) + '</div><div class="row__meta">' + esc(networkLabel(g.network)) + "</div></div></div>";
-      }).join("") + "</div>" +
+  const riot = (p.game_accounts || []).find(function (g) { return g.network === RIOT_NETWORK; });
+  if (riot) {
+    html += '<div class="sec"><div class="sec__head"><h2>Riot ID</h2></div><div class="panel">' +
+      '<div class="row"><div><div class="row__name">' + esc(riot.handle) + '</div><div class="row__meta">Wild Rift</div></div></div></div>' +
       (p.is_me ? '<p class="muted">' + "Visible to others only if you turn it on in Settings." + "</p>" : "") + "</div>";
   }
 

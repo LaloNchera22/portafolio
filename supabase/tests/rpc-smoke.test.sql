@@ -15,7 +15,12 @@ insert into auth.users (id, email, raw_user_meta_data) values
   ('f2000000-0000-0000-0000-000000000002', 'p2@example.test', '{"username":"player_two"}'),
   ('f3000000-0000-0000-0000-000000000003', 'p3@example.test', '{"username":"player_three"}'),
   ('f4000000-0000-0000-0000-000000000004', 'p4@example.test', '{"username":"player_four"}'),
-  ('99999999-0000-0000-0000-000000000009', 'grace@example.test', '{"username":"grace"}');
+  ('99999999-0000-0000-0000-000000000009', 'grace@example.test', '{"username":"grace"}'),
+  ('a1000000-0000-0000-0000-00000000000a', 'w1@example.test', '{"username":"wr_one"}'),
+  ('a2000000-0000-0000-0000-00000000000a', 'w2@example.test', '{"username":"wr_two"}'),
+  ('a3000000-0000-0000-0000-00000000000a', 'w3@example.test', '{"username":"wr_three"}'),
+  ('a4000000-0000-0000-0000-00000000000a', 'w4@example.test', '{"username":"wr_four"}'),
+  ('a5000000-0000-0000-0000-00000000000a', 'w5@example.test', '{"username":"wr_five"}');
 
 -- Run a statement as a signed-in user; returns the SQL error hint (or 'ok').
 create function pg_temp.as_user(p_uid uuid, p_sql text) returns text
@@ -84,6 +89,19 @@ declare
   v_before_d bigint;
   u uuid;
   i int;
+  w1 uuid := 'a1000000-0000-0000-0000-00000000000a';
+  w2 uuid := 'a2000000-0000-0000-0000-00000000000a';
+  w3 uuid := 'a3000000-0000-0000-0000-00000000000a';
+  w4 uuid := 'a4000000-0000-0000-0000-00000000000a';
+  w5 uuid := 'a5000000-0000-0000-0000-00000000000a';
+  v_za uuid;
+  v_zb uuid;
+  v_room2 uuid;
+  v_ev bigint;
+  v_json jsonb;
+  v_before_za bigint;
+  v_before_zb bigint;
+  v_t2 uuid;
 begin
   -- Sign-up never trusts a client-supplied role.
   perform pg_temp.expect((select role from public.profiles where id = c), 'player', 'signup ignores client role');
@@ -148,14 +166,16 @@ begin
   -- 10% platform fee, 70/30 prizes, deposits on disputes, walkovers.
   perform pg_temp.expect(pg_temp.as_user(c, 'select public.rib_tournament_create(''Cup'', ''Valorant'', 1000, 5, null)'), 'invalid_tournament_size', 'tournaments have 4 or 8 players');
   perform pg_temp.expect(pg_temp.as_user(c, 'select public.rib_tournament_create(''Cup'', ''Valorant'', 50, 4, null)'), 'invalid_entry_fee', 'entry fee is 0 or at least 1 rcoin');
+  perform pg_temp.as_user(b, 'select public.rib_game_account_set(''riot'', ''Bob#NA1'')');
   perform pg_temp.expect(pg_temp.as_user(b, 'select public.rib_tournament_create(''Cup'', ''Valorant'', 3000, 4, null)'), 'new_account_limit', 'new accounts are capped at 25 rcoin');
-  perform pg_temp.expect(pg_temp.as_user(c, 'select public.rib_tournament_create(''Cup'', ''Valorant'', 1000, 4, ''riot'')'), 'game_account_required', 'a network tournament needs a linked account');
+  perform pg_temp.expect(pg_temp.as_user(c, 'select public.rib_tournament_create(''Cup'', ''Valorant'', 1000, 4, ''riot'')'), 'riot_account_required', 'a tournament needs a linked Riot ID');
+  perform pg_temp.expect(pg_temp.as_user(c, 'select public.rib_game_account_set(''riot'', ''Carol'')'), 'invalid_riot_id', 'a Riot ID is Name#TAG');
   perform pg_temp.expect(pg_temp.as_user(c, 'select public.rib_game_account_set(''steam-ish'', ''Carol'')'), 'invalid_network', 'unknown networks are rejected');
   perform pg_temp.as_user(c, 'select public.rib_game_account_set(''riot'', ''Carol#NA1'')');
   perform pg_temp.expect(pg_temp.as_user(c, 'select public.rib_tournament_create(''Cup'', ''Valorant'', 1000, 4, ''riot'')'), 'ok', 'carol creates a 4-player cup');
   select id into v_tournament from public.tournaments where creator_id = c and name = 'Cup';
   perform pg_temp.expect((select count(*)::text from public.tournament_entries where tournament_id = v_tournament and user_id = c), '1', 'the creator is the first entrant');
-  perform pg_temp.expect(pg_temp.as_user(d, format('select public.rib_tournament_join(%L)', v_tournament)), 'game_account_required', 'joining needs the same network');
+  perform pg_temp.expect(pg_temp.as_user(d, format('select public.rib_tournament_join(%L)', v_tournament)), 'riot_account_required', 'joining needs a Riot ID');
   perform pg_temp.as_user(a, 'select public.rib_game_account_set(''riot'', ''Alice#NA1'')');
   perform pg_temp.as_user(b, 'select public.rib_game_account_set(''riot'', ''Bob#NA1'')');
   perform pg_temp.as_user(d, 'select public.rib_game_account_set(''riot'', ''Dave#NA1'')');
@@ -233,6 +253,7 @@ begin
   perform pg_temp.expect(pg_temp.as_user(c, 'select public.rib_game_account_remove(''riot'')'), 'game_account_in_use', 'a linked account in use cannot be removed');
   perform pg_temp.as_user(c, format('select public.rib_tournament_leave(%L)', (select id from public.tournaments where name = 'Cup R')));
   perform pg_temp.expect(pg_temp.as_user(c, 'select public.rib_game_account_remove(''riot'')'), 'ok', 'an unused account can be removed');
+  perform pg_temp.as_user(c, 'select public.rib_game_account_set(''riot'', ''Carol#NA1'')');
 
   -- A sit & go that never fills is refunded after 24 hours.
   perform pg_temp.as_user(d, 'select public.rib_tournament_create(''Cup 2'', ''chess'', 500, 8, null)');
@@ -250,6 +271,10 @@ begin
 
   -- An 8-player bracket runs three rounds; an empty semifinal cascades into
   -- a walkover final and a champion with no runner-up.
+  perform pg_temp.as_user('f1000000-0000-0000-0000-000000000001', 'select public.rib_game_account_set(''riot'', ''PlayerOne#NA1'')');
+  perform pg_temp.as_user('f2000000-0000-0000-0000-000000000002', 'select public.rib_game_account_set(''riot'', ''PlayerTwo#NA1'')');
+  perform pg_temp.as_user('f3000000-0000-0000-0000-000000000003', 'select public.rib_game_account_set(''riot'', ''PlayerThree#NA1'')');
+  perform pg_temp.as_user('f4000000-0000-0000-0000-000000000004', 'select public.rib_game_account_set(''riot'', ''PlayerFour#NA1'')');
   perform pg_temp.as_user('f1000000-0000-0000-0000-000000000001', 'select public.rib_tournament_create(''Big cup'', ''chess'', 0, 8, null)');
   select id into v_tournament from public.tournaments where name = 'Big cup';
   foreach u in array array[a, b, c, 'f2000000-0000-0000-0000-000000000002'::uuid, 'f3000000-0000-0000-0000-000000000003'::uuid,
@@ -440,6 +465,7 @@ begin
   perform pg_temp.expect(pg_temp.as_user(g, $q$select public.rib_settings_update('{"nope": true}')$q$), 'invalid_setting', 'unknown settings are rejected');
   perform pg_temp.expect(pg_temp.as_user(g, $q$select public.rib_settings_update('{"monthly_cap_cents": 1050}')$q$), 'invalid_entry_cap', 'the cap is whole rcoin');
   perform pg_temp.expect(pg_temp.as_user(g, $q$select public.rib_settings_update('{"monthly_cap_cents": 1500}')$q$), 'ok', 'set a monthly entry cap');
+  perform pg_temp.as_user(g, $q$select public.rib_game_account_set('riot', 'Grace#LAN')$q$);
   perform pg_temp.expect(pg_temp.as_user(g, $q$select public.rib_tournament_create('Grace Cup', 'CS2', 1000, 4, null)$q$), 'ok', 'an entry under the cap goes through');
   perform pg_temp.expect(pg_temp.as_user(g, $q$select public.rib_tournament_create('Grace Cup 2', 'CS2', 1000, 4, null)$q$), 'entry_cap_reached', 'an entry past the cap is refused');
   perform pg_temp.expect(pg_temp.scalar_as(g, $q$select public.rib_settings_get() ->> 'month_spent_cents'$q$), '1000', 'this month''s entry fees are counted');
@@ -516,6 +542,211 @@ begin
   perform pg_temp.expect(pg_temp.scalar_as(g, $q$select string_agg(username, ',') from public.rib_blocked()$q$), 'dave', 'block list');
   perform pg_temp.expect(pg_temp.scalar_as(g, $q$select public.rib_unblock('dave')$q$), 'none', 'unblock');
   perform pg_temp.expect(pg_temp.as_user(g, 'select * from public.friendships'), '42501', 'the social graph is RPC-only');
+
+  -- Wild Rift engine (0026): rules, Riot IDs, Quick Play, automatic checks.
+  perform pg_temp.expect(public.rib_ready_window()::text || '/' || public.rib_confirm_window()::text || '/' || public.rib_verified_confirm_window()::text || '/' || public.rib_auto_settle_confidence()::text,
+    '00:05:00/00:10:00/00:03:00/0.90', 'ready 5 min, confirm 10 min, verified confirm 3 min, check at 0.90');
+  perform pg_temp.expect(
+    (select string_agg(public.rib_riot_id_valid(x)::text, ',' order by n)
+       from unnest(array['Name#TAG', E'Na​me#TAG', 'Nm#TAG', 'Name#TA', 'Name#TAG123', '한국어#한국1', 'Name#T-G', 'Na#me#TAG', 'Big Name 16 char#EUW', E'Name\u0007#TAG']) with ordinality u(x, n)),
+    'true,false,false,false,false,true,false,false,true,false', 'Riot IDs follow the same rules as the app');
+  perform pg_temp.expect(public.rib_riot_id_normalize(E' Name  #TAG '), 'Name#TAG', 'Riot IDs are stored trimmed like the app parses them');
+  perform pg_temp.expect(
+    public.rib_rate_limit_hit('resultCheckGlobal', '00000000-0000-0000-0000-000000000000', 2, 86400)::text || ','
+    || public.rib_rate_limit_hit('resultCheckGlobal', '00000000-0000-0000-0000-000000000000', 2, 86400)::text || ','
+    || public.rib_rate_limit_hit('resultCheckGlobal', '00000000-0000-0000-0000-000000000000', 2, 86400)::text,
+    'true,true,false', 'the global daily check budget counts on the nil subject');
+  update public.platform_settings set value = 'true' where key = 'test_payments_enabled';
+  foreach u in array array[w1, w2, w3, w4, w5] loop
+    perform pg_temp.as_user(u, 'select public.rib_buy_rcoin_test(10000)');
+  end loop;
+  perform pg_temp.expect(pg_temp.as_user(w1, $q$select public.rib_game_account_set('riot', 'WildOne#NA1')$q$), 'ok', 'link a Riot ID');
+  perform pg_temp.as_user(w2, $q$select public.rib_game_account_set('riot', 'WildTwo#NA1')$q$);
+  perform pg_temp.as_user(w3, $q$select public.rib_game_account_set('riot', 'WildThree#NA1')$q$);
+  perform pg_temp.as_user(w4, $q$select public.rib_game_account_set('riot', 'WildFour#NA1')$q$);
+
+  -- The service role pins the Riot account; a new handle drops it.
+  perform pg_temp.expect(pg_temp.as_user(w1, $q$select public.rib_riot_account_verified('a1000000-0000-0000-0000-00000000000a', 'puuid-w1', 'WildOne', 'NA1')$q$), '42501', 'players cannot verify their own Riot ID');
+  perform public.rib_riot_account_verified(w1, 'puuid-w1', 'WildOne', 'NA1');
+  perform pg_temp.expect((select riot_puuid || ':' || (verified_at is not null)::text from public.game_accounts where user_id = w1 and network = 'riot'), 'puuid-w1:true', 'a Riot-confirmed ID is verified');
+  begin
+    perform public.rib_riot_account_verified(w5, 'puuid-w1', 'WildFive', 'NA1');
+    raise exception 'FAIL one Riot account verified twice';
+  exception when others then
+    get stacked diagnostics v_hint = pg_exception_hint;
+    perform pg_temp.expect(v_hint, 'riot_account_taken', 'a Riot account verifies one player only');
+  end;
+  perform pg_temp.as_user(w1, $q$select public.rib_game_account_set('riot', 'wildone#na1')$q$);
+  perform pg_temp.expect((select (verified_at is not null)::text from public.game_accounts where user_id = w1 and network = 'riot'), 'true', 'a case-only change keeps the verification');
+  perform pg_temp.as_user(w1, $q$select public.rib_game_account_set('riot', 'WildUno#NA1')$q$);
+  perform pg_temp.expect((select coalesce(riot_puuid, 'none') || ':' || (verified_at is null)::text from public.game_accounts where user_id = w1 and network = 'riot'), 'none:true', 'a different Riot ID drops the verification');
+  perform pg_temp.expect(pg_temp.as_user(w2, $q$select public.rib_game_account_set('riot', 'WILDUNO#na1')$q$), 'riot_account_taken', 'a Riot ID belongs to one player, whatever the case');
+  begin
+    perform public.rib_riot_account_verified(w2, 'puuid-w2', 'wilduno', 'NA1');
+    raise exception 'FAIL a taken Riot ID was verified';
+  exception when others then
+    get stacked diagnostics v_hint = pg_exception_hint;
+    perform pg_temp.expect(v_hint, 'riot_account_taken', 'the service role cannot give a taken Riot ID to another player');
+  end;
+
+  -- Custom tournaments are Wild Rift on riot, whatever the client sends.
+  perform pg_temp.expect(pg_temp.as_user(w5, $q$select public.rib_tournament_create('No ID', 'Wild Rift', 0, 4, null)$q$), 'riot_account_required', 'creating needs a Riot ID');
+  perform pg_temp.expect(pg_temp.as_user(w1, $q$select public.rib_tournament_create('WR Custom', 'Valorant', 0, 4, 'steam')$q$), 'ok', 'a custom tournament is created');
+  select id into v_tournament from public.tournaments where name = 'WR Custom';
+  perform pg_temp.expect((select game || ':' || network || ':' || coalesce(tier_key, 'custom') || ':' || entrants from public.tournaments where id = v_tournament), 'Wild Rift:riot:custom:1', 'custom events are forced to Wild Rift / riot');
+  perform pg_temp.as_user(w1, format('select public.rib_tournament_leave(%L)', v_tournament));
+  perform pg_temp.expect((select status || ':' || entrants from public.tournaments where id = v_tournament), 'cancelled:0', 'the last player out closes the event');
+
+  -- Quick Play.
+  perform pg_temp.expect(pg_temp.as_user(w1, 'select public.rib_quick_join(300, 4)'), 'invalid_tier', 'unknown entry fee tier');
+  perform pg_temp.expect(pg_temp.as_user(w1, 'select public.rib_quick_join(100, 6)'), 'invalid_tier', 'unknown size tier');
+  perform pg_temp.expect(pg_temp.as_user(w5, 'select public.rib_quick_join(100, 4)'), 'riot_account_required', 'quick play needs a Riot ID');
+  perform pg_temp.expect(pg_temp.as_user(e, 'select public.rib_quick_join(0, 4)'), 'account_closed', 'a closed account cannot queue for a free event');
+  perform pg_temp.expect(pg_temp.as_user(e, format('select public.rib_tournament_join(%L)', (select id from public.tournaments where name = 'Free Cup'))), 'account_closed', 'a closed account cannot join a free event');
+  perform pg_temp.expect(pg_temp.as_user(w1, 'select public.rib_quick_join(100, 4)'), 'ok', 'the first player opens a tier event');
+  select id into v_tournament from public.tournaments where tier_key = '100:4' and status = 'open';
+  perform pg_temp.expect((select name || '|' || game || '|' || network || '|' || creator_id::text from public.tournaments where id = v_tournament),
+    'Wild Rift 4 · 1 rcoin|Wild Rift|riot|' || w1::text, 'a new tier event is named after the tier');
+  perform pg_temp.expect(pg_temp.as_user(w1, 'select public.rib_quick_join(100, 4)'), 'already_queued', 'one open entry per tier');
+  perform pg_temp.expect(pg_temp.as_user(w2, 'select public.rib_quick_join(100, 4)'), 'ok', 'the second player joins');
+  perform pg_temp.expect((select count(*)::text || ':' || max(entrants) from public.tournaments where tier_key = '100:4' and status = 'open'), '1:2', 'quick play fills the open event and counts its entrants');
+  perform pg_temp.expect(pg_temp.scalar_as(w5, 'select count(*)::text || ''/'' || sum(waiting) || ''/'' || sum(open_events) from public.rib_quick_tiers()'), '12/2/1', 'every tier is listed with who is waiting');
+  perform pg_temp.expect(pg_temp.scalar_as(w5, 'select waiting || '':'' || open_events from public.rib_quick_tiers() where entry_fee_cents = 100 and size = 4'), '2:1', 'players waiting per tier');
+  perform pg_temp.expect(pg_temp.as_user(w1, 'select public.rib_quick_join(0, 8)'), 'ok', 'a player can wait in another tier');
+  select id into v_t2 from public.tournaments where tier_key = '0:8' and status = 'open';
+  perform pg_temp.expect((select name || ':' || entrants from public.tournaments where id = v_t2), 'Wild Rift 8 · Free:1', 'an empty tier opens a free event');
+  perform pg_temp.as_user(w1, format('select public.rib_tournament_leave(%L)', v_t2));
+  perform pg_temp.expect((select status || ':' || entrants from public.tournaments where id = v_t2), 'cancelled:0', 'leaving updates the entrant count');
+
+  -- An invite link can't put a queued player in a second event of the same tier.
+  perform pg_temp.as_user(w3, 'select public.rib_quick_join(0, 4)');
+  insert into public.tournaments (creator_id, name, game, entry_fee_cents, max_players, status, format, network, tier_key)
+  values (w4, 'Wild Rift 4 · Free', 'Wild Rift', 0, 4, 'open', 'bracket', 'riot', '0:4') returning id into v_t2;
+  perform pg_temp.expect(pg_temp.as_user(w3, format('select public.rib_tournament_join(%L)', v_t2)), 'already_queued', 'an invite join honours the tier queue');
+  perform pg_temp.expect(pg_temp.as_user(w3, $q$select public.rib_game_account_set('riot', 'WildTres#NA1')$q$), 'riot_id_locked', 'no Riot ID change while waiting in an event');
+  perform pg_temp.as_user(w3, format('select public.rib_tournament_leave(%L)', (select id from public.tournaments where tier_key = '0:4' and status = 'open' and id <> v_t2)));
+  update public.tournaments set status = 'cancelled', finished_at = now() where id = v_t2;
+
+  perform pg_temp.expect(pg_temp.as_user(w3, 'select public.rib_quick_join(100, 4)'), 'ok', 'the third player joins');
+  perform pg_temp.expect(pg_temp.as_user(w4, 'select public.rib_quick_join(100, 4)'), 'ok', 'the fourth player fills the event');
+  perform pg_temp.expect((select status || ':' || entrants from public.tournaments where id = v_tournament), 'active:4', 'a full tier event starts');
+  perform pg_temp.expect((select string_agg(round || ':' || status, ',' order by round, slot) from public.match_rooms where tournament_id = v_tournament), '1:ready_check,1:ready_check,2:waiting', 'the bracket opens at once');
+  perform pg_temp.expect((select bool_and(ready_deadline = now() + interval '5 minutes')::text from public.match_rooms where tournament_id = v_tournament and round = 1), 'true', 'the ready check lasts 5 minutes');
+  perform pg_temp.expect((select bool_and(a_riot_id = public.rib_riot_handle(player_a) and b_riot_id = public.rib_riot_handle(player_b))::text from public.match_rooms where tournament_id = v_tournament and round = 1), 'true', 'rooms snapshot both Riot IDs when they open');
+  perform pg_temp.expect((select count(*)::text from public.tournaments where tier_key = '100:4' and status = 'open'), '0', 'a started event leaves the tier');
+  perform pg_temp.expect(pg_temp.balance(w4)::text, '9400', 'quick play charges the tier entry fee');
+  perform pg_temp.expect(pg_temp.as_user(w2, $q$select public.rib_game_account_set('riot', 'WildDos#NA1')$q$), 'riot_id_locked', 'no Riot ID change during a tournament');
+  perform pg_temp.expect(pg_temp.as_user(w2, $q$select public.rib_game_account_set('riot', 'wildtwo#na1')$q$), 'ok', 'a case-only change is not a change');
+  begin
+    perform public.rib_riot_account_verified(w2, 'puuid-w2', 'WildDos', 'NA1');
+    raise exception 'FAIL Riot ID changed during a tournament';
+  exception when others then
+    get stacked diagnostics v_hint = pg_exception_hint;
+    perform pg_temp.expect(v_hint, 'riot_id_locked', 'the service role cannot swap a Riot ID mid-tournament either');
+  end;
+
+  -- Semifinal 1: a clear screenshot that agrees with the uploader's report
+  -- shortens the confirm window; silence then confirms through the sweep.
+  select id, player_a, player_b into v_room, v_ya, v_yb from public.match_rooms where tournament_id = v_tournament and round = 1 and slot = 0;
+  perform pg_temp.as_user(v_ya, format('select public.rib_room_ready(%L)', v_room));
+  perform pg_temp.as_user(v_yb, format('select public.rib_room_ready(%L)', v_room));
+  perform pg_temp.as_user(v_ya, format('select public.rib_room_report(%L, %L)', v_room, v_ya));
+  perform pg_temp.expect((select (confirm_deadline = now() + interval '10 minutes')::text from public.match_rooms where id = v_room), 'true', 'the confirm window lasts 10 minutes');
+  perform set_config('request.jwt.claim.sub', v_ya::text, true);
+  select t.token into v_token from public.rib_room_evidence_token(v_room) t;
+  perform pg_temp.expect(pg_temp.as_user(v_ya, format('select public.rib_room_evidence_add(%L, %L, %L, %L, ''screen'')', v_room, v_token, v_room || '/' || v_ya || '/end.png', repeat('c', 64))), 'ok', 'the end screen is uploaded');
+  select id into v_ev from public.room_evidence where room_id = v_room order by id desc limit 1;
+  perform pg_temp.expect((select check_status from public.room_evidence where id = v_ev), 'pending', 'a new capture waits for the check');
+  perform pg_temp.expect(pg_temp.as_user(v_yb, format('select check_status from public.room_evidence where id = %s', v_ev)), 'ok', 'players see the check status');
+  perform pg_temp.expect(pg_temp.as_user(v_yb, format('select sha256 from public.room_evidence where id = %s', v_ev)), '42501', 'players cannot read the hashes');
+  perform pg_temp.expect(pg_temp.as_user(v_yb, format('select check_detail from public.room_evidence where id = %s', v_ev)), '42501', 'players cannot read the checker output');
+  perform pg_temp.expect(pg_temp.as_user(v_ya, format('select public.rib_evidence_for_check(%s)', v_ev)), '42501', 'the check input is server-only');
+  perform pg_temp.expect(pg_temp.as_user(v_ya, format('select public.rib_evidence_check_apply(%s, ''verified'', %L, 0.99, null, null)', v_ev, v_ya)), '42501', 'players cannot apply a check');
+  v_json := public.rib_evidence_for_check(v_ev);
+  perform pg_temp.expect((v_json ->> 'room_id') || ':' || (v_json ->> 'uploader_id') || ':' || (v_json -> 'reports' ->> 'a') || ':' || (v_json ->> 'check_status') || ':' || (v_json ->> 'fast_tracked'),
+    v_room::text || ':' || v_ya::text || ':' || v_ya::text || ':pending:false', 'the checker gets the room, uploader and reports');
+  perform pg_temp.expect((v_json -> 'player_a' ->> 'riot_id') || '|' || (v_json -> 'player_b' ->> 'riot_id'),
+    (select a_riot_id || '|' || b_riot_id from public.match_rooms where id = v_room), 'the checker gets the Riot ID snapshot');
+  perform pg_temp.expect(coalesce(public.rib_evidence_for_check(-1)::text, 'none'), 'none', 'an unknown capture returns nothing');
+  perform public.rib_evidence_check_apply(v_ev, 'verified', v_ya, 0.95, '{"model":"test"}', repeat('1', 64));
+  perform pg_temp.expect((select status || ':' || fast_tracked::text || ':' || review_flag::text || ':' || (confirm_deadline = now() + interval '3 minutes')::text from public.match_rooms where id = v_room),
+    'live:true:false:true', 'a verified screenshot shortens the confirm window, it does not settle');
+  perform pg_temp.expect((select check_status || ':' || (check_winner = v_ya)::text || ':' || check_confidence || ':' || content_sha256 from public.room_evidence where id = v_ev), 'verified:true:0.950:' || repeat('1', 64), 'the check result is stored');
+  perform pg_temp.expect((public.rib_evidence_for_check(v_ev) ->> 'fast_tracked'), 'true', 'the checker sees the fast track');
+  begin
+    perform public.rib_evidence_check_apply(v_ev, 'verified', v_ya, 0.95, null, null);
+    raise exception 'FAIL a capture was checked twice';
+  exception when others then
+    get stacked diagnostics v_hint = pg_exception_hint;
+    perform pg_temp.expect(v_hint, 'evidence_not_pending', 'a capture is checked once');
+  end;
+  update public.match_rooms set confirm_deadline = now() - interval '1 second' where id = v_room;
+  perform public.rib_room_sweep();
+  perform pg_temp.expect((select status || ':' || (winner_id = v_ya)::text from public.match_rooms where id = v_room), 'done:true', 'silence confirms the fast-tracked report');
+  perform pg_temp.expect((select player_a::text from public.match_rooms where tournament_id = v_tournament and round = 2), v_ya::text, 'the winner advances');
+
+  -- Semifinal 2: nothing a screenshot says settles, voids or disputes the room.
+  select id, player_a, player_b into v_room2, v_za, v_zb from public.match_rooms where tournament_id = v_tournament and round = 1 and slot = 1;
+  perform pg_temp.as_user(v_za, format('select public.rib_room_ready(%L)', v_room2));
+  perform pg_temp.as_user(v_zb, format('select public.rib_room_ready(%L)', v_room2));
+  perform set_config('request.jwt.claim.sub', v_zb::text, true);
+  select t.token into v_token from public.rib_room_evidence_token(v_room2) t;
+  perform pg_temp.expect(pg_temp.as_user(v_zb, format('select public.rib_room_evidence_add(%L, %L, %L, %L, ''screen'')', v_room2, v_token, v_room2 || '/' || v_zb || '/end.png', repeat('c', 64))), 'evidence_duplicate', 'a screenshot from another match is refused');
+  perform pg_temp.expect(pg_temp.as_user(v_zb, format('select public.rib_room_evidence_add(%L, %L, %L, %L, ''screen'')', v_room2, v_token, v_room2 || '/' || v_zb || '/end.png', repeat('1', 64))), 'evidence_duplicate', 'a file whose stored bytes were used elsewhere is refused');
+  perform pg_temp.expect(pg_temp.as_user(v_zb, format('select public.rib_room_evidence_add(%L, %L, %L, %L, ''screen'')', v_room2, v_token, v_room2 || '/' || v_zb || '/end.png', repeat('d', 64))), 'ok', 'a fresh screenshot is accepted');
+  select id into v_ev from public.room_evidence where room_id = v_room2 order by id desc limit 1;
+  perform public.rib_evidence_check_apply(v_ev, 'verified', v_zb, 0.97, null, repeat('2', 64));
+  perform pg_temp.expect((select status || ':' || fast_tracked::text || ':' || review_flag::text || ':' || coalesce(confirm_deadline::text, 'none') from public.match_rooms where id = v_room2), 'live:false:false:none', 'no fast track before the uploader reports');
+  perform pg_temp.as_user(v_za, format('select public.rib_room_report(%L, %L)', v_room2, v_za));
+  perform set_config('request.jwt.claim.sub', v_za::text, true);
+  select t.token into v_token from public.rib_room_evidence_token(v_room2) t;
+  perform pg_temp.as_user(v_za, format('select public.rib_room_evidence_add(%L, %L, %L, %L, ''screen'')', v_room2, v_token, v_room2 || '/' || v_za || '/end.png', repeat('f', 64)));
+  select id into v_ev from public.room_evidence where room_id = v_room2 order by id desc limit 1;
+  perform public.rib_evidence_check_apply(v_ev, 'verified', v_za, 0.50, null, repeat('3', 64));
+  perform pg_temp.expect((select status || ':' || fast_tracked::text from public.match_rooms where id = v_room2), 'live:false', 'a low-confidence read changes nothing');
+  perform set_config('request.jwt.claim.sub', v_zb::text, true);
+  select t.token into v_token from public.rib_room_evidence_token(v_room2) t;
+  perform pg_temp.as_user(v_zb, format('select public.rib_room_evidence_add(%L, %L, %L, %L, ''screen'')', v_room2, v_token, v_room2 || '/' || v_zb || '/end2.png', repeat('9', 64)));
+  select id into v_ev from public.room_evidence where room_id = v_room2 order by id desc limit 1;
+  v_before_za := pg_temp.balance(v_za);
+  v_before_zb := pg_temp.balance(v_zb);
+  perform public.rib_evidence_check_apply(v_ev, 'contradicts', null, 0.97, null, repeat('4', 64));
+  perform pg_temp.expect((select status || ':' || review_flag::text || ':' || fast_tracked::text || ':' || coalesce(disputed_by::text, 'nobody') || ':' || dispute_deposit_cents from public.match_rooms where id = v_room2),
+    'live:true:false:nobody:0', 'a contradicting screenshot only flags the room for review');
+  perform pg_temp.expect((pg_temp.balance(v_za) - v_before_za)::text || '/' || (pg_temp.balance(v_zb) - v_before_zb)::text, '0/0', 'a flag moves no money');
+  perform set_config('request.jwt.claim.sub', v_za::text, true);
+  select t.token into v_token from public.rib_room_evidence_token(v_room2) t;
+  perform pg_temp.as_user(v_za, format('select public.rib_room_evidence_add(%L, %L, %L, %L, ''screen'')', v_room2, v_token, v_room2 || '/' || v_za || '/end2.png', repeat('8', 64)));
+  select id into v_ev from public.room_evidence where room_id = v_room2 order by id desc limit 1;
+  update public.match_rooms set review_flag = false where id = v_room2;
+  perform public.rib_evidence_check_apply(v_ev, 'verified', v_za, 0.99, null, repeat('1', 64));
+  perform pg_temp.expect((select e.check_status || ':' || r.status || ':' || r.fast_tracked::text || ':' || r.review_flag::text from public.room_evidence e join public.match_rooms r on r.id = e.room_id where e.id = v_ev),
+    'duplicate:live:false:true', 'stored bytes seen in another room make the check a duplicate');
+  perform pg_temp.as_user(v_zb, format('select public.rib_room_report(%L, %L)', v_room2, v_za));
+  perform pg_temp.expect((select status || ':' || (winner_id = v_za)::text from public.match_rooms where id = v_room2), 'done:true', 'matching reports still settle at once');
+  perform pg_temp.expect((select status from public.match_rooms where tournament_id = v_tournament and round = 2), 'ready_check', 'the final opens');
+
+  -- Friendlies: a contradicting screenshot flags the room and nothing else.
+  perform pg_temp.as_user(w1, $q$select public.rib_challenge_create('Wild Rift', '1v1')$q$);
+  select id into v_challenge from public.challenges where creator_id = w1 and status = 'open' order by created_at desc limit 1;
+  perform pg_temp.as_user(w5, format('select public.rib_challenge_accept(%L)', v_challenge));
+  select room_id into v_room from public.challenges where id = v_challenge;
+  perform pg_temp.expect((select a_riot_id || ':' || coalesce(b_riot_id, 'none') from public.match_rooms where id = v_room), 'WildUno#NA1:none', 'friendly rooms snapshot the Riot IDs they have');
+  perform pg_temp.as_user(w1, format('select public.rib_room_ready(%L)', v_room));
+  perform pg_temp.as_user(w5, format('select public.rib_room_ready(%L)', v_room));
+  perform set_config('request.jwt.claim.sub', w1::text, true);
+  select t.token into v_token from public.rib_room_evidence_token(v_room) t;
+  perform pg_temp.as_user(w1, format('select public.rib_room_evidence_add(%L, %L, %L, %L, ''camera'')', v_room, v_token, v_room || '/' || w1 || '/end.jpg', repeat('0', 64)));
+  select id into v_ev from public.room_evidence where room_id = v_room order by id desc limit 1;
+  perform public.rib_evidence_check_apply(v_ev, 'contradicts', null, 0.92, null, null);
+  perform pg_temp.expect((select r.status || ':' || r.review_flag::text || ':' || c.status from public.match_rooms r join public.challenges c on c.room_id = r.id where r.id = v_room), 'live:true:active', 'a contradicted friendly keeps going');
+  begin
+    perform public.rib_evidence_check_apply(v_ev, 'pending', null, null, null, null);
+    raise exception 'FAIL pending accepted as a check result';
+  exception when others then
+    get stacked diagnostics v_hint = pg_exception_hint;
+    perform pg_temp.expect(v_hint, 'evidence_invalid', 'a check result must be final');
+  end;
 
   -- Ledger integrity: every balance equals the sum of its ledger rows.
   perform pg_temp.expect(
