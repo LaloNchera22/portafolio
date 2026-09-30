@@ -9,27 +9,37 @@ test("landing states test mode and loads without errors", async ({ page, api }) 
   expect(api.calls.every((c) => !c.path.startsWith("/rest/"))).toBe(true);
 });
 
-test("landing prize table follows the bracket size", async ({ page }) => {
+test("landing prize calculator splits entry fees by bracket size", async ({ page }) => {
   await page.goto("/index.html");
   await page.getByRole("button", { name: "Decline" }).click();
-  const champion = page.locator('#prizes tr[data-fee="1000"] [data-prize="first"]');
-  await champion.scrollIntoViewIfNeeded();
-  await expect(champion).toHaveText("25.2");
-  await page.getByRole("radio", { name: "8 players" }).check();
-  await expect(champion).toHaveText("50.4");
-  await expect(page.locator("[data-size-label]")).toHaveText("8");
+  const calc = page.locator("[data-prize-calc]");
+  await calc.scrollIntoViewIfNeeded();
+  const champion = calc.locator('[data-calc="winner"]');
+  const host = calc.locator('[data-calc="host"]');
+  await expect(calc.locator("[data-calc-fee-out]")).toHaveText("10 rcoin");
+  await expect(champion).toHaveText("68");
+  await expect(host).toHaveText("4");
+  await calc.getByRole("radio", { name: "16", exact: true }).check();
+  await expect(champion).toHaveText("136");
+  await expect(host).toHaveText("8");
+  await calc.getByLabel("Entry fee").fill("50");
+  await expect(calc.locator("[data-calc-fee-out]")).toHaveText("50 rcoin");
+  await calc.getByRole("radio", { name: "32", exact: true }).check();
+  await expect(champion).toHaveText("1360");
+  await expect(calc.locator('[data-calc="pool"]')).toHaveText("1600");
 });
 
-test("mobile menu opens, traps the page and closes with Escape", async ({ page, isMobile }) => {
-  test.skip(!isMobile, "the menu toggle only shows on phones");
-  await page.goto("/how-it-works.html");
-  const toggle = page.locator("[data-nav-toggle]");
-  await toggle.click();
-  await expect(toggle).toHaveAttribute("aria-expanded", "true");
-  await expect(page.locator("#nav-links")).toBeVisible();
-  await page.keyboard.press("Escape");
-  await expect(toggle).toHaveAttribute("aria-expanded", "false");
-  await expect(toggle).toBeFocused();
+test("landing nav shows only Log in and Sign up, with no menu toggle", async ({ page }) => {
+  await page.goto("/index.html");
+  const nav = page.locator("header.nav nav");
+  await expect(nav).toHaveCount(1);
+  await expect(nav).toHaveAttribute("aria-label", "Account");
+  const links = nav.getByRole("link");
+  await expect(links).toHaveText(["Log in", "Sign up"]);
+  await expect(nav.getByRole("link", { name: "Log in" })).toBeVisible();
+  await expect(nav.getByRole("link", { name: "Sign up" })).toBeVisible();
+  await expect(page.locator("[data-nav-toggle], .nav__toggle, .nav__links")).toHaveCount(0);
+  await expect(page.locator("header.nav button")).toHaveCount(0);
 });
 
 test("sign-up requires the age confirmation", async ({ page, api }) => {

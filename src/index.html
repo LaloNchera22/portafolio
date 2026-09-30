@@ -5,8 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
   <!-- Primary SEO -->
-  <title>Runinback — Wild Rift tournaments with instant prizes</title>
-  <meta name="description" content="1v1 Wild Rift tournaments for 4 or 8 players. Pick an entry fee, tap once, and the bracket starts when it fills. Champion and runner-up are paid as soon as the final is confirmed." />
+  <title>Runinback — Host or join 1v1 Wild Rift tournaments</title>
+  <meta name="description" content="Host or join 1v1 Wild Rift tournaments of 4 to 32 players. Share a link, the champion takes 85% of entry fees. Test mode with simulated rcoin." />
   <meta name="author" content="Runinback" />
   <meta name="robots" content="index, follow" />
   <meta name="theme-color" content="#0e100f" />
@@ -15,71 +15,141 @@
   <!-- Open Graph -->
   <meta property="og:type" content="website" />
   <meta property="og:site_name" content="Runinback" />
-  <meta property="og:title" content="Runinback — Wild Rift tournaments with instant prizes" />
-  <meta property="og:description" content="Sit &amp; go Wild Rift brackets of 4 or 8 players. One tap to join, 1v1 custom games, prizes paid when the final is confirmed." />
+  <meta property="og:title" content="Runinback — Host or join 1v1 Wild Rift tournaments" />
+  <meta property="og:description" content="Create a 1v1 Wild Rift bracket for 4, 8, 16 or 32 players, share the link, and the champion takes 85% of entry fees. Test mode, simulated rcoin." />
   <meta property="og:url" content="https://runinback.com/" />
   <meta property="og:image" content="https://runinback.com/og-image.png" />
   <meta property="og:image:type" content="image/png" />
   <meta property="og:image:width" content="1200" />
   <meta property="og:image:height" content="630" />
-  <meta property="og:image:alt" content="Runinback — Wild Rift tournaments" />
+  <meta property="og:image:alt" content="Runinback: 1v1 Wild Rift tournaments you host or join" />
   <meta property="og:locale" content="en_US" />
 
   <!-- Twitter -->
   <meta name="twitter:card" content="summary_large_image" />
-  <meta name="twitter:title" content="Runinback — Wild Rift tournaments with instant prizes" />
-  <meta name="twitter:description" content="Sit &amp; go Wild Rift brackets of 4 or 8 players. One tap to join, 1v1 custom games, prizes paid when the final is confirmed." />
+  <meta name="twitter:title" content="Runinback — Host or join 1v1 Wild Rift tournaments" />
+  <meta name="twitter:description" content="Create a 1v1 Wild Rift bracket for 4, 8, 16 or 32 players, share the link, and the champion takes 85% of entry fees. Test mode, simulated rcoin." />
   <meta name="twitter:image" content="https://runinback.com/og-image.png" />
-  <meta name="twitter:image:alt" content="Runinback — Wild Rift tournaments" />
+  <meta name="twitter:image:alt" content="Runinback: 1v1 Wild Rift tournaments you host or join" />
 
   <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png" />
   <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16.png" />
   <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
   <link rel="manifest" href="/site.webmanifest" />
+  <link rel="preload" as="image" href="/media/hero-poster.webp" fetchpriority="high" />
   <link rel="stylesheet" href="/styles/site.css" />
 
   <!-- Structured data -->
   <script type="application/ld+json">
-  {
-    "@context": "https://schema.org",
-    "@graph": [
-      {
-        "@type": "Organization",
-        "@id": "https://runinback.com/#org",
-        "name": "Runinback",
-        "url": "https://runinback.com/",
-        "logo": { "@type": "ImageObject", "url": "https://runinback.com/icon-512.png", "width": 512, "height": 512 },
-        "email": "support@runinback.com"
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "Organization",
+      "@id": "https://runinback.com/#org",
+      "name": "Runinback",
+      "url": "https://runinback.com/",
+      "logo": {
+        "@type": "ImageObject",
+        "url": "https://runinback.com/icon-512.png",
+        "width": 512,
+        "height": 512
       },
-      {
-        "@type": "WebSite",
-        "@id": "https://runinback.com/#site",
-        "name": "Runinback",
-        "url": "https://runinback.com/",
-        "publisher": { "@id": "https://runinback.com/#org" },
-        "inLanguage": "en"
+      "email": "support@runinback.com"
+    },
+    {
+      "@type": "WebSite",
+      "@id": "https://runinback.com/#site",
+      "name": "Runinback",
+      "url": "https://runinback.com/",
+      "publisher": {
+        "@id": "https://runinback.com/#org"
       },
-      {
-        "@type": "WebApplication",
-        "name": "Runinback",
-        "url": "https://runinback.com/",
-        "applicationCategory": "GameApplication",
-        "operatingSystem": "Web",
-        "image": "https://runinback.com/og-image.png",
-        "description": "Skill-based tournaments for League of Legends: Wild Rift. Sit & go brackets of 4 or 8 players, 1v1 custom games, fixed entry fees and prizes paid when the final is confirmed.",
-        "publisher": { "@id": "https://runinback.com/#org" }
+      "inLanguage": "en"
+    },
+    {
+      "@type": "WebApplication",
+      "@id": "https://runinback.com/#app",
+      "name": "Runinback",
+      "url": "https://runinback.com/",
+      "applicationCategory": "GameApplication",
+      "operatingSystem": "Web",
+      "image": "https://runinback.com/og-image.png",
+      "description": "Host or join 1v1 tournaments for League of Legends: Wild Rift. Brackets of 4, 8, 16 or 32 players, public or private, shared by link. The host decides matches, players can appeal within 24 hours, and the champion takes 85% of the prize pool (host 5%, Runinback 10%). Currently in test mode with simulated rcoin.",
+      "offers": {
+        "@type": "Offer",
+        "price": "0",
+        "priceCurrency": "USD",
+        "description": "Free account. Test mode uses simulated rcoin with no cash value."
       },
-      {
-        "@type": "FAQPage",
-        "mainEntity": [
-          { "@type": "Question", "name": "Is this real money?", "acceptedAnswer": { "@type": "Answer", "text": "Not yet. Runinback runs in test mode: rcoin balances are simulated and have no cash value. Real-money play opens only after legal review, and not everywhere." } },
-          { "@type": "Question", "name": "Do I need a Riot ID?", "acceptedAnswer": { "@type": "Answer", "text": "Yes. Link your Riot ID (Name#TAG) in the console before you join. Your opponent uses it to find you in the custom game, and the end screen is checked against it." } },
-          { "@type": "Question", "name": "What does it cost?", "acceptedAnswer": { "@type": "Answer", "text": "Runinback keeps 10% of each paid tournament's pool. The other 90% is prize: 70% to the champion, 30% to the runner-up. rcoin is bought by card with a 5% fee, and withdrawals are free." } },
-          { "@type": "Question", "name": "What if my opponent doesn't show up?", "acceptedAnswer": { "@type": "Answer", "text": "Each match has a 5-minute ready check. If you're ready and your opponent isn't, you advance by walkover." } }
-        ]
+      "publisher": {
+        "@id": "https://runinback.com/#org"
       }
-    ]
-  }
+    },
+    {
+      "@type": "FAQPage",
+      "@id": "https://runinback.com/#faq",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "Is this real money?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Not yet. Runinback runs in test mode: rcoin balances are simulated and have no cash value. Real-money play opens only after legal review, and not everywhere."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Who decides who wins?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "The tournament's host decides each match after you play it. You can still upload the end screen so the host sees the result. If you think a call was wrong, appeal within 24 hours of the final and our team reviews it before any prize is paid."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What does it cost?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Only the entry fee the host sets. Of the prize pool, 85% goes to the champion, 5% to the host and 10% to Runinback. You buy rcoin by card with a 5% fee (1 rcoin = $1), and withdrawals are free. An appeal on a paid tournament holds a deposit of 10% of the entry fee, returned if you're right."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Can I make a private tournament?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Yes. Private tournaments don't show up in the public list; only people with your invite link or code can join. You can change the code at any time."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Do I need a Riot ID?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Yes. Link your Riot ID (Name#TAG) in the console before you join. The host and your opponent use it to find you in the custom game."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What if my opponent doesn't show up?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "The host can give you the match by walkover after a 10-minute wait. If neither player shows up, both are out of that match."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Can I leave before it starts?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Yes, for a full refund, until the bracket starts. If the host cancels, or the tournament never starts, every entry fee is refunded automatically."
+          }
+        }
+      ]
+    }
+  ]
+}
   </script>
   <script src="/js-flag.js"></script>
 </head>
@@ -95,23 +165,17 @@
         <img class="brand__icon" src="/logo-icon.png" width="34" height="24" alt="" />
         <img class="brand__word" src="/logo-word.png" width="64" height="14" alt="" />
       </a>
-      <nav class="nav__links" id="nav-links" aria-label="Primary">
-        <a href="how-it-works.html" class="nav__link">How it works</a>
-        <a href="index.html#prizes" class="nav__link">Prizes</a>
-        <a href="contact.html" class="nav__link">Contact</a>
+      <nav class="nav__actions" aria-label="Account">
         <span class="nav__account" id="nav-account">
           <a class="nav__link nav__auth" href="login.html">Log in</a>
           <a class="btn btn--cta btn--sm" href="signup.html">Sign up</a>
         </span>
       </nav>
-      <button type="button" class="nav__toggle" data-nav-toggle aria-controls="nav-links" aria-label="Open menu" aria-expanded="false">
-        <span></span>
-      </button>
     </div>
   </header>
 
   <main id="main">
-    <!-- Hero: the bracket is the picture -->
+    <!-- Hero -->
     <section class="hero" aria-labelledby="hero-title">
       <video poster="/media/hero-poster.webp" class="hero__video" id="hero-video" muted loop playsinline autoplay preload="metadata" aria-hidden="true" tabindex="-1">
         <source src="/media/hero-loop-v2.mp4" type="video/mp4" />
@@ -120,20 +184,29 @@
       <div class="shell hero__grid">
         <div class="hero__copy">
           <p class="eyebrow hero__eyebrow">League of Legends: Wild Rift</p>
-          <h1 class="display hero__title" id="hero-title">Tournaments that start when they fill.</h1>
+          <h1 class="display hero__title lx-words" id="hero-title">
+            <span class="lx-word" style="--i:0">Host</span> <span class="lx-word" style="--i:1">it.</span>
+            <span class="lx-word" style="--i:2">Play</span> <span class="lx-word" style="--i:3">it.</span>
+            <span class="lx-word lx-word--accent" style="--i:4">Win</span> <span class="lx-word lx-word--accent" style="--i:5">it.</span>
+          </h1>
           <p class="lead hero__lead">
-            Pick an entry fee and a bracket of 4 or 8. One tap seats you, the bracket starts
-            the moment the last player joins, and the prize lands in your wallet as soon as
-            the final is confirmed.
+            1v1 Wild Rift tournaments you can run or join in a minute. Create a bracket, share the
+            link, and the champion takes <strong>85% of every entry fee</strong>. The host earns 5%
+            for running it.
           </p>
           <div class="hero__actions">
             <a href="signup.html" class="btn btn--cta">Create your account <span class="arrow" aria-hidden="true">→</span></a>
-            <a href="how-it-works.html" class="btn btn--ghost">See how it works</a>
+            <a href="login.html" class="btn btn--ghost">Log in</a>
           </div>
+          <dl class="lx-stats" aria-label="At a glance">
+            <div class="lx-stats__item"><dt>To the champion</dt><dd><span data-count="85" data-count-delay="700">85</span>%</dd></div>
+            <div class="lx-stats__item"><dt>Bracket sizes</dt><dd>4–32</dd></div>
+            <div class="lx-stats__item"><dt>To appeal a result</dt><dd><span data-count="24" data-count-delay="900">24</span>h</dd></div>
+          </dl>
         </div>
 
         <!-- Animated bracket: 8 players on wide screens, 4 on phones -->
-        <figure class="bk bk--hero bk--8" data-reveal="none">
+<figure class="bk bk--hero bk--8" data-reveal="none">
           <svg class="bk__svg" viewBox="0 0 630 312" width="630" height="312" focusable="false" aria-hidden="true">
             <path class="bk__line" pathLength="1" style="--t:0.35s" d="M125 16H147V36H169"/>
             <path class="bk__line" pathLength="1" style="--t:0.38s" d="M125 56H147V36H169"/>
@@ -166,9 +239,9 @@
             <g class="bk__slot" style="--t:0.85s"><rect x="169" y="261" width="124" height="30" rx="4"/><text x="179" y="281" class="bk__name">Juno#NA1</text></g>
             <g class="bk__slot bk__slot--win" style="--t:1.25s"><rect x="337" y="61" width="124" height="30" rx="4"/><text x="347" y="81" class="bk__name">You#TAG</text></g>
             <g class="bk__slot" style="--t:1.30s"><rect x="337" y="221" width="124" height="30" rx="4"/><text x="347" y="241" class="bk__name">Sable#OCE</text></g>
-            <g class="bk__slot bk__slot--win bk__slot--champ" style="--t:1.80s"><rect x="505" y="135" width="124" height="42" rx="6"/><text x="517" y="154" class="bk__name">You#TAG</text><text x="517" y="171" class="bk__prize">+<tspan data-count="50.4" data-count-delay="2000">50.4</tspan> rcoin</text></g>
+            <g class="bk__slot bk__slot--win bk__slot--champ" style="--t:1.80s"><rect x="505" y="135" width="124" height="42" rx="6"/><text x="517" y="154" class="bk__name">You#TAG</text><text x="517" y="171" class="bk__prize">+<tspan data-count="68" data-count-delay="2000">68</tspan> rcoin</text></g>
           </svg>
-          <figcaption class="bk__caption">8 players at 10 rcoin each. The champion takes 50.4 rcoin, the runner-up 21.6.</figcaption>
+          <figcaption class="bk__caption">8 players at 10 rcoin each: the champion takes 68 rcoin, the host 4.</figcaption>
         </figure>
         <figure class="bk bk--hero bk--4" data-reveal="none">
           <svg class="bk__svg" viewBox="0 0 366 152" width="366" height="152" focusable="false" aria-hidden="true">
@@ -186,148 +259,158 @@
             <g class="bk__slot" style="--t:0.30s"><rect x="1" y="121" width="104" height="30" rx="4"/><text x="11" y="141" class="bk__name">Juno#NA1</text></g>
             <g class="bk__slot bk__slot--win" style="--t:0.70s"><rect x="131" y="21" width="104" height="30" rx="4"/><text x="141" y="41" class="bk__name">You#TAG</text></g>
             <g class="bk__slot" style="--t:0.75s"><rect x="131" y="101" width="104" height="30" rx="4"/><text x="141" y="121" class="bk__name">Vexa#LAN</text></g>
-            <g class="bk__slot bk__slot--win bk__slot--champ" style="--t:1.25s"><rect x="261" y="55" width="104" height="42" rx="6"/><text x="273" y="74" class="bk__name">You#TAG</text><text x="273" y="91" class="bk__prize">+<tspan data-count="25.2" data-count-delay="1450">25.2</tspan> rcoin</text></g>
+            <g class="bk__slot bk__slot--win bk__slot--champ" style="--t:1.25s"><rect x="261" y="55" width="104" height="42" rx="6"/><text x="273" y="74" class="bk__name">You#TAG</text><text x="273" y="91" class="bk__prize">+<tspan data-count="34" data-count-delay="1450">34</tspan> rcoin</text></g>
           </svg>
-          <figcaption class="bk__caption">4 players at 10 rcoin each. The champion takes 25.2 rcoin, the runner-up 10.8.</figcaption>
+          <figcaption class="bk__caption">4 players at 10 rcoin each: the champion takes 34 rcoin, the host 2.</figcaption>
         </figure>
       </div>
     </section>
 
-    <!-- Quick Play tiers -->
-    <section class="section tiers-section" id="prizes" aria-labelledby="prizes-heading">
-      <div class="shell">
-        <div class="tiers-head">
-          <div class="section-head" data-reveal>
-            <p class="eyebrow">Quick Play</p>
-            <h2 class="h1" id="prizes-heading">Pick a tier. Tap once.</h2>
-            <p class="lead muted">Six entry fees, two bracket sizes. Quick Play seats you in the next open bracket for that tier. The numbers below are exactly what gets paid.</p>
-          </div>
-          <fieldset class="size-toggle" data-size-toggle data-reveal>
-            <legend class="size-toggle__legend">Bracket size</legend>
-            <label class="size-toggle__opt"><input type="radio" name="bracket-size" value="4" checked /><span>4 players</span></label>
-            <label class="size-toggle__opt"><input type="radio" name="bracket-size" value="8" /><span>8 players</span></label>
-          </fieldset>
-        </div>
+    <!-- Ticker -->
+    <div class="lx-ticker" aria-hidden="true">
+      <div class="lx-ticker__track">
+        <span>Public or private brackets</span><span>Share one link</span><span>Host posts the lobby</span><span>Host decides every match</span><span>24h to appeal</span><span>85% to the champion</span><span>4 · 8 · 16 · 32 players</span><span>Free practice brackets</span>
+        <span>Public or private brackets</span><span>Share one link</span><span>Host posts the lobby</span><span>Host decides every match</span><span>24h to appeal</span><span>85% to the champion</span><span>4 · 8 · 16 · 32 players</span><span>Free practice brackets</span>
+      </div>
+    </div>
 
-        <div class="tiers" data-tiers data-size="4" data-reveal>
-          <table class="tiers__table">
-            <caption class="tiers__caption" aria-live="polite">Prizes for <span data-size-label>4</span> players, in rcoin (1 rcoin = $1)</caption>
-            <thead>
-              <tr>
-                <th scope="col">Entry fee</th>
-                <th scope="col">Champion</th>
-                <th scope="col">Runner-up</th>
-                <th scope="col" class="tiers__pool">Pool</th>
-              </tr>
-            </thead>
-            <tbody>
-            <tr class="tiers__row tiers__row--free" data-fee="0">
-              <th scope="row"><span class="tiers__fee">Free</span><span class="tiers__tag">Practice, no prize</span></th>
-              <td class="tiers__num tiers__num--none">–</td>
-              <td class="tiers__num tiers__num--none">–</td>
-              <td class="tiers__num tiers__pool tiers__num--none">–</td>
-            </tr>
-            <tr class="tiers__row" data-fee="100">
-              <th scope="row"><span class="tiers__fee">1</span></th>
-              <td class="tiers__num tiers__num--first"><span data-prize="first" data-count="2.52">2.52</span></td>
-              <td class="tiers__num"><span data-prize="second" data-count="1.08">1.08</span></td>
-              <td class="tiers__num tiers__pool"><span data-prize="pool">4</span></td>
-            </tr>
-            <tr class="tiers__row" data-fee="500">
-              <th scope="row"><span class="tiers__fee">5</span></th>
-              <td class="tiers__num tiers__num--first"><span data-prize="first" data-count="12.6">12.6</span></td>
-              <td class="tiers__num"><span data-prize="second" data-count="5.4">5.4</span></td>
-              <td class="tiers__num tiers__pool"><span data-prize="pool">20</span></td>
-            </tr>
-            <tr class="tiers__row" data-fee="1000">
-              <th scope="row"><span class="tiers__fee">10</span></th>
-              <td class="tiers__num tiers__num--first"><span data-prize="first" data-count="25.2">25.2</span></td>
-              <td class="tiers__num"><span data-prize="second" data-count="10.8">10.8</span></td>
-              <td class="tiers__num tiers__pool"><span data-prize="pool">40</span></td>
-            </tr>
-            <tr class="tiers__row" data-fee="2500">
-              <th scope="row"><span class="tiers__fee">25</span></th>
-              <td class="tiers__num tiers__num--first"><span data-prize="first" data-count="63">63</span></td>
-              <td class="tiers__num"><span data-prize="second" data-count="27">27</span></td>
-              <td class="tiers__num tiers__pool"><span data-prize="pool">100</span></td>
-            </tr>
-            <tr class="tiers__row" data-fee="5000">
-              <th scope="row"><span class="tiers__fee">50</span></th>
-              <td class="tiers__num tiers__num--first"><span data-prize="first" data-count="126">126</span></td>
-              <td class="tiers__num"><span data-prize="second" data-count="54">54</span></td>
-              <td class="tiers__num tiers__pool"><span data-prize="pool">200</span></td>
-            </tr>
-            </tbody>
-          </table>
-          <p class="tiers__note">The pool is every entry fee combined. Runinback keeps 10%; the other 90% is prize, 70% to the champion and 30% to the runner-up. An 8-player bracket doubles every number.</p>
-          <div class="actions">
-            <a href="signup.html" class="btn btn--cta">Pick your tier <span class="arrow" aria-hidden="true">→</span></a>
-            <a href="how-it-works.html#fees" class="text-link">How fees and payouts work</a>
-          </div>
+    <!-- Two ways in -->
+    <section class="section" id="paths" aria-labelledby="paths-heading">
+      <div class="shell">
+        <div class="section-head" data-reveal>
+          <p class="eyebrow">Two ways in</p>
+          <h2 class="h1" id="paths-heading">Compete, or run the show.</h2>
+        </div>
+        <div class="lx-paths" data-stagger>
+          <article class="lx-path lx-path--play" data-reveal data-spotlight>
+            <p class="lx-path__tag">Play</p>
+            <h3 class="lx-path__title">Join a bracket</h3>
+            <p class="lx-path__text">Open a friend's invite link or pick a public tournament. Pay the entry fee, get seated, and play 1v1 custom games until one player is left.</p>
+            <ul class="lx-path__list">
+              <li>Quick Play seats you in the next open bracket in one tap</li>
+              <li>Leave for a full refund until it starts</li>
+              <li>Chat with your opponent and the host in each match room</li>
+            </ul>
+          </article>
+          <article class="lx-path lx-path--host" data-reveal data-spotlight>
+            <p class="lx-path__tag">Host</p>
+            <h3 class="lx-path__title">Run a tournament</h3>
+            <p class="lx-path__text">Name it, pick 4 to 32 players and an entry fee, make it public or private. You set up each Wild Rift lobby and decide who advances, and you earn 5% of the entry fees.</p>
+            <ul class="lx-path__list">
+              <li>One share link, even for private brackets</li>
+              <li>Start early with 4+ players; empty seats become byes</li>
+              <li>Your commission is paid with the prize</li>
+            </ul>
+          </article>
         </div>
       </div>
     </section>
 
-    <!-- How a match works -->
-    <section class="section" aria-labelledby="flow-heading">
-      <div class="shell">
-        <div class="section-head" data-reveal>
-          <p class="eyebrow">How a match works</p>
-          <h2 class="h1" id="flow-heading">From tap to prize in six steps.</h2>
+    <!-- Prize calculator -->
+    <section class="section" id="prizes" aria-labelledby="prizes-heading">
+      <div class="shell lx-prize">
+        <div class="section-head lx-prize__head" data-reveal>
+          <p class="eyebrow">Prizes</p>
+          <h2 class="h1" id="prizes-heading">Where every entry fee goes.</h2>
+          <p class="lead muted">The prize pool is every entry fee paid. The champion takes 85%, the host 5%, and Runinback keeps 10%. Try it:</p>
         </div>
-        <ol class="flow" data-stagger>
-          <li class="flow__step" data-reveal>
-            <h3 class="flow__title">Link your Riot ID</h3>
-            <p class="flow__text">Add your <span class="riot-id">Name#TAG</span> once. Your opponent uses it to find you, and it's required to enter.</p>
+        <div class="lx-calc" data-prize-calc data-reveal>
+          <div class="lx-calc__controls">
+            <div class="lx-calc__field">
+              <label class="lx-calc__label" for="calc-fee">Entry fee <output class="lx-calc__value" for="calc-fee" role="none" aria-live="off" data-calc-fee-out>10 rcoin</output></label>
+              <input class="lx-range" id="calc-fee" type="range" min="1" max="50" step="1" value="10" aria-valuetext="10 rcoin" data-calc-fee />
+            </div>
+            <fieldset class="lx-calc__field lx-calc__sizes">
+              <legend class="lx-calc__label">Players</legend>
+              <label class="lx-seg"><input type="radio" name="calc-size" value="4" /><span>4</span></label>
+              <label class="lx-seg"><input type="radio" name="calc-size" value="8" checked /><span>8</span></label>
+              <label class="lx-seg"><input type="radio" name="calc-size" value="16" /><span>16</span></label>
+              <label class="lx-seg"><input type="radio" name="calc-size" value="32" /><span>32</span></label>
+            </fieldset>
+          </div>
+          <div class="lx-split" aria-hidden="true">
+            <span class="lx-split__bar lx-split__bar--winner" style="--w:85%"></span>
+            <span class="lx-split__bar lx-split__bar--platform" style="--w:10%"></span>
+            <span class="lx-split__bar lx-split__bar--host" style="--w:5%"></span>
+          </div>
+          <dl class="lx-calc__out">
+            <div class="lx-calc__row lx-calc__row--winner"><dt>Champion <span>85%</span></dt><dd><span data-calc="winner">68</span> rcoin</dd></div>
+            <div class="lx-calc__row lx-calc__row--host"><dt>Host <span>5%</span></dt><dd><span data-calc="host">4</span> rcoin</dd></div>
+            <div class="lx-calc__row lx-calc__row--platform"><dt>Runinback <span>10%</span></dt><dd><span data-calc="platform">8</span> rcoin</dd></div>
+            <div class="lx-calc__row lx-calc__row--pool"><dt>Prize pool</dt><dd><span data-calc="pool">80</span> rcoin</dd></div>
+          </dl>
+          <p class="sr-only" role="status" data-calc-status></p>
+          <p class="lx-calc__note">1 rcoin = $1. Quick Play brackets have no host: 90% is prize, 70% to the champion and 30% to the runner-up. Free brackets cost nothing and pay no prize.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- How it works -->
+    <section class="section" id="how" aria-labelledby="how-heading">
+      <div class="shell split">
+        <div class="section-head split__head lx-sticky" data-reveal>
+          <p class="eyebrow">How it works</p>
+          <h2 class="h1" id="how-heading">From invite link to prize.</h2>
+          <p class="lead muted">Every match is a 1v1 Wild Rift custom game. Link your Riot ID (<span class="riot-id">Name#TAG</span>) once; you need it to enter.</p>
+        </div>
+        <ol class="lx-steps" data-steps>
+          <li class="lx-step" data-reveal>
+            <span class="lx-step__n" aria-hidden="true">01</span>
+            <h3 class="lx-step__title">Create or join</h3>
+            <p class="lx-step__text">A host creates the tournament and shares its link. Players open it, see the entry fee and prize, and join.</p>
           </li>
-          <li class="flow__step" data-reveal>
-            <h3 class="flow__title">Pick a tier and tap</h3>
-            <p class="flow__text">Choose an entry fee and 4 or 8 players. The bracket is drawn at random and starts the moment the last seat fills.</p>
+          <li class="lx-step" data-reveal>
+            <span class="lx-step__n" aria-hidden="true">02</span>
+            <h3 class="lx-step__title">The bracket is drawn</h3>
+            <p class="lx-step__text">It starts when the last seat fills, or earlier when the host starts it with 4 or more players. Seeds are random.</p>
           </li>
-          <li class="flow__step" data-reveal>
-            <h3 class="flow__title">Ready check <span class="chip">5 min</span></h3>
-            <p class="flow__text">When your match opens, both players press Ready. Miss it and you lose by walkover.</p>
+          <li class="lx-step" data-reveal>
+            <span class="lx-step__n" aria-hidden="true">03</span>
+            <h3 class="lx-step__title">The host opens the lobby</h3>
+            <p class="lx-step__text">For each match the host creates the Wild Rift custom game and posts the lobby code or a screenshot in the match room.</p>
           </li>
-          <li class="flow__step" data-reveal>
-            <h3 class="flow__title">Play the 1v1</h3>
-            <p class="flow__text">One player hosts a Wild Rift custom game with the lobby name and password from the match room. Play it out.</p>
+          <li class="lx-step" data-reveal>
+            <span class="lx-step__n" aria-hidden="true">04</span>
+            <h3 class="lx-step__title">Play, then the host decides</h3>
+            <p class="lx-step__text">You play the 1v1 and can upload the end screen. The host picks the winner, who advances; the loser is out.</p>
           </li>
-          <li class="flow__step" data-reveal>
-            <h3 class="flow__title">Report the result <span class="chip">10 min</span></h3>
-            <p class="flow__text">Both players report and upload the end screen. Matching reports settle at once; a verified end screen cuts the wait to 3 minutes.</p>
+          <li class="lx-step" data-reveal>
+            <span class="lx-step__n" aria-hidden="true">05</span>
+            <h3 class="lx-step__title">24 hours to appeal <span class="chip">24h</span></h3>
+            <p class="lx-step__text">After the final, any player can appeal a decision. An appeal holds the prize until a person on our team reviews it.</p>
           </li>
-          <li class="flow__step" data-reveal>
-            <h3 class="flow__title">Get paid</h3>
-            <p class="flow__text">Winners advance on their own. When the final is confirmed, the champion and runner-up are paid straight to their wallets.</p>
+          <li class="lx-step" data-reveal>
+            <span class="lx-step__n" aria-hidden="true">06</span>
+            <h3 class="lx-step__title">Everyone gets paid</h3>
+            <p class="lx-step__text">The champion's prize and the host's commission land in their wallets. Match chats are deleted once it's all settled.</p>
           </li>
         </ol>
       </div>
     </section>
 
-    <!-- Fairness -->
-    <section class="section" aria-labelledby="fair-heading">
-      <div class="shell split">
-        <div class="section-head split__head" data-reveal>
+    <!-- Fair play -->
+    <section class="section" id="fair" aria-labelledby="fair-heading">
+      <div class="shell">
+        <div class="section-head" data-reveal>
           <p class="eyebrow">Fair play</p>
-          <h2 class="h1" id="fair-heading">Results both players can stand behind.</h2>
-          <a href="how-it-works.html#disputes" class="text-link">Read the dispute rules</a>
+          <h2 class="h1" id="fair-heading">Hosts decide. People review.</h2>
         </div>
-        <ul class="ledger" data-stagger>
-          <li class="ledger__item" data-reveal>
-            <h3 class="ledger__title">Both players report</h3>
-            <p class="ledger__text">When the two reports agree, the match settles right away. If one player stays silent, the other's report stands when the 10-minute window closes.</p>
+        <ul class="lx-fair" data-stagger>
+          <li class="lx-fair__item" data-reveal data-spotlight>
+            <h3 class="lx-fair__title">Hosts can't play</h3>
+            <p class="lx-fair__text">The person who decides the matches can't enter their own tournament.</p>
           </li>
-          <li class="ledger__item" data-reveal>
-            <h3 class="ledger__title">The end screen is checked</h3>
-            <p class="ledger__text">We read the end-of-match screenshot automatically and compare it with both Riot IDs. A clear match speeds things up; it never decides a result on its own, and a screenshot reused from another match is flagged.</p>
+          <li class="lx-fair__item" data-reveal data-spotlight>
+            <h3 class="lx-fair__title">Appeals go to a person</h3>
+            <p class="lx-fair__text">Our team reviews appeals with the match chat and screenshots. A wrong call moves the prize and the host's commission to the right winner.</p>
           </li>
-          <li class="ledger__item" data-reveal>
-            <h3 class="ledger__title">Disputes go to a person</h3>
-            <p class="ledger__text">Disagree with a report and the match goes to human review with the room chat and screenshots. A dispute holds a 10% deposit that a false claim loses.</p>
+          <li class="lx-fair__item" data-reveal data-spotlight>
+            <h3 class="lx-fair__title">Quick calls get checked</h3>
+            <p class="lx-fair__text">A walkover needs a 10-minute wait and a reason. Suspiciously fast decisions are flagged, and new hosts have a longer appeal window.</p>
           </li>
-          <li class="ledger__item" data-reveal>
-            <h3 class="ledger__title">One player, one Riot ID</h3>
-            <p class="ledger__text">A Riot ID belongs to one account and locks while you're in a bracket. New accounts can enter up to 25 rcoin until they finish 3 matches.</p>
+          <li class="lx-fair__item" data-reveal data-spotlight>
+            <h3 class="lx-fair__title">Hosts who stall lose it</h3>
+            <p class="lx-fair__text">A bracket that stops moving for 24 hours is cancelled and every entry fee is refunded. Hosts with repeated bad calls can only run free brackets.</p>
           </li>
         </ul>
       </div>
@@ -339,6 +422,7 @@
         <div class="section-head split__head" data-reveal>
           <p class="eyebrow">FAQ</p>
           <h2 class="h1" id="faq-heading">Questions, answered.</h2>
+          <a href="contact.html" class="text-link">Still stuck? Contact us</a>
         </div>
         <div class="faq" data-reveal>
           <div class="faq__item" data-faq>
@@ -346,24 +430,28 @@
             <div class="faq__a"><p>Not yet. Runinback runs in test mode: rcoin balances are simulated and have no cash value. Real-money play opens only after legal review, and not everywhere.</p></div>
           </div>
           <div class="faq__item" data-faq>
-            <h3 class="faq__h"><button type="button" class="faq__q">Do I need a Riot ID? <span class="faq__icon" aria-hidden="true"></span></button></h3>
-            <div class="faq__a"><p>Yes. Link your Riot ID (<span class="riot-id">Name#TAG</span>) in the console before you join. Your opponent uses it to find you in the custom game, and the end screen is checked against it.</p></div>
+            <h3 class="faq__h"><button type="button" class="faq__q">Who decides who wins? <span class="faq__icon" aria-hidden="true"></span></button></h3>
+            <div class="faq__a"><p>The tournament's host decides each match after you play it. You can still upload the end screen so the host sees the result. If you think a call was wrong, appeal within 24 hours of the final and our team reviews it before any prize is paid.</p></div>
           </div>
           <div class="faq__item" data-faq>
             <h3 class="faq__h"><button type="button" class="faq__q">What does it cost? <span class="faq__icon" aria-hidden="true"></span></button></h3>
-            <div class="faq__a"><p>Runinback keeps 10% of each paid tournament's pool. The other 90% is prize: 70% to the champion, 30% to the runner-up. You buy rcoin by card with a 5% fee (1 rcoin = $1), and withdrawals are free. Free tiers cost nothing and pay no prize.</p></div>
+            <div class="faq__a"><p>Only the entry fee the host sets. Of the prize pool, 85% goes to the champion, 5% to the host and 10% to Runinback. You buy rcoin by card with a 5% fee (1 rcoin = $1), and withdrawals are free. An appeal on a paid tournament holds a deposit of 10% of the entry fee, returned if you're right.</p></div>
+          </div>
+          <div class="faq__item" data-faq>
+            <h3 class="faq__h"><button type="button" class="faq__q">Can I make a private tournament? <span class="faq__icon" aria-hidden="true"></span></button></h3>
+            <div class="faq__a"><p>Yes. Private tournaments don't show up in the public list; only people with your invite link or code can join. You can change the code at any time.</p></div>
+          </div>
+          <div class="faq__item" data-faq>
+            <h3 class="faq__h"><button type="button" class="faq__q">Do I need a Riot ID? <span class="faq__icon" aria-hidden="true"></span></button></h3>
+            <div class="faq__a"><p>Yes. Link your Riot ID (<span class="riot-id">Name#TAG</span>) in the console before you join. The host and your opponent use it to find you in the custom game.</p></div>
           </div>
           <div class="faq__item" data-faq>
             <h3 class="faq__h"><button type="button" class="faq__q">What if my opponent doesn't show up? <span class="faq__icon" aria-hidden="true"></span></button></h3>
-            <div class="faq__a"><p>Each match opens with a 5-minute ready check. If you're ready and your opponent isn't, you advance by walkover. If neither player is ready, both are out of that match.</p></div>
+            <div class="faq__a"><p>The host can give you the match by walkover after a 10-minute wait. If neither player shows up, both are out of that match.</p></div>
           </div>
           <div class="faq__item" data-faq>
             <h3 class="faq__h"><button type="button" class="faq__q">Can I leave before it starts? <span class="faq__icon" aria-hidden="true"></span></button></h3>
-            <div class="faq__a"><p>Yes. Until the bracket fills you can leave for a full refund, and if it doesn't fill within 24 hours every entry fee is refunded automatically.</p></div>
-          </div>
-          <div class="faq__item" data-faq>
-            <h3 class="faq__h"><button type="button" class="faq__q">What's coming next? <span class="faq__icon" aria-hidden="true"></span></button></h3>
-            <div class="faq__a"><p>Riot Sign-On to prove you own your Riot ID, seasons with ranking rewards, and more formats. None of these are live yet; we'll announce them when they are.</p></div>
+            <div class="faq__a"><p>Yes, for a full refund, until the bracket starts. If the host cancels, or the tournament never starts, every entry fee is refunded automatically.</p></div>
           </div>
         </div>
       </div>
@@ -371,9 +459,9 @@
 
     <!-- CTA -->
     <section class="section">
-      <div class="shell cta-band" data-reveal>
-        <h2 class="display">Your bracket is filling.</h2>
-        <p class="lead muted mx-auto">Create a free account, link your Riot ID and join a Quick Play tier with test rcoin.</p>
+      <div class="shell cta-band lx-cta" data-reveal>
+        <h2 class="display">Your bracket is one link away.</h2>
+        <p class="lead muted mx-auto">Create a free account, link your Riot ID, and host or join a tournament with test rcoin.</p>
         <div class="cta-band__actions">
           <a href="signup.html" class="btn btn--cta">Create your account <span class="arrow" aria-hidden="true">→</span></a>
           <a href="login.html" class="btn btn--ghost">Log in</a>
@@ -382,18 +470,18 @@
     </section>
   </main>
 
-  <footer class="footer">
+<footer class="footer">
     <div class="shell">
       <div class="footer__top">
         <div class="footer__brand">
           <a href="index.html" class="brand" aria-label="Runinback home"><img class="brand__lockup" src="/logo-lockup.png" width="180" height="30" alt="Runinback" /></a>
-          <p class="footer__tagline">1v1 Wild Rift tournaments with fixed entry fees and prizes paid when the final is confirmed.</p>
+          <p class="footer__tagline">Host or join 1v1 Wild Rift tournaments. The champion takes 85% of entry fees.</p>
         </div>
         <nav class="footer__col" aria-label="Play">
           <h2 class="footer__h">Play</h2>
           <ul>
-            <li><a href="how-it-works.html">How it works</a></li>
-            <li><a href="index.html#prizes">Quick Play prizes</a></li>
+            <li><a href="index.html#how">How it works</a></li>
+            <li><a href="index.html#prizes">Prizes</a></li>
             <li><a href="signup.html">Create an account</a></li>
             <li><a href="login.html">Log in</a></li>
           </ul>
@@ -401,8 +489,8 @@
         <nav class="footer__col" aria-label="Help">
           <h2 class="footer__h">Help</h2>
           <ul>
-            <li><a href="how-it-works.html#faq">FAQ</a></li>
-            <li><a href="how-it-works.html#disputes">Disputes</a></li>
+            <li><a href="index.html#faq">FAQ</a></li>
+            <li><a href="index.html#fair">Disputes</a></li>
             <li><a href="mailto:support@runinback.com">support@runinback.com</a></li>
           </ul>
         </nav>

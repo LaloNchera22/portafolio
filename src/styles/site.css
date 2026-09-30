@@ -126,7 +126,9 @@ body {
   letter-spacing: -0.01em;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  /* clip, not hidden: hidden makes body a scroll container and breaks sticky. */
   overflow-x: hidden;
+  overflow-x: clip;
   min-height: 100vh;
 }
 
@@ -424,12 +426,6 @@ ol.steps {
   .brand__word { display: none; }
 }
 
-.nav__links {
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-24);
-}
-
 .nav__link {
   font-size: var(--text-body-sm);
   color: var(--color-surface-cream);
@@ -458,46 +454,6 @@ ol.steps {
 .nav__link:hover {
   color: var(--color-surface-cream);
 }
-
-.nav__toggle {
-  display: none;
-  width: 44px;
-  height: 44px;
-  align-items: center;
-  justify-content: center;
-  border-radius: 50%;
-  border: 1px solid var(--color-surface-25);
-  background: transparent;
-  transition: border-color 0.25s var(--ease-out), background 0.25s var(--ease-out);
-}
-.nav.is-open .nav__toggle { border-color: var(--color-surface-cream); }
-.nav__toggle span {
-  position: relative;
-  width: 20px;
-  height: 2px;
-  background: var(--color-surface-cream);
-  transition: background 0.2s var(--ease-out);
-}
-.nav__toggle span::before,
-.nav__toggle span::after {
-  content: "";
-  position: absolute;
-  left: 0;
-  width: 20px;
-  height: 2px;
-  background: var(--color-surface-cream);
-  transition: transform 0.3s var(--ease-out);
-}
-.nav__toggle span::before { top: -6px; }
-.nav__toggle span::after { top: 6px; }
-
-.nav.is-open .nav__toggle span { background: transparent; }
-.nav.is-open .nav__toggle span::before { transform: translateY(6px) rotate(45deg); }
-.nav.is-open .nav__toggle span::after { transform: translateY(-6px) rotate(-45deg); }
-
-/* The scroll-progress bar sits above the nav; hide it while the full-screen
-   menu is open so no stray sliver shows over the overlay. */
-.nav.is-open ~ .progress { opacity: 0; }
 
 /* ==========================================================================
    Announcement banner
@@ -1258,92 +1214,6 @@ ol.steps {
 }
 
 @media (max-width: 640px) {
-  /* Keep the brand + toggle row painted above the full-screen menu overlay. */
-  .nav__inner { position: relative; z-index: 2; }
-  .nav__inner .brand { position: relative; z-index: 3; }
-  .nav__toggle { display: flex; z-index: 3; }
-
-  /* While the menu is open the header must be a plain, solid surface: a
-     backdrop-filter (or transform) on .nav turns it into the containing block
-     for the fixed overlay below, which is exactly what broke the old menu on
-     scroll. Neutralise both so the overlay always maps to the viewport. */
-  .nav.is-open,
-  .nav.is-open.is-scrolled {
-    background: var(--surface-canvas);
-    -webkit-backdrop-filter: none;
-    backdrop-filter: none;
-    border-bottom-color: transparent;
-    transform: none;
-  }
-
-  /* Full-screen menu overlay — opaque canvas, slides in from the right. */
-  .nav__links {
-    position: fixed;
-    inset: 0;
-    width: 100%;
-    height: 100dvh;
-    flex-direction: column;
-    align-items: stretch;
-    justify-content: flex-start;
-    gap: 0;
-    padding: calc(var(--spacing-96) + env(safe-area-inset-top))
-             var(--gutter)
-             calc(var(--gutter) + env(safe-area-inset-bottom));
-    background: var(--surface-canvas);
-    overflow-y: auto;
-    overscroll-behavior: contain;
-    transform: translateX(100%);
-    opacity: 0;
-    visibility: hidden;
-    transition: transform 0.42s var(--ease-in-out),
-                opacity 0.28s var(--ease-out),
-                visibility 0s linear 0.42s;
-  }
-  .nav.is-open .nav__links {
-    transform: translateX(0);
-    opacity: 1;
-    visibility: visible;
-    transition: transform 0.42s var(--ease-in-out),
-                opacity 0.28s var(--ease-out);
-  }
-
-  /* Menu items — full-width rows separated by hairlines. */
-  .nav__links .nav__link {
-    width: 100%;
-    font-size: var(--text-body-lg);
-    color: var(--color-surface-cream);
-    padding: var(--spacing-20) 0;
-    border-bottom: 1px solid var(--color-surface-25);
-  }
-  .nav__links .nav__link::after { display: none; }
-  .nav__links .nav__link:hover { color: var(--color-surface-50); }
-
-  /* Auth block sits at the foot of the sheet as two full-width pills. */
-  .nav__account {
-    flex-direction: column;
-    align-items: stretch;
-    width: 100%;
-    gap: var(--spacing-12);
-    margin-top: var(--spacing-48);
-  }
-  .nav__links .nav__auth {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 100%;
-    padding: 14px 26px;
-    border: 1px solid var(--color-surface-25);
-    border-radius: var(--radius-full);
-    font-size: 17px;
-    font-weight: var(--fw-semibold);
-    color: var(--color-surface-cream);
-  }
-  .nav__links .btn { width: 100%; }
-  .nav__links .btn--sm {
-    padding: 14px 26px;
-    font-size: 17px;
-  }
-
   .footer__top { grid-template-columns: 1fr; gap: var(--spacing-32); }
   .form__row { grid-template-columns: 1fr; }
 
@@ -1521,8 +1391,7 @@ body[data-auth-scope] .nav {
 }
 
 @media (pointer: coarse) {
-  .btn,
-  .nav__toggle { min-height: 44px; }
+  .btn { min-height: 44px; }
 }
 
 /* Landing hero: the page's one orchestrated entrance, in CSS so the
@@ -1632,16 +1501,6 @@ body[data-auth-scope] .nav {
 .checkbox input { transition: border-color 0.2s, background-color 0.2s, transform 0.12s var(--ease-out); }
 .checkbox input:active { transform: scale(0.9); }
 .checkbox input:checked::after { animation: ui-check 0.2s var(--ease-out) backwards; }
-
-/* Mobile menu: links follow the panel in a short cascade. */
-@media (max-width: 640px) {
-  .nav.is-open .nav__links > * { animation: ui-enter 0.4s var(--ease-out) backwards; }
-  .nav.is-open .nav__links > :nth-child(1) { animation-delay: 0.10s; }
-  .nav.is-open .nav__links > :nth-child(2) { animation-delay: 0.14s; }
-  .nav.is-open .nav__links > :nth-child(3) { animation-delay: 0.18s; }
-  .nav.is-open .nav__links > :nth-child(4) { animation-delay: 0.22s; }
-}
-body.menu-open { overflow: hidden; }
 
 /* ==========================================================================
    Shared helpers (marketing)
@@ -1828,145 +1687,6 @@ body.menu-open { overflow: hidden; }
 }
 
 /* ==========================================================================
-   Quick Play tiers (landing)
-   ========================================================================== */
-
-.tiers-head {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: flex-end;
-  justify-content: space-between;
-  gap: var(--spacing-24) var(--spacing-48);
-  margin-bottom: var(--spacing-32);
-}
-.tiers-head .section-head { margin-bottom: 0; }
-
-/* Segmented 4 / 8 control: real radio buttons, a sliding thumb behind them. */
-.size-toggle {
-  position: relative;
-  display: inline-grid;
-  grid-template-columns: 1fr 1fr;
-  padding: 4px;
-  margin: 0;
-  min-inline-size: auto;
-  border: 1px solid var(--color-surface-25);
-  border-radius: var(--radius-full);
-}
-.size-toggle__legend {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  overflow: hidden;
-  clip-path: inset(50%);
-  white-space: nowrap;
-}
-.size-toggle__opt { position: relative; z-index: 1; }
-.size-toggle__opt input {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  margin: 0;
-  opacity: 0;
-  cursor: pointer;
-}
-.size-toggle__opt span {
-  display: block;
-  padding: 10px 20px;
-  border-radius: var(--radius-full);
-  font-size: var(--text-body-sm);
-  font-weight: var(--fw-semibold);
-  color: var(--color-surface-50);
-  white-space: nowrap;
-  transition: color 0.25s var(--ease-out);
-}
-.size-toggle__opt input:checked + span { color: var(--color-just-black); background: var(--color-surface-cream); }
-.size-toggle__opt input:focus-visible + span { outline: 2px solid var(--color-surface-cream); outline-offset: 3px; }
-@supports selector(:has(*)) {
-  .size-toggle::before {
-    content: "";
-    position: absolute;
-    top: 4px;
-    bottom: 4px;
-    left: 4px;
-    width: calc(50% - 4px);
-    border-radius: var(--radius-full);
-    background: var(--color-surface-cream);
-    transition: transform 0.4s var(--ease-out);
-  }
-  .size-toggle:has(input[value="8"]:checked)::before { transform: translateX(100%); }
-  .size-toggle__opt input:checked + span { background: transparent; }
-}
-/* Without JS the numbers can't change, so the control would lie. */
-html:not(.js) .size-toggle { display: none; }
-
-.tiers__table {
-  width: 100%;
-  border-collapse: collapse;
-  table-layout: fixed; /* counting numbers never resize the columns */
-  font-variant-numeric: tabular-nums;
-}
-.tiers__caption {
-  caption-side: top;
-  text-align: left;
-  padding-bottom: var(--spacing-16);
-  color: var(--color-surface-50);
-  font-size: var(--text-body-sm);
-}
-.tiers__table thead th {
-  padding-bottom: var(--spacing-12);
-  border-bottom: 1px solid var(--color-surface-25);
-  color: var(--color-surface-50);
-  font-size: var(--text-body-sm);
-  font-weight: var(--fw-medium);
-  text-align: right;
-}
-.tiers__table thead th:first-child { text-align: left; width: 34%; }
-.tiers__row > * {
-  padding-block: clamp(14px, 2vw, 20px);
-  border-bottom: 1px solid var(--color-surface-25);
-  vertical-align: middle;
-}
-.tiers__row th { text-align: left; font-weight: var(--fw-semibold); }
-.tiers__fee {
-  display: inline-block;
-  font-size: clamp(28px, 4.4vw, 48px);
-  line-height: 1;
-  letter-spacing: -0.03em;
-  transition: transform 0.35s var(--ease-out);
-}
-.tiers__row:hover .tiers__fee { transform: translateX(6px); }
-.tiers__tag {
-  display: block;
-  margin-top: 6px;
-  color: var(--color-surface-50);
-  font-size: var(--text-caption);
-  font-weight: var(--fw-regular);
-  letter-spacing: 0;
-}
-.tiers__num {
-  text-align: right;
-  font-size: clamp(20px, 2.8vw, 32px);
-  font-weight: var(--fw-semibold);
-  letter-spacing: -0.02em;
-}
-.tiers__num--first { color: var(--accent-settle); }
-.tiers__num--none { color: var(--color-surface-25); }
-td.tiers__pool { color: var(--color-surface-50); }
-.tiers__note {
-  max-width: 64ch;
-  margin-block: var(--spacing-24) var(--spacing-32);
-  color: var(--color-surface-50);
-  font-size: var(--text-body-sm);
-  line-height: 1.6;
-}
-.tiers .actions { align-items: center; gap: var(--spacing-24); }
-@media (max-width: 560px) {
-  .tiers__pool { display: none; }
-  .tiers__table thead th:first-child { width: 40%; }
-}
-
-/* ==========================================================================
    Six-step flow (landing)
    A real sequence, so it's numbered. Each step's top rule fills in as the
    step reveals, one after another.
@@ -2149,4 +1869,606 @@ html.js .timing:not(.is-visible) .timing__fill { transform: scaleX(0); }
 .steps .step__num { font-family: var(--font-body); font-variant-numeric: tabular-nums; min-width: 1.5ch; }
 .step__title { font-size: var(--text-body-lg); }
 
+/* ==========================================================================
+   Nav — account actions only
+   The header carries the logo and the account slot (#nav-account, rendered
+   by auth/account-nav.js: Log in + Sign up, or Console + Log out). There is
+   no link list and no menu, so the same row works from 320px up.
+   ========================================================================== */
 
+.nav__actions {
+  display: flex;
+  align-items: center;
+  flex: none;
+}
+.nav__actions .nav__account { gap: clamp(8px, 3vw, 20px); }
+/* A 44px hit area for the text link without changing how it reads. */
+.nav__actions .nav__auth {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding-inline: 4px;
+  white-space: nowrap;
+}
+.nav__actions .nav__auth::after { bottom: 10px; left: 4px; width: calc(100% - 8px); }
+.nav__actions .btn--sm { min-height: 44px; white-space: nowrap; }
+@media (max-width: 359px) {
+  .nav__actions .btn--sm { padding-inline: 14px; }
+}
+
+/* ==========================================================================
+   Landing
+   The page's one orchestrated moment is the hero headline rising word by
+   word; everything else moves only when the visitor scrolls to it or points
+   at it. Color follows the taxonomy: blue = playing (matchmaking), orange =
+   hosting (escrow / commission), pink = the champion's prize (settlement).
+   Depth comes from hairlines and a pointer-tracked glow, never box-shadow.
+   Every animation below is off under prefers-reduced-motion.
+   ========================================================================== */
+
+:root {
+  --lx-muted: #8a8a7c;        /* fixed grey for data (never re-themed) */
+  --lx-hairline: var(--color-surface-25);
+  --lx-control-line: #6b6c62; /* >= 3:1 on the panel: control edges (WCAG 1.4.11) */
+}
+
+/* --- Hero headline: word-by-word rise ---------------------------------- */
+.lx-words { text-wrap: balance; }
+/* One short sentence per line: "Host it." / "Play it." / "Win it." */
+.hero__title.lx-words { max-width: 7.5ch; }
+.lx-word { display: inline-block; }
+.lx-word--accent {
+  background: var(--gradient-shockingly-green);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: var(--color-shockingly-green); /* fallback where clip is unsupported */
+}
+@keyframes lx-word-rise {
+  from { opacity: 0.01; transform: translateY(0.45em) rotate(2deg); }
+}
+@media (prefers-reduced-motion: no-preference) {
+  /* The words carry the entrance, so the title block itself stays put. */
+  .hero__title.lx-words { animation: none; }
+  .lx-words .lx-word {
+    transform-origin: 0 100%;
+    animation: lx-word-rise 0.9s var(--ease-out) both;
+    animation-delay: calc(0.08s + var(--i, 0) * 0.07s);
+  }
+}
+
+/* --- Hero stats: three facts on hairlines ------------------------------ */
+.lx-stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin-top: var(--spacing-48);
+  border-top: 1px solid var(--lx-hairline);
+  max-width: 520px;
+}
+.lx-stats__item {
+  display: flex;
+  flex-direction: column-reverse; /* number above its label, dt stays first */
+  gap: 4px;
+  padding: var(--spacing-16) var(--spacing-12) 0;
+  min-width: 0;
+}
+.lx-stats__item:first-child { padding-left: 0; }
+.lx-stats__item + .lx-stats__item { border-left: 1px solid var(--lx-hairline); }
+.lx-stats dt {
+  color: var(--lx-muted);
+  font-size: var(--text-caption);
+  line-height: 1.3;
+}
+.lx-stats dd {
+  font-size: clamp(26px, 4vw, 40px);
+  font-weight: var(--fw-semibold);
+  letter-spacing: -0.03em;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .lx-stats { animation: hero-rise 0.8s var(--ease-out) 0.35s both; }
+}
+
+/* --- Ticker: full-bleed hairline marquee ------------------------------- */
+.lx-ticker {
+  position: relative;
+  overflow: hidden;
+  border-block: 1px solid var(--lx-hairline);
+  padding-block: var(--spacing-16);
+  -webkit-mask: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent);
+  mask: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent);
+}
+.lx-ticker__track {
+  display: flex;
+  width: max-content;
+}
+.lx-ticker__track span {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-24);
+  padding-right: var(--spacing-24);
+  font-size: var(--text-body-sm);
+  color: var(--color-surface-cream);
+  white-space: nowrap;
+}
+/* A small peak between phrases, echoing the brand mark. */
+.lx-ticker__track span::after {
+  content: "";
+  width: 7px;
+  height: 7px;
+  border-top: 1px solid var(--lx-muted);
+  border-left: 1px solid var(--lx-muted);
+  transform: rotate(45deg) translate(2px, 2px);
+}
+@keyframes lx-ticker {
+  to { transform: translateX(-50%); } /* the track holds the phrases twice */
+}
+@media (prefers-reduced-motion: no-preference) {
+  /* Two passes, then it holds still (WCAG 2.2.2); hover or focus pauses it. */
+  .lx-ticker__track { animation: lx-ticker 48s linear 2 forwards; }
+  .lx-ticker:hover .lx-ticker__track,
+  .lx-ticker:focus-within .lx-ticker__track { animation-play-state: paused; }
+}
+
+/* --- Spotlight (shared by paths + fair play) ---------------------------
+   landing.js writes --mx/--my (px inside the card) on fine pointers. A
+   radial glow follows the pointer on the surface, and a masked copy of the
+   same gradient lights the 1px border under it. */
+[data-spotlight] {
+  --lx-hue: var(--color-surface-cream);
+  position: relative;
+  isolation: isolate;
+}
+[data-spotlight]::before,
+[data-spotlight]::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.4s var(--ease-out);
+}
+[data-spotlight]::before {
+  z-index: -1;
+  background: radial-gradient(420px circle at var(--mx, 50%) var(--my, 0%),
+    color-mix(in srgb, var(--lx-hue) 9%, transparent), transparent 70%);
+}
+[data-spotlight]::after {
+  padding: 1px;
+  background: radial-gradient(260px circle at var(--mx, 50%) var(--my, 0%),
+    var(--lx-hue), transparent 75%);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
+}
+@media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
+  [data-spotlight].is-lit::before,
+  [data-spotlight].is-lit::after { opacity: 1; }
+}
+
+/* --- Two ways in: Play (blue) and Host (orange) ------------------------ */
+.lx-paths {
+  display: grid;
+  gap: var(--spacing-16);
+}
+@media (min-width: 820px) {
+  .lx-paths { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--spacing-24); }
+}
+.lx-path {
+  display: flex;
+  flex-direction: column;
+  padding: clamp(24px, 4vw, 44px);
+  border: 1px solid var(--lx-hairline);
+  border-radius: var(--radius-lg);
+  background: var(--surface-panel);
+}
+.lx-path--play { --lx-hue: var(--accent-match); }
+.lx-path--host { --lx-hue: var(--accent-escrow); }
+/* The hue sits on a thin top edge: the card's identity at a glance. */
+.lx-path { background-image: linear-gradient(90deg, var(--lx-hue), transparent 60%); background-size: 100% 2px; background-repeat: no-repeat; }
+.lx-path__tag {
+  display: inline-flex;
+  gap: 0.4em;
+  margin-bottom: var(--spacing-32);
+  color: var(--lx-hue);
+  font-size: var(--text-body-sm);
+  font-weight: var(--fw-medium);
+}
+.lx-path__tag::before { content: "{"; color: var(--lx-muted); }
+.lx-path__tag::after { content: "}"; color: var(--lx-muted); }
+.lx-path__title {
+  font-size: var(--text-heading-sm);
+  font-weight: var(--fw-semibold);
+  letter-spacing: -0.025em;
+  line-height: 1.05;
+  margin-bottom: var(--spacing-16);
+}
+.lx-path__text {
+  color: var(--lx-muted);
+  max-width: 48ch;
+  margin-bottom: var(--spacing-32);
+}
+.lx-path__list { margin-top: auto; }
+.lx-path__list li {
+  display: grid;
+  grid-template-columns: 14px 1fr;
+  gap: var(--spacing-12);
+  align-items: baseline;
+  padding-block: var(--spacing-12);
+  border-top: 1px solid var(--lx-hairline);
+  font-size: var(--text-body-sm);
+  line-height: 1.5;
+}
+.lx-path__list li::before {
+  content: "";
+  width: 14px;
+  height: 1px;
+  align-self: start;
+  margin-top: 0.75em;
+  background: var(--lx-hue);
+}
+
+/* --- Prize calculator -------------------------------------------------- */
+.lx-prize { display: grid; gap: var(--spacing-32); }
+.lx-prize__head { margin-bottom: 0; }
+@media (min-width: 960px) {
+  .lx-prize {
+    grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr);
+    gap: clamp(48px, 7vw, 112px);
+    align-items: start;
+  }
+}
+.lx-calc {
+  display: grid;
+  gap: var(--spacing-24);
+  padding: clamp(20px, 4vw, 40px);
+  border: 1px solid var(--lx-hairline);
+  border-radius: var(--radius-lg);
+  background: var(--surface-panel);
+  min-width: 0;
+}
+.lx-calc__controls { display: grid; gap: var(--spacing-24); }
+.lx-calc__field { min-width: 0; border: 0; margin: 0; padding: 0; }
+.lx-calc__label {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--spacing-12);
+  padding: 0;
+  margin-bottom: var(--spacing-8);
+  color: var(--lx-muted);
+  font-size: var(--text-body-sm);
+}
+.lx-calc__value {
+  color: var(--color-surface-cream);
+  font-size: var(--text-body-lg);
+  font-weight: var(--fw-semibold);
+  letter-spacing: -0.01em;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Range: a hairline track that fills in cream up to the thumb (--fill from JS). */
+.lx-range {
+  -webkit-appearance: none;
+  appearance: none;
+  display: block;
+  width: 100%;
+  height: 44px;
+  margin: 0;
+  background: transparent;
+  cursor: pointer;
+  --lx-track: linear-gradient(90deg, var(--color-surface-cream) var(--fill, 18.4%), var(--lx-control-line) var(--fill, 18.4%));
+}
+.lx-range::-webkit-slider-runnable-track { height: 2px; border-radius: 2px; background: var(--lx-track); }
+.lx-range::-moz-range-track { height: 2px; border-radius: 2px; background: var(--lx-control-line); }
+.lx-range::-moz-range-progress { height: 2px; border-radius: 2px; background: var(--color-surface-cream); }
+.lx-range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 22px;
+  height: 22px;
+  margin-top: -10px;
+  border: 1px solid var(--color-surface-cream);
+  border-radius: 50%;
+  background: var(--surface-canvas);
+  transition: transform 0.2s var(--ease-out), background-color 0.2s var(--ease-out);
+}
+.lx-range::-moz-range-thumb {
+  width: 20px;
+  height: 20px;
+  border: 1px solid var(--color-surface-cream);
+  border-radius: 50%;
+  background: var(--surface-canvas);
+  transition: transform 0.2s var(--ease-out), background-color 0.2s var(--ease-out);
+}
+.lx-range:hover::-webkit-slider-thumb,
+.lx-range:active::-webkit-slider-thumb { transform: scale(1.15); background: var(--color-surface-cream); }
+.lx-range:hover::-moz-range-thumb,
+.lx-range:active::-moz-range-thumb { transform: scale(1.15); background: var(--color-surface-cream); }
+.lx-range:focus { outline: none; }
+.lx-range:focus-visible { outline: 2px solid var(--color-surface-cream); outline-offset: 2px; border-radius: 4px; }
+
+/* Segmented player count: real radios, ghost pills. */
+.lx-calc__sizes {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 6px;
+}
+.lx-calc__sizes > legend { float: left; grid-column: 1 / -1; width: 100%; } /* a floated legend is an ordinary grid item: it gets its own row */
+.lx-seg { position: relative; }
+.lx-seg input {
+  position: absolute;
+  z-index: 1;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+.lx-seg span {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  border: 1px solid var(--lx-control-line);
+  border-radius: var(--radius-full);
+  font-size: var(--text-body-sm);
+  font-weight: var(--fw-semibold);
+  font-variant-numeric: tabular-nums;
+  color: var(--lx-muted);
+  transition: color 0.25s var(--ease-out), background-color 0.25s var(--ease-out), border-color 0.25s var(--ease-out);
+}
+.lx-seg:hover span { border-color: var(--color-surface-cream); color: var(--color-surface-cream); }
+.lx-seg input:checked + span {
+  border-color: var(--color-surface-cream);
+  background: var(--color-surface-cream);
+  color: var(--color-just-black);
+}
+.lx-seg input:focus-visible + span { outline: 2px solid var(--color-surface-cream); outline-offset: 3px; }
+.lx-seg input:active + span { transform: scale(0.97); }
+
+/* Split bar: champion / platform / host, proportional to their share. */
+.lx-split {
+  display: flex;
+  height: 10px;
+  border-radius: 2px;
+  overflow: hidden;
+  background: var(--lx-hairline);
+}
+.lx-split__bar {
+  display: block;
+  flex: none;
+  width: var(--w);
+  height: 100%;
+  border-right: 2px solid var(--surface-panel);
+  transition: width 1.1s var(--ease-in-out);
+}
+.lx-split__bar:last-child { border-right: 0; }
+.lx-split__bar--winner { background: var(--accent-settle); }
+.lx-split__bar--platform { background: var(--lx-muted); transition-delay: 0.12s; }
+.lx-split__bar--host { background: var(--accent-escrow); transition-delay: 0.2s; }
+/* Grows from nothing when the calculator scrolls in. */
+html.js .lx-calc[data-reveal]:not(.is-visible) .lx-split__bar { width: 0; }
+
+.lx-calc__out { display: grid; }
+.lx-calc__row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--spacing-16);
+  padding-block: var(--spacing-12);
+  border-top: 1px solid var(--lx-hairline);
+  font-variant-numeric: tabular-nums;
+}
+.lx-calc__row dt {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-size: var(--text-body-sm);
+}
+.lx-calc__row dt::before {
+  content: "";
+  flex: none;
+  width: 8px;
+  height: 8px;
+  border-radius: 2px;
+  background: var(--lx-row, transparent);
+}
+.lx-calc__row dt span { color: var(--lx-muted); }
+.lx-calc__row dd {
+  flex: none;
+  font-size: clamp(20px, 3vw, 30px);
+  font-weight: var(--fw-semibold);
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+  white-space: nowrap;
+}
+.lx-calc__row--winner { --lx-row: var(--accent-settle); }
+.lx-calc__row--winner dd { color: var(--accent-settle); font-size: clamp(28px, 4.4vw, 44px); }
+.lx-calc__row--host { --lx-row: var(--accent-escrow); }
+.lx-calc__row--host dd { color: var(--accent-escrow); }
+.lx-calc__row--platform { --lx-row: var(--lx-muted); }
+.lx-calc__row--platform dd { color: var(--lx-muted); }
+.lx-calc__row--pool { border-top-color: var(--hairline-strong); }
+.lx-calc__row--pool dt::before { background: transparent; border: 1px solid var(--lx-muted); }
+.lx-calc__note {
+  color: var(--lx-muted);
+  font-size: var(--text-caption);
+  line-height: 1.6;
+  max-width: 62ch;
+}
+
+/* --- How it works: timeline with a scroll-driven rail ------------------
+   --progress (0–1) is written on .lx-steps by landing.js; the step under
+   the reading line gets .is-active, the ones above it .is-done. */
+@media (min-width: 960px) {
+  .lx-sticky { position: sticky; top: 120px; align-self: start; }
+}
+.lx-steps {
+  --lx-rail-x: 17px;
+  position: relative;
+  list-style: none;
+  padding-left: 60px;
+}
+.lx-steps::before,
+.lx-steps::after {
+  content: "";
+  position: absolute;
+  top: 8px;
+  bottom: 8px;
+  left: var(--lx-rail-x);
+  width: 1px;
+  background: var(--lx-hairline);
+}
+.lx-steps::after {
+  width: 2px;
+  margin-left: -0.5px;
+  background: var(--color-surface-cream);
+  transform-origin: top;
+  transform: scaleY(var(--progress, 0));
+}
+.lx-step {
+  position: relative;
+  padding-block: var(--spacing-8) var(--spacing-48);
+}
+.lx-step:last-child { padding-bottom: 0; }
+.lx-step__n {
+  position: absolute;
+  z-index: 1; /* above the rail drawn by .lx-steps::before/::after */
+  top: 4px;
+  left: calc(-60px + var(--lx-rail-x) - 17px);
+  display: grid;
+  place-items: center;
+  width: 35px;
+  height: 35px;
+  border: 1px solid var(--lx-hairline);
+  border-radius: 50%;
+  background: var(--surface-canvas);
+  color: var(--lx-muted);
+  font-size: 13px;
+  font-weight: var(--fw-semibold);
+  font-variant-numeric: tabular-nums;
+  transition: background-color 0.35s var(--ease-out), border-color 0.35s var(--ease-out), color 0.35s var(--ease-out), transform 0.45s var(--ease-spring);
+}
+.lx-step__title {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 10px;
+  margin-bottom: var(--spacing-8);
+  font-size: var(--text-body-lg);
+  font-weight: var(--fw-semibold);
+  letter-spacing: -0.01em;
+  line-height: 1.25;
+  transition: color 0.35s var(--ease-out);
+}
+.lx-step__text {
+  color: var(--lx-muted);
+  font-size: var(--text-body-sm);
+  line-height: 1.6;
+  max-width: 56ch;
+}
+.lx-step.is-done .lx-step__n { border-color: var(--color-surface-cream); color: var(--color-surface-cream); }
+.lx-step.is-active .lx-step__n {
+  border-color: var(--color-surface-cream);
+  background: var(--color-surface-cream);
+  color: var(--color-just-black);
+  transform: scale(1.12);
+}
+/* While tracking, steps not reached yet recede a little. */
+.lx-steps.is-tracking .lx-step:not(.is-active):not(.is-done) .lx-step__title { color: var(--lx-muted); }
+@media (prefers-reduced-motion: reduce) {
+  .lx-steps::after { transform: none; } /* rail shown complete */
+}
+
+/* --- Fair play: four rules ------------------------------------------- */
+.lx-fair {
+  display: grid;
+  gap: var(--spacing-16);
+}
+@media (min-width: 640px) { .lx-fair { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (min-width: 1120px) { .lx-fair { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+.lx-fair__item {
+  padding: clamp(20px, 3vw, 28px);
+  border: 1px solid var(--lx-hairline);
+  border-radius: var(--radius-lg);
+  background: var(--surface-panel);
+}
+.lx-fair__title {
+  font-size: var(--text-body-lg);
+  font-weight: var(--fw-semibold);
+  letter-spacing: -0.01em;
+  line-height: 1.25;
+  margin-bottom: var(--spacing-12);
+}
+.lx-fair__text {
+  color: var(--lx-muted);
+  font-size: var(--text-body-sm);
+  line-height: 1.6;
+}
+
+/* --- Closing CTA: a hairline with a light running along it ------------- */
+@property --lx-angle {
+  syntax: "<angle>";
+  inherits: false;
+  initial-value: 0deg;
+}
+.lx-cta {
+  position: relative;
+  isolation: isolate;
+  width: calc(100% - 2 * var(--gutter));
+  max-width: calc(var(--page-max-width) - 2 * var(--gutter));
+  padding: clamp(48px, 8vw, 104px) clamp(20px, 5vw, 64px);
+  border-radius: var(--radius-lg);
+  background: var(--surface-panel);
+}
+.lx-cta::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  padding: 1px;
+  border-radius: inherit;
+  pointer-events: none;
+  background:
+    conic-gradient(from var(--lx-angle), transparent 0deg, transparent 250deg,
+      color-mix(in srgb, var(--color-surface-cream) 70%, transparent) 320deg, transparent 360deg),
+    linear-gradient(var(--lx-hairline), var(--lx-hairline));
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
+}
+@keyframes lx-orbit { to { --lx-angle: 360deg; } }
+@media (prefers-reduced-motion: no-preference) {
+  .lx-cta::before { animation: lx-orbit 7s linear 3; } /* three laps, then rests */
+}
+
+/* --- Reduced motion: everything lands in its final state --------------- */
+@media (prefers-reduced-motion: reduce) {
+  .lx-ticker__track,
+  .lx-words .lx-word,
+  .lx-cta::before { animation: none; }
+  .lx-split__bar { transition: none; }
+  /* Vendor pseudo-elements get their own rules: one unknown selector would
+     drop a whole list in the other engine. */
+  .lx-range:hover::-webkit-slider-thumb,
+  .lx-range:active::-webkit-slider-thumb { transform: none; }
+  .lx-range:hover::-moz-range-thumb,
+  .lx-range:active::-moz-range-thumb { transform: none; }
+  .lx-seg input:active + span,
+  .lx-step.is-active .lx-step__n { transform: none; }
+  html.js .lx-calc[data-reveal]:not(.is-visible) .lx-split__bar { width: var(--w); }
+}
+
+/* Forced colors (Windows High Contrast): gradient-clipped text would vanish,
+   so it falls back to the system text color. */
+@media (forced-colors: active) {
+  .lx-word--accent {
+    background: none;
+    -webkit-text-fill-color: currentColor;
+    color: CanvasText;
+  }
+}

@@ -1,12 +1,13 @@
-/* Entry: public marketing + auth pages (index, how-it-works, contact, login,
- * signup). Site interactions + prize table + account nav + auth forms. */
+/* Entry: public marketing + auth pages (index, contact, login, signup).
+ * Site interactions + landing (prize calculator, spotlight, timeline) +
+ * account nav + auth forms. */
 import { initAccountNav } from "../auth/account-nav.js";
 import { initSiteInteractions } from "../site/interactions.js";
-import { initPrizeTiers } from "../site/prize-tiers.js";
+import { initLanding } from "../site/landing.js";
 
 initAccountNav();
 initSiteInteractions();
-initPrizeTiers();
+initLanding();
 
 if (document.getElementById("login-form") || document.getElementById("signup-form")) {
   import("../auth/auth-forms.js")

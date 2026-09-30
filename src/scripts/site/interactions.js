@@ -1,12 +1,10 @@
 /* ==========================================================================
    Runinback — shared interactions (marketing, auth and static pages)
-   Nav, mobile menu, scroll reveal (one IntersectionObserver), count-ups,
+   Nav, scroll reveal (one IntersectionObserver), count-ups,
    background video, FAQ, mailto forms, magnetic CTAs, cookie notice.
    Vanilla JS, no dependencies. Every page is complete without it.
    ========================================================================== */
 import { countUpWithin } from "./count-up.js";
-
-const MOBILE_MENU = "(max-width: 640px)";
 
 export function initSiteInteractions() {
   // Tell public/js-flag.js the bundle booted, so reveal states stay enabled.
@@ -15,7 +13,6 @@ export function initSiteInteractions() {
   const finePointer = window.matchMedia("(pointer: fine)").matches;
 
   initScrollChrome();
-  initMobileMenu();
   initReveal(reduceMotion);
   initBackgroundVideos(reduceMotion);
   initFaq();
@@ -50,7 +47,7 @@ function initScrollChrome() {
     const y = window.scrollY;
     if (nav) {
       nav.classList.toggle("is-scrolled", y > 20);
-      nav.classList.toggle("is-hidden", y > lastY && y > 400 && !nav.classList.contains("is-open"));
+      nav.classList.toggle("is-hidden", y > lastY && y > 400);
     }
     lastY = y;
     const p = maxScroll > 0 ? Math.min(1, y / maxScroll) : 0;
@@ -63,48 +60,6 @@ function initScrollChrome() {
   window.addEventListener("load", measure);
   measure();
   update();
-}
-
-/* --- Mobile menu --------------------------------------------------------
-   A full-screen sheet below 640px. While open, the page behind is inert, so
-   Tab stays inside the header; Escape or a link closes it and focus returns
-   to the toggle. */
-function initMobileMenu() {
-  const nav = document.querySelector("[data-nav]");
-  const toggle = nav && nav.querySelector("[data-nav-toggle]");
-  const links = nav && nav.querySelector(".nav__links");
-  if (!toggle || !links) return;
-  if (!links.id) links.id = "nav-links";
-  toggle.setAttribute("aria-controls", links.id);
-  if (toggle.tagName === "BUTTON") toggle.type = "button";
-
-  const behind = [document.getElementById("main"), document.querySelector(".footer")].filter(Boolean);
-  const mq = window.matchMedia(MOBILE_MENU);
-  const isOpen = () => nav.classList.contains("is-open");
-  const setMenu = (open, restoreFocus) => {
-    nav.classList.toggle("is-open", open);
-    toggle.setAttribute("aria-expanded", String(open));
-    toggle.setAttribute("aria-label", open ? "Close menu" : "Open menu");
-    document.body.classList.toggle("menu-open", open);
-    behind.forEach((el) => { el.inert = open; });
-    if (open) {
-      const first = links.querySelector("a, button");
-      if (first) first.focus({ preventScroll: true });
-    } else if (restoreFocus) {
-      toggle.focus({ preventScroll: true });
-    }
-  };
-  toggle.setAttribute("aria-label", "Open menu");
-  toggle.addEventListener("click", () => setMenu(!isOpen(), true));
-  document.addEventListener("keydown", (e) => {
-    if (e.key === "Escape" && isOpen()) setMenu(false, true);
-  });
-  links.addEventListener("click", (e) => {
-    if (isOpen() && e.target.closest("a")) setMenu(false, false);
-  });
-  // Rotating a phone to landscape can cross the breakpoint with the menu open.
-  const onBreakpoint = () => { if (!mq.matches && isOpen()) setMenu(false, false); };
-  if (mq.addEventListener) mq.addEventListener("change", onBreakpoint);
 }
 
 /* --- Scroll reveal ------------------------------------------------------
