@@ -6,8 +6,8 @@
 // dist/assets so they can be cached immutably.
 //
 // Public runtime config is injected at build time from the same environment
-// variables Vercel already has (SUPABASE_URL, SUPABASE_ANON_KEY, STRIPE_ENABLED,
-// CRYPTO_ENABLED). Only public values belong here — never a service-role key.
+// variables Vercel already has (SUPABASE_URL, SUPABASE_ANON_KEY, STRIPE_ENABLED).
+// Only public values belong here — never a service-role key.
 import { readdirSync } from "node:fs";
 import { resolve } from "node:path";
 import { defineConfig, loadEnv } from "vite";
@@ -55,7 +55,6 @@ export default defineConfig(({ mode }) => {
     supabaseUrl: env.SUPABASE_URL || "",
     supabaseAnonKey: env.SUPABASE_ANON_KEY || "",
     stripeEnabled: isTruthy(env.STRIPE_ENABLED),
-    cryptoEnabled: isTruthy(env.CRYPTO_ENABLED),
   };
 
   return {

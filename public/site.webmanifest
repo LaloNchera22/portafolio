@@ -1,8 +1,11 @@
 {
   "name": "Runinback",
   "short_name": "Runinback",
-  "description": "Skill-based competition for video games: 1v1 matches and tournaments where the best player wins the prize.",
+  "description": "Wild Rift tournaments of 4 or 8 players: 1v1 custom games, fixed entry fees and prizes paid when the final is confirmed.",
   "start_url": "/",
+  "id": "/",
+  "lang": "en",
+  "categories": ["games", "sports"],
   "display": "standalone",
   "background_color": "#0e100f",
   "theme_color": "#0e100f",

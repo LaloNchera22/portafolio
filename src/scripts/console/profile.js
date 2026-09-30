@@ -15,7 +15,11 @@ import { RIOT_NETWORK, parseRiotId, playReturn } from "../lib/wild-rift.js";
 import { confirmAction } from "./confirm.js";
 import { errorText, rememberUsername, session } from "./context.js";
 import { goToPage } from "./navigation.js";
-import { forgetPlayer } from "./player.js";
+
+// The public card caches by handle; player.js (loaded on demand) listens.
+function forgetPlayer(username) {
+  if (username) document.dispatchEvent(new CustomEvent("rib:player-changed", { detail: username }));
+}
 
 export const USERNAME_PATTERN = /^[a-zA-Z0-9_]{3,24}$/;
 const SECTIONS = ["profile", "settings", "security"];
@@ -333,11 +337,17 @@ let accountsRead = null;
 
 function accountsHtml(rows) {
   const riot = rows.find(function (a) { return a.network === RIOT_NETWORK; });
-  if (!riot) return '<p class="muted">No Riot ID linked yet.</p>';
-  return '<div class="panel"><div class="row row--proj"><div><div class="row__name">' + esc(riot.handle) +
+  if (!riot) return '<div class="riot-card is-empty"><p class="riot-card__none">No Riot ID linked yet. Link it below to enter any tournament.</p></div>';
+  const cut = riot.handle.lastIndexOf("#");
+  const name = cut > 0 ? riot.handle.slice(0, cut) : riot.handle;
+  const tag = cut > 0 ? riot.handle.slice(cut) : "";
+  return '<div class="riot-card' + (riot.verified_at ? " is-verified" : "") + '"><div class="riot-card__id">' +
+    '<span class="riot-card__name">' + esc(name) + '<span class="riot-card__tag">' + esc(tag) + "</span></span>" +
     (riot.verified_at ? ' <span class="tag tag--good" title="Confirmed with Riot on ' + esc(formatDate(riot.verified_at)) + '">Verified</span>' : "") +
-    '</div><div class="row__meta">Riot ID · Wild Rift</div></div><div class="row__end"><button type="button" class="btn btn--sm" data-unlink="' +
-    RIOT_NETWORK + '" aria-label="Remove Riot ID ' + esc(riot.handle) + '">Remove</button></div></div></div>';
+    '</div><div class="row__meta">Riot ID · Wild Rift</div>' +
+    '<span class="riot-card__lock" hidden>Locked while you play</span>' +
+    '<div class="riot-card__act"><button type="button" class="btn btn--sm" data-unlink="' +
+    RIOT_NETWORK + '" aria-label="Remove Riot ID ' + esc(riot.handle) + '">Remove</button></div></div>';
 }
 
 /**
@@ -397,6 +407,12 @@ function applyLock() {
   input.disabled = locked;
   $("game-account-save").disabled = locked;
   document.querySelectorAll("#game-accounts [data-unlink]").forEach(function (b) { b.disabled = locked; });
+  const card = document.querySelector("#game-accounts .riot-card");
+  if (card) {
+    card.classList.toggle("is-locked", locked);
+    const note = card.querySelector(".riot-card__lock");
+    if (note) note.hidden = !locked;
+  }
   const hint = $("game-account-hint");
   if (hint) {
     if (!hint.dataset.base) hint.dataset.base = hint.textContent;

@@ -14,6 +14,7 @@
 </head>
 <body>
   <div class="capp" id="capp" hidden>
+    <a class="skip-link" href="#capp-main" id="skip-link">Skip to content</a>
     <!-- top bar -->
     <header class="capp__bar">
       <div class="capp__barrow">
@@ -44,13 +45,15 @@
       <button type="button" role="menuitem" class="acct-menu__out" data-auth-signout>Log out</button>
     </div>
 
-    <main class="capp__wrap">
-      <!-- your matches, on every page: filled by live.js -->
-      <div class="live-rooms" id="live-rooms" hidden aria-live="polite"></div>
+    <main class="capp__wrap" id="capp-main">
+      <!-- one throttled polite region for narrated status (lib/announce.js) -->
+      <p class="visually-hidden" id="capp-announce" role="status" aria-live="polite"></p>
+      <!-- your matches, on every page: filled by live.js (new ones also toast) -->
+      <div class="live-rooms" id="live-rooms" hidden></div>
       <!-- ============================ PLAY ============================ -->
       <section class="page" id="page-compete">
         <div class="head">
-          <div><p class="eyebrow">Wild Rift · 1v1 brackets · 4 or 8 players</p><h1>Play.</h1></div>
+          <div><p class="eyebrow">Wild Rift 1v1 brackets</p><h1 tabindex="-1">Play.</h1></div>
           <div class="head__r">
             <button type="button" class="btn btn--sm" id="tournament-new">New tournament</button>
           </div>
@@ -107,16 +110,17 @@
         <!-- Quick Play: tiers, and the events I'm waiting in -->
         <div id="compete-play">
           <div class="tournament-invite" id="tournament-invite" hidden></div>
-          <div id="play-waiting" aria-live="polite"></div>
-          <div class="sec">
+          <div id="play-waiting"></div>
+          <div class="sec sec--play">
             <div class="sec__head"><h2>Quick Play</h2><span class="sec__note" id="play-status" aria-live="polite"></span></div>
-            <div id="play-tiers" aria-busy="true"><p class="muted is-loading">Loading…</p></div>
+            <p class="muted sec__lead">Pick an entry fee and a size. You take the next open seat in that tier, and the bracket starts the moment it fills.</p>
+            <div id="play-tiers" aria-busy="true"></div>
           </div>
         </div>
 
         <!-- my tournaments -->
         <div id="compete-mine" hidden>
-          <div class="sec"><div id="tournament-mine"><p class="muted is-loading">Loading…</p></div></div>
+          <div class="sec"><div id="tournament-mine" aria-busy="true"></div></div>
         </div>
 
         <!-- custom tournaments waiting for players -->
@@ -128,14 +132,14 @@
               <button type="button" data-size="8" aria-pressed="false">8 players</button>
             </div>
           </form>
-          <div class="sec"><div id="tournament-list" aria-busy="true"><p class="muted is-loading">Loading…</p></div></div>
+          <div class="sec"><div id="tournament-list" aria-busy="true"></div></div>
         </div>
       </section>
 
       <!-- ========================== RANKING ========================== -->
       <section class="page" id="page-ranking" hidden>
         <div class="head">
-          <div><p class="eyebrow">Tournament winnings</p><h1>Ranking.</h1></div>
+          <div><p class="eyebrow">Tournament winnings</p><h1 tabindex="-1">Ranking.</h1></div>
           <div class="seg seg--inline" id="ranking-period" role="group" aria-label="Ranking period">
             <button type="button" data-period="week" aria-pressed="true">This week</button>
             <button type="button" data-period="all" aria-pressed="false">All time</button>
@@ -143,14 +147,14 @@
         </div>
         <div class="standing" id="ranking-me" hidden></div>
         <p class="visually-hidden" role="status" id="ranking-status"></p>
-        <div id="ranking-list" aria-busy="true"><p class="muted is-loading">Loading…</p></div>
+        <div id="ranking-list" aria-busy="true"><div class="skel skel--rows" aria-hidden="true"><span class="skel__l"></span><span class="skel__l"></span><span class="skel__l"></span><span class="skel__l"></span></div></div>
         <button type="button" class="btn btn--sm lobby-more" id="ranking-more" hidden>Show more</button>
-        <p class="testnote">The ranking counts tournaments: net rcoin is prizes won minus entry fees paid, and the record counts confirmed tournament matches (walkovers don't). Friendlies and practice don't count. Positions refresh every few minutes, and the weekly board resets every Monday (UTC).</p>
+        <p class="testnote">The ranking counts Wild Rift tournaments: net rcoin is prizes won minus entry fees paid, and the record counts confirmed tournament matches (walkovers don't). Positions refresh every few minutes, and the weekly board resets every Monday (UTC). Seasons are coming.</p>
       </section>
 
       <!-- =========================== WALLET =========================== -->
       <section class="page" id="page-wallet" hidden>
-        <div class="head"><div><p class="eyebrow">Wallet</p><h1>rcoin.</h1></div></div>
+        <div class="head"><div><p class="eyebrow">Wallet</p><h1 tabindex="-1">rcoin.</h1></div></div>
 
         <div class="hero-bal">
           <div class="hero-bal__main">
@@ -163,7 +167,7 @@
           </div>
         </div>
 
-        <div class="wallet-top" style="margin-top:26px">
+        <div class="wallet-top">
           <div class="card-box wallet-deposit">
             <label class="field-lbl">Buy rcoin <span class="pill">test</span></label>
             <div class="field"><label for="buy-amount">You pay (USD)</label><input id="buy-amount" type="number" min="1" step="1" value="100" inputmode="decimal" /></div>
@@ -178,24 +182,13 @@
               <div class="row"><span>Purchase fee (5%)</span><span id="buy-fee">$5.00</span></div>
               <div class="row tot"><span>You receive</span><span id="buy-receive">95 rcoin</span></div>
             </div>
-            <div class="paymethod" id="pay-method" hidden>
-              <span class="paymethod__lbl">Pay with</span>
-              <div class="chips" data-chips="pay-method">
-                <button type="button" data-method="card" class="on">Card</button>
-                <button type="button" data-method="crypto">Crypto</button>
-              </div>
-              <p class="hint" id="pay-note" style="margin-top:8px"></p>
-            </div>
             <button type="button" class="btn btn--cta btn--wide" id="buy-submit">Buy 95 rcoin</button>
-            <p class="hint">Clear rate on screen: <strong>$100 = 95 rcoin</strong>. The 5% is charged once, on the way in. Inside the platform 1 rcoin = $1.</p>
+            <p class="hint"><span id="pay-note">Pay by card.</span> Clear rate on screen: <strong>$100 = 95 rcoin</strong>. The 5% is charged once, on the way in. Inside the platform 1 rcoin = $1.</p>
             <p class="msg" id="wallet-msg" hidden></p>
           </div>
           <div class="card-box wallet-deposit">
             <label class="field-lbl">Withdraw</label>
             <div class="field"><label for="withdraw-amount">Amount (rcoin)</label><input id="withdraw-amount" type="number" min="1" step="1" placeholder="0" inputmode="decimal" /></div>
-            <div class="field"><label for="withdraw-destination">To</label>
-              <select id="withdraw-destination"><option>USDT (Base network)</option><option>USD (bank transfer)</option></select>
-            </div>
             <div class="buy-brk">
               <div class="row"><span>Withdrawal fee</span><span style="color:var(--c-good)">$0.00</span></div>
               <div class="row tot"><span>You receive</span><span id="withdraw-receive">$0.00</span></div>
@@ -208,9 +201,9 @@
 
         <div class="sec">
           <div class="sec__head"><h2>Activity</h2></div>
-          <div id="wallet-ledger"><p class="muted is-loading">Loading…</p></div>
+          <div id="wallet-ledger" aria-busy="true"><div class="skel skel--rows" aria-hidden="true"><span class="skel__l"></span><span class="skel__l"></span><span class="skel__l"></span></div></div>
         </div>
-        <p class="testnote">You're in test mode: buying and withdrawing move a simulated balance so you can try the full flow. In production this will be non-custodial, on-chain on Base. rcoin stays in test mode, with no real money, until legal review.</p>
+        <p class="testnote">You're in test mode: buying and withdrawing move a simulated balance so you can try the full flow. rcoin stays in test mode, with no real money, until legal review.</p>
       </section>
 
       <!-- =========================== PROFILE ========================== -->
@@ -272,7 +265,7 @@
           <div class="sec" id="game-accounts-sec">
             <div class="sec__head"><h2 id="game-accounts-title" tabindex="-1">Riot ID</h2></div>
             <p class="muted sec__lead">The Riot ID you play Wild Rift with. Every tournament needs one, and your opponent invites it to the custom game.</p>
-            <div id="game-accounts" aria-live="polite"><p class="muted is-loading">Loading…</p></div>
+            <div id="game-accounts" aria-live="polite"><div class="skel skel--rows" aria-hidden="true"><span class="skel__l"></span></div></div>
             <form id="game-account-form" class="card-box game-account-form" novalidate>
               <div class="field">
                 <label for="game-account-handle">Riot ID</label>
@@ -282,10 +275,11 @@
               <button type="submit" class="btn btn--cta btn--sm" id="game-account-save">Link Riot ID</button>
               <p class="msg" id="game-account-msg" role="status" aria-live="polite"></p>
             </form>
+            <p class="soon-note"><span class="soon">Coming</span> Sign in with Riot, to prove the Riot ID is yours. Until then, Verified means Riot confirmed the ID exists.</p>
           </div>
           <div class="sec">
             <div class="sec__head"><h2>Your record</h2><a class="sec__note" data-page="page-ranking" href="#page-ranking">See the ranking</a></div>
-            <div class="statline" id="profile-stats" aria-live="polite"><p class="muted is-loading">Loading…</p></div>
+            <div class="statline" id="profile-stats" aria-live="polite"><div class="skel skel--stats" aria-hidden="true"><span class="skel__l"></span><span class="skel__l"></span><span class="skel__l"></span></div></div>
           </div>
         </div>
 
@@ -401,7 +395,7 @@
           </section>
           <section class="sec danger-zone" aria-labelledby="close-title">
             <div class="sec__head"><h2 id="close-title">Close account</h2></div>
-            <p class="muted">Closing is permanent. Your handle is anonymized, your photo, bio and linked game accounts are removed, API keys are revoked, you leave the ranking and you can no longer sign in. Transaction records are kept as required for audit. Finish or leave your open tournaments first.</p>
+            <p class="muted">Closing is permanent. Your handle is anonymized, your photo, bio and Riot ID are removed, you leave the ranking and you can no longer sign in. Transaction records are kept as required for audit. Finish or leave your open tournaments first.</p>
             <button type="button" class="btn btn--sm btn--danger" id="account-close">Close my account</button>
             <p class="msg" id="account-close-msg" role="status" aria-live="polite"></p>
           </section>
@@ -410,22 +404,22 @@
 
       <!-- a player's public card: filled by player.js -->
       <section class="page" id="page-player" hidden>
-        <div id="player-root" aria-live="polite"><p class="muted is-loading">Loading…</p></div>
+        <div id="player-root" aria-busy="true"><div class="skel skel--rows" aria-hidden="true"><span class="skel__l"></span><span class="skel__l"></span></div></div>
       </section>
 
       <section class="page" id="page-room" hidden>
         <div class="head">
-          <div><p class="eyebrow">Match room</p><h1 id="room-title">Room.</h1></div>
-          <div class="head__r"><button type="button" class="btn btn--sm" id="room-back">‹ Play</button></div>
+          <div><p class="eyebrow">Match room</p><h1 id="room-title" tabindex="-1">Match room.</h1></div>
+          <div class="head__r"><button type="button" class="btn btn--sm" id="room-back">Back to Play</button></div>
         </div>
-        <div id="room-root"><p class="muted is-loading">Loading…</p></div>
+        <div id="room-root"></div>
       </section>
 
       <!-- ============================= OPS ============================= -->
       <section class="page" id="page-ops" hidden>
-        <div class="head"><div><p class="eyebrow">Runinback team</p><h1>Dispute queue.</h1></div></div>
-        <p class="muted sec__lead">Oldest first. Read both reports, the room chat and the captures, then award the match to one player (the bracket advances) or void it (both are out). A rejected dispute's deposit goes to the other player.</p>
-        <div id="ops-root"><p class="muted is-loading">Loading…</p></div>
+        <div class="head"><div><p class="eyebrow">Runinback team</p><h1 tabindex="-1">Dispute queue.</h1></div></div>
+        <p class="muted sec__lead">Oldest first. Read both reports, the room chat and the end screens (with their automatic check), then award the match to one player (the bracket advances) or void it (both are out). A rejected dispute's deposit goes to the other player.</p>
+        <div id="ops-root" aria-busy="true"><div class="skel skel--rows" aria-hidden="true"><span class="skel__l"></span><span class="skel__l"></span></div></div>
       </section>
 
     </main>

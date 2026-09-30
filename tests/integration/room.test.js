@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
-// Match room: renders each state of a Wild Rift bracket match (or a legacy
-// friendly) from the room row, sends the right RPC for every action, and runs
+// Match room: renders each state of a Wild Rift bracket match from the room
+// row, sends the right RPC for every action, and runs
 // the end-screen check: upload → rib_room_evidence_add → verify-result, with
 // the check status shown per screenshot from the response and Realtime. A
 // screenshot never settles a match: a verified one only fast-tracks the
@@ -174,12 +174,25 @@ describe("match room", () => {
     expect(lastCall("rib_room_dispute")[1]).toEqual({ p_room_id: "r1", p_reason: "I won 13-9, the scoreboard is in my capture" });
   });
 
-  it("explains that a disputed friendly just ends with no result", async () => {
-    info = Object.assign(info, { tournament_name: null, entry_fee_cents: null, rounds: null });
-    await show(baseRoom({ kind: "friendly", tournament_id: null, status: "live", started_at: soon(), b_report: "u2", confirm_deadline: soon() }));
-    expect($("room-root").textContent).toContain("Friendly · free");
+  it("explains who reviews a dispute in a free tournament, with no deposit", async () => {
+    info = Object.assign(info, { entry_fee_cents: 0 });
+    await show(baseRoom({ status: "live", started_at: soon(), b_report: "u2", confirm_deadline: soon() }));
+    expect($("room-root").textContent).toContain("Friday Cup · Semifinals · free");
     $("room-root").querySelector('[data-act="dispute-open"]').click();
-    expect($("room-dispute").textContent).toContain("A disputed friendly ends with no result.");
+    expect($("room-dispute").textContent).toContain("The Runinback team reviews disputed matches.");
+    expect($("room-dispute").textContent).not.toContain("deposit");
+    expect($("room-root").textContent).not.toMatch(/friendly/i);
+  });
+
+  it("colors the state card by what the player has to do, and keeps the clock out of the live region", async () => {
+    await show(baseRoom());
+    expect($("room-state").getAttribute("data-tone")).toBe("act");
+    expect($("room-state").hasAttribute("aria-live")).toBe(false);
+    expect($("room-state").querySelector(".room-clock__t").getAttribute("role")).toBe("timer");
+    await show(baseRoom({ status: "live", started_at: soon(), b_report: "u2", confirm_deadline: soon() }));
+    expect($("room-state").getAttribute("data-tone")).toBe("respond");
+    await show(baseRoom({ status: "disputed", started_at: soon(), a_report: "u1", b_report: "u2", disputed_by: "u2" }));
+    expect($("room-state").getAttribute("data-tone")).toBe("review");
   });
 
   it("sends chat messages through the rate-limited RPC", async () => {

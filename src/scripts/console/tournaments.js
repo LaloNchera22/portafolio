@@ -23,13 +23,17 @@
 import { byId as $, escapeHtml as esc, setVisible, showMessage } from "../lib/dom.js";
 import { toast } from "../lib/errors.js";
 import { formatRcoin } from "../lib/format.js";
-import { tweenNumber } from "../lib/motion.js";
+import { announce } from "../lib/announce.js";
+import { prefersReducedMotion, tweenNumber } from "../lib/motion.js";
 import { prizeSplit, roundName, roundsFor } from "../lib/tournament.js";
-import { QUICK_TIERS, RIOT_NETWORK, WILD_RIFT, findTier, playReturn, tierKey } from "../lib/wild-rift.js";
+import { QUICK_FEES, QUICK_TIERS, RIOT_NETWORK, WILD_RIFT, findTier, playReturn, tierKey } from "../lib/wild-rift.js";
+import { confirmAction } from "./confirm.js";
 import { errorText, session } from "./context.js";
 import { clearRouteArg, currentRouteArg, goToPage, selectedChipAmount } from "./navigation.js";
 import { loadGameAccounts } from "./profile.js";
-import { openRoom, peakArt } from "./room.js";
+import { peakArt } from "./art.js";
+import { openRoom } from "./room.js";
+import { skelCards, skelRows } from "./skeleton.js";
 import { refreshWallet } from "./wallet.js";
 
 const POLL_MS = 20000;
@@ -44,6 +48,8 @@ const play = {
   joining: false, timer: 0, channel: null, watched: "", pending: 0,
   started: {},                                 // events joined here: open their first room
   seats: {}, size: null, lobbyRequest: 0,
+  tierSeen: {},                                // waiting count last drawn per tier (seat fill animation)
+  joiningKey: null, fresh: null,               // the tier being joined; the event just joined (entrance)
 };
 const openBrackets = {}; // tournament id -> bracket expanded
 
@@ -131,24 +137,56 @@ function queuedIn(tier) {
   return play.waiting.some(function (t) { return tierOf(t) === tier.key; });
 }
 
-function tierButton(tier) {
+// The fee is the headline: the number large, the unit small.
+function feeHtml(cents) {
+  if (!cents) return "Free";
+  const text = formatRcoin(cents);
+  return text.replace(/ rcoin$/, "") + "<small> rcoin</small>";
+}
+
+// Seats of the next bracket, filled by the players waiting (capped one short
+// of full: a full bracket has already started). Decorative; the label says it.
+function tierSeats(tier, waiting) {
+  const filled = Math.min(Math.max(0, waiting || 0), tier.size - 1);
+  const before = play.tierSeen[tier.key];
+  play.tierSeen[tier.key] = filled;
+  let html = '<span class="tier__seats" aria-hidden="true">';
+  for (let i = 0; i < tier.size; i++) {
+    const on = i < filled;
+    const isNew = on && before !== undefined && i >= before;
+    html += '<span class="tseat' + (on ? " is-on" : "") + (isNew ? " is-new" : "") + '"' + (isNew ? ' style="--d:' + (i - before) * 60 + 'ms"' : "") + "></span>";
+  }
+  return html + "</span>";
+}
+
+// Entry fees warm up down the grid: Free is cool, 50 rcoin runs hot (CSS --heat).
+function tierHeat(fee) {
+  const i = QUICK_FEES.indexOf(fee);
+  return i <= 0 ? 0 : i / (QUICK_FEES.length - 1);
+}
+
+function tierButton(tier, index) {
   const info = play.tiers && play.tiers[tier.key];
   const queued = queuedIn(tier);
   const waiting = info ? info.waiting : null;
   const split = prizeSplit(tier.fee, tier.size);
+  const joiningThis = play.joining && play.joiningKey === tier.key;
   let wait = "";
-  if (queued) wait = '<span class="tier__wait is-in">You\'re in</span>';
+  if (joiningThis) wait = '<span class="tier__wait is-joining">Joining…</span>';
+  else if (queued) wait = '<span class="tier__wait is-in">You\'re in</span>';
   else if (waiting) wait = '<span class="tier__wait is-live">' + waiting + " waiting</span>";
   else if (waiting === 0) wait = '<span class="tier__wait">Start one</span>';
+  else if (!play.tiers && !play.tiersFailed) wait ='<span class="tier__wait is-pending" aria-hidden="true"></span>';
   const label = (tier.fee ? formatRcoin(tier.fee) + " entry" : "Free") + ", " + tier.size + " players" +
     (tier.fee ? ", champion wins " + formatRcoin(split.first) : "") +
     (queued ? ", you're in" : waiting ? ", " + waiting + " waiting" : "");
-  return '<button type="button" class="tier' + (tier.fee ? "" : " is-free") + (queued ? " is-queued" : "") + '" data-tier="' + tier.key + '" aria-label="' + esc(label) + '"' +
+  return '<button type="button" class="tier' + (tier.fee ? "" : " is-free") + (queued ? " is-queued" : "") + (joiningThis ? " is-joining" : "") +
+    '" data-tier="' + tier.key + '" style="--heat:' + tierHeat(tier.fee).toFixed(2) + ";--n:" + (index || 0) + '" aria-label="' + esc(label) + '"' + (joiningThis ? ' aria-busy="true"' : "") +
     (play.joining ? " disabled" : "") + ">" +
-    '<span class="tier__fee">' + feeText(tier.fee) + "</span>" +
+    '<span class="tier__fee">' + feeHtml(tier.fee) + "</span>" +
     '<span class="tier__size">' + tier.size + " players</span>" +
     '<span class="tier__prize">' + (tier.fee ? "Champion " + formatRcoin(split.first) : "No prize, for fun") + "</span>" +
-    wait + "</button>";
+    tierSeats(tier, waiting) + wait + "</button>";
 }
 
 function renderTiers() {
@@ -156,7 +194,11 @@ function renderTiers() {
   if (!box) return;
   const focused = document.activeElement && document.activeElement.closest && document.activeElement.closest("#play-tiers [data-tier]");
   const keep = focused ? focused.getAttribute("data-tier") : null;
-  box.innerHTML = '<div class="tiers" role="group" aria-label="Pick an entry fee and size">' + QUICK_TIERS.map(tierButton).join("") + "</div>";
+  // A fee × size matrix: fees run down, the two sizes across.
+  box.innerHTML = '<div class="tiers' + (box.dataset.settled ? "" : " is-first") + '" role="group" aria-label="Pick an entry fee and size">' +
+    '<span class="tiers__col" aria-hidden="true">4 players</span><span class="tiers__col" aria-hidden="true">8 players</span>' +
+    QUICK_TIERS.map(tierButton).join("") + "</div>";
+  if (play.tiers) settle(box);
   box.setAttribute("aria-busy", play.tiers ? "false" : "true");
   if (keep) { const again = box.querySelector('[data-tier="' + keep + '"]'); if (again) again.focus(); }
   const status = $("play-status");
@@ -174,6 +216,7 @@ function loadTiers(force) {
     if (request !== play.tiersRequest) return;
     if (!r || r.error || !Array.isArray(r.data)) {
       if (!play.tiers && $("play-status")) $("play-status").textContent = "Live counts are unavailable right now.";
+      if (!play.tiers && !play.tiersFailed) { play.tiersFailed = true; renderTiers(); }
       return;
     }
     const map = {};
@@ -201,34 +244,52 @@ function joinTier(tier) {
       goToPage("page-wallet", { arg: "buy/" + (tier.fee - session.balanceCents) + "/" + back });
       return;
     }
-    if (tier.fee && !window.confirm("Enter a " + tier.size + "-player " + WILD_RIFT + " bracket for " + formatRcoin(tier.fee) +
-      "? You can leave for a full refund until it fills. When it fills, you have " + READY_MINUTES + " minutes to get ready for your first match.")) return;
-    play.joining = true;
+    if (!tier.fee) return sendJoin(tier, back);
+    const split = prizeSplit(tier.fee, tier.size);
+    return confirmAction({
+      title: "Enter for " + formatRcoin(tier.fee) + "?",
+      body: "A " + tier.size + "-player " + WILD_RIFT + " bracket. The champion wins " + formatRcoin(split.first) + ", the runner-up " + formatRcoin(split.second) +
+        ". You can leave for a full refund until it fills. When it fills, you have " + READY_MINUTES + " minutes to get ready for your first match.",
+      ok: "Pay " + formatRcoin(tier.fee) + " and join",
+    }).then(function (ok) { if (ok) return sendJoin(tier, back); });
+  });
+}
+
+function sendJoin(tier, back) {
+  if (play.joining) return Promise.resolve();
+  play.joining = true;
+  play.joiningKey = tier.key;
+  renderTiers();
+  return session.client.rpc("rib_quick_join", { p_entry_fee_cents: tier.fee, p_size: tier.size }).then(function (r) {
+    if (r.error) {
+      const hint = r.error.hint;
+      if (hint === "riot_account_required") { goToPage("page-profile", { arg: "link/" + RIOT_NETWORK + "/" + back }); return; }
+      toast(errorText(r.error, "Couldn't join. Try again."), "err");
+      if (hint === "already_queued") loadMine(true);
+      return;
+    }
+    const t = Array.isArray(r.data) ? r.data[0] : r.data;
+    if (t && t.id) {
+      play.started[t.id] = true;
+      play.fresh = { id: t.id, until: Date.now() + 800 };
+      if (t.status === "open") {
+        addWaiting(t, tier);
+        // The tier grid is long on a phone: bring the new waiting card into view.
+        const card = document.querySelector('#play-waiting [data-tid="' + String(t.id).replace(/"/g, "") + '"]');
+        if (card && card.scrollIntoView) card.scrollIntoView({ block: "center", behavior: prefersReducedMotion() ? "auto" : "smooth" });
+      }
+    }
+    if (t && t.status === "active") toast("It just filled. Your first match is ready.", "match");
+    else toast("You're in. It starts the moment the last seat fills.", "ok");
+    refreshWallet();
+    loadMine(true);
+    loadTiers(true);
+  }).catch(function () {
+    toast("Network error. Check your connection and try again.", "err");
+  }).finally(function () {
+    play.joining = false;
+    play.joiningKey = null;
     renderTiers();
-    return session.client.rpc("rib_quick_join", { p_entry_fee_cents: tier.fee, p_size: tier.size }).then(function (r) {
-      if (r.error) {
-        const hint = r.error.hint;
-        if (hint === "riot_account_required") { goToPage("page-profile", { arg: "link/" + RIOT_NETWORK + "/" + back }); return; }
-        toast(errorText(r.error, "Couldn't join. Try again."), "err");
-        if (hint === "already_queued") loadMine(true);
-        return;
-      }
-      const t = Array.isArray(r.data) ? r.data[0] : r.data;
-      if (t && t.id) {
-        play.started[t.id] = true;
-        if (t.status === "open") addWaiting(t, tier);
-      }
-      if (t && t.status === "active") toast("It just filled. Your first match is ready.", "match");
-      else toast("You're in. It starts the moment the last seat fills.", "ok");
-      refreshWallet();
-      loadMine(true);
-      loadTiers(true);
-    }).catch(function () {
-      toast("Network error. Check your connection and try again.", "err");
-    }).finally(function () {
-      play.joining = false;
-      renderTiers();
-    });
   });
 }
 
@@ -244,36 +305,62 @@ function addWaiting(t, tier) {
 }
 
 /* ---- waiting for the last seat -------------------------------------------- */
-function seats(t) {
+function seats(t, big) {
   const fresh = play.seats[t.id];
   play.seats[t.id] = t.entrants;
-  let html = '<div class="seats" style="--n:' + t.size + '" role="img" aria-label="' + t.entrants + " of " + t.size + ' seats taken">';
+  let html = '<div class="seats' + (big ? " seats--big" : "") + '" style="--n:' + t.size + '" role="img" aria-label="' + t.entrants + " of " + t.size + ' seats taken">';
   for (let i = 0; i < t.size; i++) {
     const taken = i < t.entrants;
     const isNew = taken && fresh !== undefined && i >= fresh;
-    html += '<span class="seat' + (taken ? " is-taken" : "") + (isNew ? " is-new" : "") + '"></span>';
+    const next = big && i === t.entrants;
+    html += '<span class="seat' + (taken ? " is-taken" : "") + (isNew ? " is-new" : "") + (next ? " is-next" : "") + '"' +
+      (isNew ? ' style="--d:' + (i - fresh) * 80 + 'ms"' : "") + "></span>";
+  }
+  if (big && fresh !== undefined && t.entrants > fresh) {
+    const need = t.size - t.entrants;
+    announce(t.entrants + " of " + t.size + " seats taken" + (need > 0 ? ", " + need + " to go." : "."));
   }
   return html + "</div>";
 }
 
 function waitingCard(t) {
   const need = Math.max(0, t.size - t.entrants);
-  return '<article class="tcard is-waiting" data-tid="' + esc(t.id) + '">' +
+  const fresh = !!play.fresh && play.fresh.id === t.id && Date.now() < play.fresh.until;
+  return '<article class="tcard is-waiting' + (fresh ? " is-fresh" : "") + '" data-tid="' + esc(t.id) + '" data-sig="' + esc(waitingSig(t)) + '">' +
     '<div class="tcard__top"><div><p class="tcard__eyebrow"><span class="chip chip--match is-live">Filling</span></p>' +
       '<h3 class="tcard__name">' + esc(t.name) + "</h3></div>" +
       '<div class="tcard__pool"><span class="k">entry</span><span class="v' + (t.entry_fee_cents ? "" : " is-free") + '">' + feeText(t.entry_fee_cents) + "</span></div></div>" +
-    seats(t) +
+    seats(t, true) +
     '<div class="tcard__mid"><span>' + t.entrants + "/" + t.size + " players · " + (need === 1 ? '<span class="tcard__last">1 to go</span>' : need + " to go") + "</span>" +
       prizeLine(t.entry_fee_cents, t.size) + "</div>" +
-    '<p class="tcard__note">Stay close: when the last seat fills your match room opens here, and you have ' + READY_MINUTES + " minutes to get ready.</p>" +
+    '<p class="tcard__note">Stay on this page: when the last seat fills, your match room opens by itself and you have ' + READY_MINUTES + " minutes to get ready.</p>" +
     '<div class="tcard__act"><button type="button" class="btn btn--sm" data-invite="' + esc(t.id) + '">Copy invite link</button>' +
       '<button type="button" class="btn btn--sm" data-leave="' + esc(t.id) + '">Leave</button></div></article>';
 }
 
+function waitingSig(t) {
+  return [t.entrants, t.size, t.name, t.entry_fee_cents].join("|");
+}
+
+// Cards that didn't change stay the same nodes: no replayed entrance, and a
+// focused Leave or Copy button keeps focus while seats fill around it.
 function renderWaiting() {
   const box = $("play-waiting");
   if (!box) return;
-  box.innerHTML = play.waiting.length ? '<div class="tgrid">' + play.waiting.map(waitingCard).join("") + "</div>" : "";
+  if (!play.waiting.length) { box.innerHTML = ""; return; }
+  const grid = box.querySelector(".tgrid");
+  const old = grid ? Array.prototype.slice.call(grid.children) : [];
+  const sameOrder = old.length === play.waiting.length && old.every(function (el, i) { return el.getAttribute("data-tid") === play.waiting[i].id; });
+  if (!sameOrder) {
+    box.innerHTML = '<div class="tgrid">' + play.waiting.map(waitingCard).join("") + "</div>";
+    return;
+  }
+  play.waiting.forEach(function (t, i) {
+    if (old[i].getAttribute("data-sig") === waitingSig(t)) return;
+    const tpl = document.createElement("template");
+    tpl.innerHTML = waitingCard(t);
+    old[i].replaceWith(tpl.content.firstElementChild);
+  });
 }
 
 // Seats fill in real time: an update to an event I'm waiting in re-reads my
@@ -351,15 +438,6 @@ function card(t, linked, extraClass) {
     '<div class="tcard__act">' + cardAction(t, linked) + "</div></article>";
 }
 
-function skeletonCards(n) {
-  let html = '<div class="tgrid" aria-hidden="true">';
-  for (let i = 0; i < n; i++) {
-    html += '<div class="skel skel--card"><span class="skel__l" style="width:55%"></span><span class="skel__l" style="width:35%"></span>' +
-      '<span class="skel__l skel__l--bar"></span><span class="skel__l skel__l--pill"></span></div>';
-  }
-  return html + "</div>";
-}
-
 // Lists cascade in on their first render only; refreshes don't replay it.
 function settle(box) {
   if (box.dataset.settled) return;
@@ -370,7 +448,7 @@ function loadLobby() {
   const request = ++play.lobbyRequest;
   const box = $("tournament-list");
   box.setAttribute("aria-busy", "true");
-  if (!box.querySelector(".tcard")) box.innerHTML = skeletonCards(3);
+  if (!box.querySelector(".tcard")) box.innerHTML = skelCards(3);
   return Promise.all([session.client.rpc("rib_open_tournaments", { p_game: null, p_size: play.size, p_limit: 30 }), riotLinked()]).then(function (res) {
     if (request !== play.lobbyRequest) return;
     const r = res[0];
@@ -429,22 +507,31 @@ function onClick(e) {
     const id = b.getAttribute("data-join");
     const fee = parseInt(b.getAttribute("data-fee"), 10) || 0;
     const name = b.getAttribute("data-name") || "this tournament";
-    if (fee && !window.confirm("Join " + name + " for " + formatRcoin(fee) + "? You can leave for a full refund until it fills, and you're refunded if it doesn't fill in 24 hours. When it fills, you'll have " + READY_MINUTES + " minutes to get ready for your first match.")) return;
-    call("rib_tournament_join", { p_tournament_id: id }, b, function (t) {
-      play.started[id] = true;
-      if (t && t.status === "active") toast(name + " just started. Your first match is ready.", "match");
-      else toast("You're in. It starts as soon as it fills.", "ok");
-    });
+    const join = function () {
+      return call("rib_tournament_join", { p_tournament_id: id }, b, function (t) {
+        play.started[id] = true;
+        if (t && t.status === "active") toast(name + " just started. Your first match is ready.", "match");
+        else toast("You're in. It starts as soon as it fills.", "ok");
+      });
+    };
+    if (!fee) { join(); return; }
+    confirmAction({
+      title: "Join " + name + " for " + formatRcoin(fee) + "?",
+      body: "You can leave for a full refund until it fills, and you're refunded if it doesn't fill in 24 hours. When it fills, you'll have " + READY_MINUTES + " minutes to get ready for your first match.",
+      ok: "Pay " + formatRcoin(fee) + " and join",
+    }).then(function (ok) { if (ok) join(); });
     return;
   }
   if (b.hasAttribute("data-leave")) {
-    if (!window.confirm("Leave this tournament? Your entry fee comes back to your wallet.")) return;
     const id = b.getAttribute("data-leave");
-    call("rib_tournament_leave", { p_tournament_id: id }, b, function () {
-      delete play.started[id];
-      play.waiting = play.waiting.filter(function (t) { return t.id !== id; });
-      renderWaiting();
-      toast("You left the tournament. Your entry fee is back.", "ok");
+    confirmAction({ title: "Leave this tournament?", body: "Your entry fee comes back to your wallet right away.", ok: "Leave" }).then(function (ok) {
+      if (!ok) return;
+      call("rib_tournament_leave", { p_tournament_id: id }, b, function () {
+        delete play.started[id];
+        play.waiting = play.waiting.filter(function (t) { return t.id !== id; });
+        renderWaiting();
+        toast("You left the tournament. Your entry fee is back.", "ok");
+      });
     });
     return;
   }
@@ -465,21 +552,21 @@ function onClick(e) {
 function myLine(t) {
   if (t.status === "open") {
     const hoursLeft = Math.max(0, Math.ceil((new Date(t.created_at).getTime() + 24 * 3600e3 - Date.now()) / 3600e3));
-    return { chip: '<span class="chip chip--match">Waiting</span>', text: t.entrants + "/" + t.size + " joined · refunded in " + hoursLeft + " h if it doesn't fill" };
+    return { tone: "match", chip: '<span class="chip chip--match">Waiting</span>', text: t.entrants + "/" + t.size + " joined · refunded in " + hoursLeft + " h if it doesn't fill" };
   }
-  if (t.status === "cancelled") return { chip: '<span class="chip">Cancelled</span>', text: "Entry fee refunded" };
+  if (t.status === "cancelled") return { tone: "off", chip: '<span class="chip">Cancelled</span>', text: "Entry fee refunded" };
   if (t.status === "finished") {
-    if (t.placement === 1) return { chip: '<span class="chip chip--settle">Champion</span>', text: t.prize_cents ? "Won " + formatRcoin(t.prize_cents) : "Won" };
-    if (t.placement === 2) return { chip: '<span class="chip chip--settle">Runner-up</span>', text: t.prize_cents ? "Won " + formatRcoin(t.prize_cents) : "Final" };
-    return { chip: '<span class="chip">Finished</span>', text: "Won by @" + (t.winner_username || "player") };
+    if (t.placement === 1) return { tone: "settle", chip: '<span class="chip chip--settle">Champion</span>', text: t.prize_cents ? "Won " + formatRcoin(t.prize_cents) : "Won" };
+    if (t.placement === 2) return { tone: "settle", chip: '<span class="chip chip--settle">Runner-up</span>', text: t.prize_cents ? "Won " + formatRcoin(t.prize_cents) : "Final" };
+    return { tone: "off", chip: '<span class="chip">Finished</span>', text: "Won by @" + (t.winner_username || "player") };
   }
   const round = t.my_round && t.rounds ? roundName(t.my_round, t.rounds) : "Match";
-  if (t.eliminated) return { chip: '<span class="chip">Out</span>', text: "Out in the " + round.toLowerCase() };
+  if (t.eliminated) return { tone: "off", chip: '<span class="chip">Out</span>', text: "Out in the " + round.toLowerCase() };
   if (t.my_room_status === "ready_check" || t.my_room_status === "live") {
-    return { chip: '<span class="chip chip--match is-live">Your ' + esc(round.toLowerCase()) + "</span>", text: t.my_room_status === "ready_check" ? "Ready check open" : "Match on", room: t.my_room_id };
+    return { tone: "live", chip: '<span class="chip chip--match is-live">Your ' + esc(round.toLowerCase()) + "</span>", text: t.my_room_status === "ready_check" ? "Ready check open" : "Match on", room: t.my_room_id };
   }
-  if (t.my_room_status === "disputed") return { chip: '<span class="chip chip--escrow">In review</span>', text: "Your " + round.toLowerCase() + " is being reviewed", room: t.my_room_id };
-  return { chip: '<span class="chip chip--match">Through</span>', text: "Waiting for your next opponent" };
+  if (t.my_room_status === "disputed") return { tone: "escrow", chip: '<span class="chip chip--escrow">In review</span>', text: "Your " + round.toLowerCase() + " is being reviewed", room: t.my_room_id };
+  return { tone: "match", chip: '<span class="chip chip--match">Through</span>', text: "Waiting for your next opponent" };
 }
 
 function loadMine(force) {
@@ -489,7 +576,7 @@ function loadMine(force) {
   }
   const request = ++play.mineRequest;
   const box = $("tournament-mine");
-  if (!play.mine && !box.querySelector(".row")) box.innerHTML = '<div class="skel skel--rows" aria-hidden="true"><span class="skel__l"></span><span class="skel__l"></span><span class="skel__l"></span></div>';
+  if (!play.mine && !box.querySelector(".row")) box.innerHTML = skelRows(3);
   return Promise.resolve(session.client.rpc("rib_my_tournaments", { p_limit: 30 })).then(function (r) {
     if (request !== play.mineRequest) return;
     if (r.error) { if (!play.mine) box.innerHTML = '<p class="muted">Couldn\'t load your tournaments.</p>'; return; }
@@ -508,14 +595,14 @@ function renderMine() {
   const box = $("tournament-mine");
   const rows = play.mine || [];
   if (!rows.length) {
-    box.innerHTML = '<div class="empty">' + peakArt("settle") + "<h3>No tournaments yet</h3><p>Pick a tier in Quick Play and you're in the next bracket.</p>" +
-      '<p><button type="button" class="btn btn--cta btn--sm" data-browse>Quick Play</button></p></div>';
+    box.innerHTML = '<div class="empty">' + peakArt("settle") + "<h3>No tournaments yet</h3><p>Pick a tier in Quick Play and you're in the next bracket. Your brackets, results and prizes collect here.</p>" +
+      '<p><button type="button" class="btn btn--cta btn--sm" data-browse>Pick a tier</button></p></div>';
     return;
   }
   box.innerHTML = '<div class="panel">' + rows.map(function (t) {
     const line = myLine(t);
     const canBracket = t.status === "active" || t.status === "finished";
-    return '<div class="row row--tmine"><div class="row--tmine__main"><div class="row__name">' + esc(t.name) + " " + line.chip + "</div>" +
+    return '<div class="row row--tmine" data-tone="' + line.tone + '"><div class="row--tmine__main"><div class="row__name">' + esc(t.name) + " " + line.chip + "</div>" +
       '<div class="row__meta">' + t.size + " players · " + feeText(t.entry_fee_cents) + " · " + esc(line.text) + "</div></div>" +
       '<div class="row__act">' +
         (line.room ? '<button type="button" class="btn btn--cta btn--sm" data-room="' + esc(line.room) + '">Open room</button>' : "") +
@@ -541,11 +628,14 @@ function toggleBracket(id, btn, forceOpen) {
   if (!open) return;
   const size = parseInt(box.getAttribute("data-size"), 10);
   const fee = parseInt(box.getAttribute("data-fee"), 10) || 0;
-  if (!box.innerHTML) box.innerHTML = '<p class="muted is-loading">Loading…</p>';
+  const first = !box.innerHTML;
+  if (first) box.innerHTML = skelRows(2);
   session.client.rpc("rib_tournament_bracket", { p_tournament_id: id }).then(function (r) {
     const rows = Array.isArray(r && r.data) ? r.data : [];
     box.innerHTML = bracketHtml(rows, size, fee);
-  });
+    // Rounds reveal left to right the first time it opens, not on refreshes.
+    box.classList.toggle("is-reveal", first);
+  }).catch(function () { box.innerHTML = '<p class="muted">Couldn\'t load the bracket. Try again in a moment.</p>'; });
 }
 
 function bracketHtml(rows, size, fee) {
@@ -563,12 +653,12 @@ function bracketHtml(rows, size, fee) {
       (m.walkover ? '<span class="bracket__note">walkover</span>' : m.status === "void" ? '<span class="bracket__note">no result</span>' : "") +
       (liveMine ? '<span class="bracket__act"><button type="button" class="btn btn--cta btn--sm" data-room="' + esc(m.room_id) + '">Open room</button></span>' : "") + "</div>";
   };
-  let html = '<div class="bracket__cols">';
+  let html = '<div class="bracket__cols" tabindex="0" role="group" aria-label="Bracket">';
   for (let i = 1; i <= rounds; i++) {
     const col = rows.filter(function (m) { return m.round === i; });
     const pairs = [];
     for (let k = 0; k < col.length; k += 2) pairs.push(col.slice(k, k + 2));
-    html += '<div class="bracket__col"><h4>' + roundName(i, rounds) + '</h4><div class="bracket__slots">' +
+    html += '<div class="bracket__col" style="--i:' + (i - 1) + '"><h4>' + roundName(i, rounds) + '</h4><div class="bracket__slots">' +
       pairs.map(function (p) {
         const mine = p.some(function (m) { return m.player_a === session.uid || m.player_b === session.uid; });
         return '<div class="bracket__pair' + (p.length > 1 ? " is-pair" : "") + (mine ? " has-me" : "") + '">' + p.map(match).join("") + "</div>";
@@ -578,7 +668,7 @@ function bracketHtml(rows, size, fee) {
   const champ = final && final.status === "done" && final.winner_id
     ? (final.winner_id === final.player_a ? final.a_username : final.b_username) : null;
   const prize = fee ? prizeSplit(fee, size) : null;
-  html += '<div class="bracket__col bracket__col--champ"><h4>Champion</h4><div class="bracket__slots"><div class="bracket__champ' + (champ ? " is-set" : "") + '">' +
+  html += '<div class="bracket__col bracket__col--champ" style="--i:' + rounds + '"><h4>Champion</h4><div class="bracket__slots"><div class="bracket__champ' + (champ ? " is-set" : "") + '">' +
     '<span class="' + (champ ? "v" : "muted") + '">' + (champ ? "@" + esc(champ) : "TBD") + "</span>" +
     (prize ? '<span class="k">' + formatRcoin(final && final.walkover ? prize.prizes : prize.first) + "</span>" : "") + "</div></div></div>";
   return html + "</div>";

@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
   <title>Contact — Runinback</title>
-  <meta name="description" content="Get in touch with the Runinback team about integrations, partnerships, press or support for skill-based competitions in your game." />
+  <meta name="description" content="Contact the Runinback team about your account, a Wild Rift match or tournament, partnerships or press." />
   <meta name="author" content="Runinback" />
   <meta name="robots" content="index, follow" />
   <meta name="theme-color" content="#0e100f" />
@@ -14,18 +14,18 @@
   <meta property="og:type" content="website" />
   <meta property="og:site_name" content="Runinback" />
   <meta property="og:title" content="Contact Runinback" />
-  <meta property="og:description" content="Reach the Runinback team about integrations, partnerships, press or support." />
+  <meta property="og:description" content="Reach the Runinback team about your account, a match, partnerships or press." />
   <meta property="og:url" content="https://runinback.com/contact.html" />
   <meta property="og:image" content="https://runinback.com/og-image.png" />
   <meta property="og:image:type" content="image/png" />
   <meta property="og:image:width" content="1200" />
   <meta property="og:image:height" content="630" />
-  <meta property="og:image:alt" content="Runinback — competitive gaming where skill pays" />
+  <meta property="og:image:alt" content="Runinback — Wild Rift tournaments" />
   <meta name="twitter:card" content="summary_large_image" />
   <meta name="twitter:title" content="Contact Runinback" />
-  <meta name="twitter:description" content="Integrations, partnerships, press and support." />
+  <meta name="twitter:description" content="Player support, partnerships and press." />
   <meta name="twitter:image" content="https://runinback.com/og-image.png" />
-  <meta name="twitter:image:alt" content="Runinback — competitive gaming where skill pays" />
+  <meta name="twitter:image:alt" content="Runinback — Wild Rift tournaments" />
   <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png" />
   <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16.png" />
   <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
@@ -57,25 +57,24 @@
   <a class="skip-link" href="#main">Skip to content</a>
 
   <header class="nav" data-nav>
-    <!-- Announcement (inside the fixed header so it never overlaps the menu) -->
     <div class="announce">
-      Test mode: play with simulated rcoin, no real money yet — <a href="signup.html">create a free account →</a>
+      Test mode: play with simulated rcoin, no real money yet. <a href="signup.html">Create a free account</a>
     </div>
     <div class="shell nav__inner">
       <a href="index.html" class="brand" aria-label="Runinback home">
         <img class="brand__icon" src="/logo-icon.png" width="34" height="24" alt="" />
         <img class="brand__word" src="/logo-word.png" width="64" height="14" alt="" />
       </a>
-      <nav class="nav__links" aria-label="Primary">
+      <nav class="nav__links" id="nav-links" aria-label="Primary">
         <a href="how-it-works.html" class="nav__link">How it works</a>
-        
+        <a href="index.html#prizes" class="nav__link">Prizes</a>
         <a href="contact.html" class="nav__link" aria-current="page">Contact</a>
         <span class="nav__account" id="nav-account">
           <a class="nav__link nav__auth" href="login.html">Log in</a>
           <a class="btn btn--cta btn--sm" href="signup.html">Sign up</a>
         </span>
       </nav>
-      <button class="nav__toggle" data-nav-toggle aria-label="Toggle menu" aria-expanded="false">
+      <button type="button" class="nav__toggle" data-nav-toggle aria-controls="nav-links" aria-label="Open menu" aria-expanded="false">
         <span></span>
       </button>
     </div>
@@ -87,36 +86,32 @@
       <div class="shell">
         <p class="eyebrow" data-reveal>Contact</p>
         <h1 class="h-lg page-head__title" data-reveal>Let's talk.</h1>
-        <p class="lead" data-reveal>Need help with your account or a match, building on the API, or writing about us? Drop us a line and we'll reply by email.</p>
+        <p class="lead" data-reveal>Need help with your account, a match or a tournament result, or want to work with us? Write to us and we'll reply by email.</p>
       </div>
     </section>
 
-    <section class="section">
-      <div class="shell">
-        <div class="grid grid--2" style="gap:clamp(32px,6vw,80px); align-items:start;">
-          <!-- Channels -->
-          <div class="stack-32" data-reveal>
-            <div>
-              <span class="label label--brand">Player support</span>
-              <p class="lead muted mt-16">Your account, wallet, a match or a tournament result.</p>
-              <a href="mailto:support@runinback.com" class="text-link mt-16">support@runinback.com <span class="arrow">→</span></a>
-            </div>
-            <div>
-              
-              <p class="lead muted mt-16">Integration help and API questions.</p>
-              <a href="mailto:dev@runinback.com" class="text-link mt-16">dev@runinback.com <span class="arrow">→</span></a>
-            </div>
-            <div>
-              <span class="label label--brand">Partnerships</span>
-              <p class="lead muted mt-16">Studios, platforms and ecosystem deals.</p>
-              <a href="mailto:partners@runinback.com" class="text-link mt-16">partners@runinback.com <span class="arrow">→</span></a>
-            </div>
-            <div>
-              <span class="label label--brand">Press</span>
-              <p class="lead muted mt-16">Media, interviews and brand assets.</p>
-              <a href="mailto:press@runinback.com" class="text-link mt-16">press@runinback.com <span class="arrow">→</span></a>
-            </div>
-          </div>
+    <section class="section" aria-labelledby="channels-heading">
+      <div class="shell split">
+        <div class="split__head">
+          <h2 class="sr-only" id="channels-heading">Ways to reach us</h2>
+          <ul class="ledger" data-stagger>
+            <li class="ledger__item" data-reveal>
+              <h3 class="ledger__title">Player support</h3>
+              <p class="ledger__text">Your account, wallet, Riot ID, a match or a tournament result. To contest a result, open a dispute from the match room first; it's faster than email.</p>
+              <a href="mailto:support@runinback.com" class="text-link">support@runinback.com</a>
+            </li>
+            <li class="ledger__item" data-reveal>
+              <h3 class="ledger__title">Partnerships</h3>
+              <p class="ledger__text">Teams, creators and tournament organizers.</p>
+              <a href="mailto:partners@runinback.com" class="text-link">partners@runinback.com</a>
+            </li>
+            <li class="ledger__item" data-reveal>
+              <h3 class="ledger__title">Press</h3>
+              <p class="ledger__text">Media, interviews and brand assets.</p>
+              <a href="mailto:press@runinback.com" class="text-link">press@runinback.com</a>
+            </li>
+          </ul>
+        </div>
 
           <!-- Form -->
           <div data-reveal>
@@ -135,7 +130,7 @@
                 <label for="topic">Topic</label>
                 <select id="topic" name="topic">
                   <option>Account, wallet or a match</option>
-                  <option>Integration / API</option>
+                  <option>Riot ID or a dispute</option>
                   <option>Partnership</option>
                   <option>Press</option>
                   <option>Something else</option>
@@ -145,24 +140,22 @@
                 <label for="message">Message</label>
                 <textarea id="message" name="message" required></textarea>
               </div>
-              <button type="submit" class="btn btn--cta">Send message <span class="arrow">→</span></button>
-              <p class="form__note">We'll only use your details to reply. No lists, no spam.</p>
+              <button type="submit" class="btn btn--cta">Open in my email app</button>
+              <p class="form__note">This opens a draft in your email app, addressed to support@runinback.com. We only use your details to reply.</p>
               <div class="form__success" data-form-success>
                 Your email app should open with the message ready to send. If it didn't, write to <a href="mailto:support@runinback.com">support@runinback.com</a>.
               </div>
             </form>
           </div>
-        </div>
       </div>
     </section>
 
     <section class="section">
       <div class="shell cta-band" data-reveal>
-        <p class="eyebrow">Get started</p>
         <h2 class="display">Ready to compete?</h2>
-        <p class="lead muted mx-auto">Create a free account and play your first match in test mode, or build on the API.</p>
+        <p class="lead muted mx-auto">Create a free account, link your Riot ID and play your first bracket in test mode.</p>
         <div class="cta-band__actions">
-          <a href="signup.html" class="btn btn--cta">Create your account <span class="arrow">→</span></a>
+          <a href="signup.html" class="btn btn--cta">Create your account <span class="arrow" aria-hidden="true">→</span></a>
           <a href="how-it-works.html" class="btn btn--ghost">See how it works</a>
         </div>
       </div>
@@ -174,29 +167,36 @@
       <div class="footer__top">
         <div class="footer__brand">
           <a href="index.html" class="brand" aria-label="Runinback home"><img class="brand__lockup" src="/logo-lockup.png" width="180" height="30" alt="Runinback" /></a>
-          <p class="footer__tagline">Skill-based competition for Wild Rift. Reset. Replay. Redeem.</p>
+          <p class="footer__tagline">1v1 Wild Rift tournaments with fixed entry fees and prizes paid when the final is confirmed.</p>
         </div>
-        <div class="footer__col">
-          <h4>Play</h4>
+        <nav class="footer__col" aria-label="Play">
+          <h2 class="footer__h">Play</h2>
           <ul>
             <li><a href="how-it-works.html">How it works</a></li>
+            <li><a href="index.html#prizes">Quick Play prizes</a></li>
             <li><a href="signup.html">Create an account</a></li>
             <li><a href="login.html">Log in</a></li>
           </ul>
-        </div>
-        <div class="footer__col">
-          
-        </div>
-        <div class="footer__col">
-          <h4>Company</h4>
+        </nav>
+        <nav class="footer__col" aria-label="Help">
+          <h2 class="footer__h">Help</h2>
+          <ul>
+            <li><a href="how-it-works.html#faq">FAQ</a></li>
+            <li><a href="how-it-works.html#disputes">Disputes</a></li>
+            <li><a href="mailto:support@runinback.com">support@runinback.com</a></li>
+          </ul>
+        </nav>
+        <nav class="footer__col" aria-label="Company">
+          <h2 class="footer__h">Company</h2>
           <ul>
             <li><a href="contact.html">Contact</a></li>
             <li><a href="terms.html">Terms</a></li>
             <li><a href="privacy.html">Privacy</a></li>
             <li><a href="cookies.html">Cookies</a></li>
           </ul>
-        </div>
+        </nav>
       </div>
+      <p class="footer__legal">Runinback isn't endorsed by Riot Games and doesn't reflect the views or opinions of Riot Games or anyone officially involved in producing or managing Riot Games properties. Riot Games, League of Legends and Wild Rift are trademarks or registered trademarks of Riot Games, Inc.</p>
       <div class="footer__bottom">
         <span>© <span data-year>2026</span> Runinback. All rights reserved.</span>
         <span>Test mode: simulated rcoin, no real money.</span>

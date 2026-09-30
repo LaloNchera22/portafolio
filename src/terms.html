@@ -37,25 +37,24 @@
   <a class="skip-link" href="#main">Skip to content</a>
 
   <header class="nav" data-nav>
-    <!-- Announcement (inside the fixed header so it never overlaps the menu) -->
     <div class="announce">
-      Test mode: play with simulated rcoin, no real money yet — <a href="signup.html">create a free account →</a>
+      Test mode: play with simulated rcoin, no real money yet. <a href="signup.html">Create a free account</a>
     </div>
     <div class="shell nav__inner">
       <a href="index.html" class="brand" aria-label="Runinback home">
         <img class="brand__icon" src="/logo-icon.png" width="34" height="24" alt="" />
         <img class="brand__word" src="/logo-word.png" width="64" height="14" alt="" />
       </a>
-      <nav class="nav__links" aria-label="Primary">
+      <nav class="nav__links" id="nav-links" aria-label="Primary">
         <a href="how-it-works.html" class="nav__link">How it works</a>
-        
+        <a href="index.html#prizes" class="nav__link">Prizes</a>
         <a href="contact.html" class="nav__link">Contact</a>
         <span class="nav__account" id="nav-account">
           <a class="nav__link nav__auth" href="login.html">Log in</a>
           <a class="btn btn--cta btn--sm" href="signup.html">Sign up</a>
         </span>
       </nav>
-      <button class="nav__toggle" data-nav-toggle aria-label="Toggle menu" aria-expanded="false">
+      <button type="button" class="nav__toggle" data-nav-toggle aria-controls="nav-links" aria-label="Open menu" aria-expanded="false">
         <span></span>
       </button>
     </div>
@@ -68,7 +67,7 @@
         <p class="eyebrow" data-reveal>Legal</p>
         <h1 class="h-lg page-head__title" data-reveal>Terms &amp; Conditions</h1>
         <p class="lead" data-reveal>The agreement between you and Runinback for using our site, accounts and Wild Rift tournaments.</p>
-        <p class="legal__meta" data-reveal>Last updated: 2026-09-29 · Version 0.4 (draft, pending legal review)</p>
+        <p class="legal__meta" data-reveal>Last updated: 2026-09-30 · Version 0.4 (draft, pending legal review)</p>
       </div>
     </section>
 
@@ -137,7 +136,7 @@
             <li>Runinback does not guarantee the conduct of any other player, of the game or of any third-party service.</li>
             <li>You are responsible for any taxes arising from your activity.</li>
           </ul>
-          <!-- LEGAL REVIEW: the 5% purchase fee and fee-free withdrawals are carried over from the previous version and still match the console; the withdrawal method for real-money play (after crypto payouts were removed) is not defined yet. -->
+          <!-- LEGAL REVIEW: the 5% purchase fee and fee-free withdrawals are carried over from the previous version and still match the console; the withdrawal method for real-money play is not defined yet. -->
 
           <h2 id="rules">7. Tournaments &amp; matches</h2>
           <ul>
@@ -146,7 +145,7 @@
             <li><strong>Ready check.</strong> Both players must mark themselves ready within the time shown in the room (currently 5 minutes). A player who is not ready in time loses the match by walkover.</li>
             <li><strong>Reporting results.</strong> Both players report the result. Matching reports settle the match at once. If one player reports and the other neither reports nor disputes within the confirm window shown in the room (currently 10 minutes), the report stands: silence confirms.</li>
             <li><strong>End-of-match screenshots.</strong> After reporting, a player may upload a screenshot of the Wild Rift end-of-match screen. The screenshot is read by an automated system that uses an AI model to recognise the players' names and the result shown. If it clearly shows the reported winner and both players' Riot IDs, the opponent's confirm window is shortened to 3 minutes; the opponent can still dispute. A screenshot never settles, cancels or disputes a match on its own. A screenshot that contradicts a report, or that was already used in another match, is flagged for our team. Uploading an edited, reused or someone else's screenshot is a breach of these Terms. How screenshots are processed is described in our <a href="privacy.html#screenshots">Privacy Policy</a>.</li>
-            <li><strong>Disputes.</strong> A player may dispute a reported result by giving a reason and, in paid tournaments, placing a deposit of 10% of the entry fee (minimum 1 rcoin). Disputes are reviewed by people on our team, who look at the room chat, the reports, the screenshots and other evidence captured in the app, and decide the match. The automated screenshot check may inform that review but does not decide it. A rejected (false) dispute&#39;s deposit is paid to the other player; an upheld dispute&#39;s deposit is returned.</li>
+            <li><strong>Disputes.</strong> A player may dispute a reported result by giving a reason and, in paid tournaments, placing a deposit of 10% of the entry fee (minimum 1 rcoin). Disputes are reviewed by people on our team, who look at the room chat, the reports, the screenshots and other evidence captured in the app, and decide the match. The automated screenshot check may inform that review but does not decide it. A rejected (false) dispute&#39;s deposit is lost and paid to the other player; an upheld dispute&#39;s deposit is returned. Until then the match stays undecided.</li>
             <li><strong>Limits and restrictions.</strong> To protect fair play we apply rate limits on entries, allow one open Quick Play entry per tier, and cap the entry fees a new account can pay until it has completed a number of matches (currently 25 rcoin until 3 completed matches). Accounts with repeated false disputes or no-shows, or that break these Terms, may be restricted from entering tournaments.</li>
             <li><strong>Rankings</strong> count only results confirmed through the Service. We may correct or remove results obtained through collusion, multiple accounts or other abuse.</li>
           </ul>
@@ -155,7 +154,7 @@
           <p>rcoin top-ups are paid by card and processed by our payment provider, Stripe. If a payment is refunded or disputed, we reverse the corresponding rcoin. If that rcoin was already used, the remaining balance is debited and the account may be restricted from entering tournaments and withdrawing until the shortfall is resolved.</p>
 
           <h2 id="responsible">9. Responsible play</h2>
-          <p>Only pay entry fees you can afford to lose. You can stop playing at any time; to close your account or to request a break, contact <a href="mailto:support@runinback.com">support@runinback.com</a>. If gaming stops being fun, seek help from a local support service in your country.</p>
+          <p>Only pay entry fees you can afford to lose. You can set a monthly entry-fee limit or take a cool-off from your account settings; a limit takes effect at once, while raising or removing it, or ending a cool-off early, only takes effect after a waiting period. You can stop playing at any time; to close your account or to request a break, contact <a href="mailto:support@runinback.com">support@runinback.com</a>. If gaming stops being fun, seek help from a local support service in your country.</p>
 
           <h2 id="acceptable-use">10. Acceptable use</h2>
           <p>You agree not to:</p>
@@ -205,29 +204,36 @@
       <div class="footer__top">
         <div class="footer__brand">
           <a href="index.html" class="brand" aria-label="Runinback home"><img class="brand__lockup" src="/logo-lockup.png" width="180" height="30" alt="Runinback" /></a>
-          <p class="footer__tagline">Skill-based competition for Wild Rift. Reset. Replay. Redeem.</p>
+          <p class="footer__tagline">1v1 Wild Rift tournaments with fixed entry fees and prizes paid when the final is confirmed.</p>
         </div>
-        <div class="footer__col">
-          <h4>Play</h4>
+        <nav class="footer__col" aria-label="Play">
+          <h2 class="footer__h">Play</h2>
           <ul>
             <li><a href="how-it-works.html">How it works</a></li>
+            <li><a href="index.html#prizes">Quick Play prizes</a></li>
             <li><a href="signup.html">Create an account</a></li>
             <li><a href="login.html">Log in</a></li>
           </ul>
-        </div>
-        <div class="footer__col">
-          
-        </div>
-        <div class="footer__col">
-          <h4>Company</h4>
+        </nav>
+        <nav class="footer__col" aria-label="Help">
+          <h2 class="footer__h">Help</h2>
+          <ul>
+            <li><a href="how-it-works.html#faq">FAQ</a></li>
+            <li><a href="how-it-works.html#disputes">Disputes</a></li>
+            <li><a href="mailto:support@runinback.com">support@runinback.com</a></li>
+          </ul>
+        </nav>
+        <nav class="footer__col" aria-label="Company">
+          <h2 class="footer__h">Company</h2>
           <ul>
             <li><a href="contact.html">Contact</a></li>
             <li><a href="terms.html">Terms</a></li>
             <li><a href="privacy.html">Privacy</a></li>
             <li><a href="cookies.html">Cookies</a></li>
           </ul>
-        </div>
+        </nav>
       </div>
+      <p class="footer__legal">Runinback isn't endorsed by Riot Games and doesn't reflect the views or opinions of Riot Games or anyone officially involved in producing or managing Riot Games properties. Riot Games, League of Legends and Wild Rift are trademarks or registered trademarks of Riot Games, Inc.</p>
       <div class="footer__bottom">
         <span>© <span data-year>2026</span> Runinback. All rights reserved.</span>
         <span>Test mode: simulated rcoin, no real money.</span>

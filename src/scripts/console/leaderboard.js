@@ -8,7 +8,7 @@ import { centsToRcoin, formatRcoin } from "../lib/format.js";
 import { tweenNumber } from "../lib/motion.js";
 import { session } from "./context.js";
 import { goToPage } from "./navigation.js";
-import { peakArt } from "./room.js";
+import { peakArt } from "./art.js";
 
 const PAGE_SIZE = 50;
 const state = { period: "week", offset: 0, request: 0, loading: false };

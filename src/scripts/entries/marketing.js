@@ -1,10 +1,12 @@
-/* Entry: public marketing + auth pages (index, how-it-works, contact,
- * developers, login, signup). Site interactions + account nav + auth forms. */
+/* Entry: public marketing + auth pages (index, how-it-works, contact, login,
+ * signup). Site interactions + prize table + account nav + auth forms. */
 import { initAccountNav } from "../auth/account-nav.js";
 import { initSiteInteractions } from "../site/interactions.js";
+import { initPrizeTiers } from "../site/prize-tiers.js";
 
 initAccountNav();
 initSiteInteractions();
+initPrizeTiers();
 
 if (document.getElementById("login-form") || document.getElementById("signup-form")) {
   import("../auth/auth-forms.js")

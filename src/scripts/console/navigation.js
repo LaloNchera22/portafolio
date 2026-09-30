@@ -34,11 +34,27 @@ export function clearRouteArg() {
   }
 }
 
-export function closeAccountMenu() {
+export function closeAccountMenu(returnFocus) {
   const menu = byId("acct-menu");
   const avatar = byId("acct-avatar");
   if (menu) menu.hidden = true;
-  if (avatar) avatar.setAttribute("aria-expanded", "false");
+  if (avatar) {
+    avatar.setAttribute("aria-expanded", "false");
+    if (returnFocus) avatar.focus();
+  }
+}
+
+function menuItems() {
+  return Array.prototype.filter.call(document.querySelectorAll("#acct-menu [role='menuitem']"), function (x) { return !x.hidden; });
+}
+
+/* Move keyboard focus to the page's heading after a page change, so a
+ * screen reader starts at the new page and Tab continues from there. */
+function focusHeading(page) {
+  const h = page.querySelector("h1");
+  if (!h) return;
+  if (!h.hasAttribute("tabindex")) h.setAttribute("tabindex", "-1");
+  try { h.focus({ preventScroll: true }); } catch (e) { h.focus(); }
 }
 
 function isPage(id) {
@@ -59,6 +75,8 @@ export function goToPage(id, options) {
   if (!(options && options.fromHistory) && location.hash !== hash) {
     history.pushState({ page: id, arg: arg }, "", hash);
   }
+  const current = document.querySelector(".capp .page:not([hidden])");
+  const changed = !current || current.id !== id;
   document.querySelectorAll(".capp .page").forEach(function (p) { p.hidden = p.id !== id; });
   // reflect the active destination on every nav surface (top tabs + bottom nav)
   const navId = NAV_PARENT[id] || id;
@@ -69,6 +87,9 @@ export function goToPage(id, options) {
   closeAccountMenu();
   syncIndicators();
   document.dispatchEvent(new CustomEvent("rib:page", { detail: id }));
+  // Not on boot (the page is where the player already is); a loader that
+  // focuses something specific (a form field) runs after and wins.
+  if (changed && !(options && options.initial)) focusHeading(byId(id));
   if (pageLoaders[id]) pageLoaders[id]();
   window.scrollTo(0, 0);
 }
@@ -143,6 +164,23 @@ export function initNavigation(loaders) {
     a.addEventListener("click", function (e) { e.preventDefault(); goToPage(a.getAttribute("data-page")); });
   });
 
+  // The skip link lands on the visible page's heading (the hash is the router's).
+  const skip = byId("skip-link");
+  if (skip) skip.addEventListener("click", function (e) {
+    e.preventDefault();
+    const page = document.querySelector(".capp .page:not([hidden])");
+    if (page) focusHeading(page);
+  });
+
+  // Any link to a player, anywhere in the console. Modified clicks open a
+  // new tab (the href is a real deep link).
+  document.addEventListener("click", function (e) {
+    const a = e.target.closest && e.target.closest("[data-player]");
+    if (!a || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+    e.preventDefault();
+    goToPage("page-player", { arg: a.getAttribute("data-player") });
+  });
+
   // Any segment press (here or in page modules) moves its thumb.
   document.addEventListener("click", function (e) { if (e.target.closest(".capp .seg")) syncIndicators(); });
   window.addEventListener("resize", syncIndicators, { passive: true });
@@ -157,13 +195,37 @@ export function initNavigation(loaders) {
   const avatar = byId("acct-avatar");
   const menu = byId("acct-menu");
   if (avatar && menu) {
+    const open = function (focusFirst) {
+      menu.hidden = false;
+      avatar.setAttribute("aria-expanded", "true");
+      if (focusFirst) { const first = menuItems()[0]; if (first) first.focus(); }
+    };
     avatar.addEventListener("click", function (e) {
       e.stopPropagation();
-      menu.hidden = !menu.hidden;
-      avatar.setAttribute("aria-expanded", String(!menu.hidden));
+      if (menu.hidden) open(e.detail === 0); // keyboard activation: into the menu
+      else closeAccountMenu();
+    });
+    avatar.addEventListener("keydown", function (e) {
+      if (e.key === "ArrowDown" && menu.hidden) { e.preventDefault(); open(true); }
+    });
+    // Arrow keys move between items, Escape closes and returns to the avatar.
+    menu.addEventListener("keydown", function (e) {
+      const items = menuItems();
+      const at = items.indexOf(document.activeElement);
+      if (e.key === "Escape") { e.preventDefault(); closeAccountMenu(true); }
+      else if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+        e.preventDefault();
+        const step = e.key === "ArrowDown" ? 1 : -1;
+        const next = items[(at + step + items.length) % items.length];
+        if (next) next.focus();
+      } else if (e.key === "Home" || e.key === "End") {
+        e.preventDefault();
+        const edge = items[e.key === "Home" ? 0 : items.length - 1];
+        if (edge) edge.focus();
+      } else if (e.key === "Tab") closeAccountMenu();
     });
     menu.addEventListener("click", function (e) { e.stopPropagation(); });
-    document.addEventListener("click", closeAccountMenu);
+    document.addEventListener("click", function () { closeAccountMenu(); });
   }
 
   wireSegment("#compete-seg button[data-seg]", "data-seg",

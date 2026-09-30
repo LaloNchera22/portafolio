@@ -9,8 +9,10 @@ import { countryName } from "../lib/countries.js";
 import { byId as $, escapeHtml as esc } from "../lib/dom.js";
 import { formatDate, formatRcoin } from "../lib/format.js";
 import { RIOT_NETWORK } from "../lib/wild-rift.js";
+import { peakArt } from "./art.js";
 import { session } from "./context.js";
 import { goToPage } from "./navigation.js";
+import { skelRows } from "./skeleton.js";
 
 const CACHE_MS = 60 * 1000;
 const cache = new Map(); // lower(username) -> { at, data }
@@ -71,8 +73,7 @@ function render(p) {
   html += p.tournaments && p.tournaments.length
     ? '<div class="panel">' + p.tournaments.map(function (t) {
         const tone = t.placement === 1 ? " chip--settle" : t.placement === 2 ? " chip--match" : "";
-        return '<div class="row"><div><div class="row__name">' + esc(t.name) + '</div><div class="row__meta">' + esc(t.game) + " · " + t.size +
-          " players · " + esc(formatDate(t.finished_at)) + '</div></div><span class="chip' + tone + '">' + placementText(t) + "</span></div>";
+        return '<div class="row"><div><div class="row__name">' + esc(t.name) + '</div><div class="row__meta">' + t.size + " players · " + esc(formatDate(t.finished_at)) + '</div></div><span class="chip' + tone + '">' + placementText(t) + "</span></div>";
       }).join("") + "</div>"
     : '<p class="muted">No finished tournaments yet.</p>';
   html += "</div>";
@@ -84,7 +85,8 @@ export function loadPlayer(arg) {
   const root = $("player-root");
   if (!root) return;
   const name = String(arg || "").trim();
-  if (!name) { root.innerHTML = '<div class="empty"><h3>Pick a player</h3><p>Open anyone from the ranking to see their card.</p><p><button type="button" class="btn btn--sm" data-go-ranking>Go to the ranking</button></p></div>'; return; }
+  root.removeAttribute("aria-busy");
+  if (!name) { root.innerHTML = '<div class="empty">' + peakArt("settle") + '<h3>Pick a player</h3><p>Open anyone from the ranking to see their card.</p><p><button type="button" class="btn btn--sm" data-go-ranking>Go to the ranking</button></p></div>'; return; }
   if (!/^[a-zA-Z0-9_]{3,24}$/.test(name)) { root.innerHTML = notFound(name); return; }
   const key = name.toLowerCase();
   const hit = cache.get(key);
@@ -97,7 +99,7 @@ export function loadPlayer(arg) {
   };
   if (hit && Date.now() - hit.at < CACHE_MS) { show(hit.data); return; }
   root.setAttribute("aria-busy", "true");
-  root.innerHTML = '<p class="muted is-loading">Loading…</p>';
+  root.innerHTML = skelRows(3);
   session.client.rpc("rib_public_profile", { p_username: name })
     .then(function (r) {
       if (r.error) { if (token === request) root.innerHTML = '<p class="muted">Couldn\'t load this player. Try again.</p>'; return; }
@@ -115,6 +117,9 @@ export function loadPlayer(arg) {
 export function forgetPlayer(username) {
   if (username) cache.delete(String(username).toLowerCase());
 }
+// Profile edits announce the handles whose cards changed (this module loads
+// on demand, so profile.js doesn't import it).
+document.addEventListener("rib:player-changed", function (e) { forgetPlayer(e.detail); });
 
 export function initPlayer() {
   const root = $("player-root");
@@ -122,13 +127,5 @@ export function initPlayer() {
   root.addEventListener("click", function (e) {
     if (e.target.closest("[data-edit-profile]")) goToPage("page-profile");
     else if (e.target.closest("[data-go-ranking]")) goToPage("page-ranking");
-  });
-  // Any link to a player, anywhere in the console.
-  document.addEventListener("click", function (e) {
-    const a = e.target.closest("[data-player]");
-    // Let modified clicks open a new tab (the href is a real deep link).
-    if (!a || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
-    e.preventDefault();
-    goToPage("page-player", { arg: a.getAttribute("data-player") });
   });
 }

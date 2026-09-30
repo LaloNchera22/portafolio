@@ -6,29 +6,31 @@
  * ========================================================================== */
 import { byId as $, escapeHtml as esc, showMessage } from "../lib/dom.js";
 import { formatDate, formatRcoin } from "../lib/format.js";
+import { peakArt } from "./art.js";
+import { confirmAction } from "./confirm.js";
 import { errorText, session } from "./context.js";
 
 const EVIDENCE_BUCKET = "room-evidence";
 
-/** Show the "Dispute queue" menu entry only to operators. */
-export function initOps() {
-  session.client.rpc("rib_is_operator").then(function (r) {
-    const link = $("acct-ops");
-    if (link) link.hidden = !(r && r.data === true);
-  });
-}
+const CHECK_LABEL = {
+  verified: ["Verified", "chip--good"], contradicts: ["Doesn't match", "chip--escrow"], unreadable: ["Couldn't read it", ""],
+  duplicate: ["Used in another match", "chip--escrow"], skipped: ["Not checked", ""], pending: ["Not checked", ""],
+};
 
 export function loadOps() {
   const root = $("ops-root");
+  root.setAttribute("aria-busy", "true");
   session.client.rpc("rib_ops_room_disputes").then(function (r) {
+    root.setAttribute("aria-busy", "false");
     if (r.error) { root.innerHTML = '<p class="muted">' + esc(errorText(r.error, "Couldn't load the queue.")) + "</p>"; return; }
     const rows = Array.isArray(r.data) ? r.data : [];
-    if (!rows.length) { root.innerHTML = '<div class="empty"><h3>No disputes</h3><p>Every match result has been agreed.</p></div>'; return; }
+    if (!rows.length) { root.innerHTML = '<div class="empty">' + peakArt("settle") + "<h3>No disputes</h3><p>Every match result has been agreed. New disputes show up here, oldest first.</p></div>"; return; }
     root.innerHTML = rows.map(function (d) {
       const name = function (uid) { return uid === d.player_a ? "@" + (d.a_username || "player A") : "@" + (d.b_username || "player B"); };
       const claim = function (uid, report) { return name(uid) + " says " + (report ? name(report) + " won" : "nothing yet"); };
-      return '<article class="ops-case" data-case="' + esc(d.id) + '">' +
-        "<header><h2>" + esc(d.game) + (d.tournament_name ? " · " + esc(d.tournament_name) + " round " + d.round : " · friendly") + "</h2>" +
+      return '<article class="ops-case' + (d.review_flag ? " is-flagged" : "") + '" data-case="' + esc(d.id) + '">' +
+        "<header><h2>" + esc(d.tournament_name || "Tournament") + " · round " + esc(d.round) + "</h2>" +
+        (d.review_flag ? '<span class="chip chip--escrow">Flagged by the end-screen check</span> ' : "") +
         '<span class="row__meta">' + esc(d.room_code || "") + " · disputed " + esc(formatDate(d.disputed_at)) +
         (d.entry_fee_cents ? " · entry " + formatRcoin(d.entry_fee_cents) + " · deposit " + formatRcoin(d.dispute_deposit_cents) : "") + "</span></header>" +
         "<ul><li>" + esc(claim(d.player_a, d.a_report)) + "</li><li>" + esc(claim(d.player_b, d.b_report)) + "</li></ul>" +
@@ -59,7 +61,7 @@ function loadCaseDetails(d) {
   const time = function (iso) {
     try { return new Date(iso).toLocaleTimeString("en", { hour: "2-digit", minute: "2-digit" }); } catch (e) { return ""; }
   };
-  session.client.from("room_evidence").select("storage_path, user_id, source").eq("room_id", id).then(function (r) {
+  session.client.from("room_evidence").select("storage_path, user_id, source, check_status").eq("room_id", id).then(function (r) {
     const box = document.querySelector('[data-evidence-for="' + id + '"]');
     const rows = Array.isArray(r && r.data) ? r.data : [];
     if (!box || !rows.length) return;
@@ -67,8 +69,9 @@ function loadCaseDetails(d) {
       box.innerHTML = (s.data || []).map(function (item, i) {
         if (!item || !item.signedUrl) return "";
         const label = who(rows[i].user_id) + " · " + (rows[i].source || "capture");
+        const check = CHECK_LABEL[rows[i].check_status];
         return '<figure><a href="' + esc(item.signedUrl) + '" target="_blank" rel="noopener"><img src="' + esc(item.signedUrl) + '" alt="Capture from ' + esc(label) + '" /></a>' +
-          "<figcaption>" + esc(label) + "</figcaption></figure>";
+          "<figcaption>" + esc(label) + (check ? ' <span class="chip ' + check[1] + '">' + check[0] + "</span>" : "") + "</figcaption></figure>";
       }).join("");
     });
   });
@@ -85,12 +88,17 @@ function wireCase(card) {
   const out = card.querySelector(".msg");
   const resolve = function (action, winner, btn) {
     const note = (card.querySelector("#note-" + id).value || "").trim();
-    if (!window.confirm(action === "void" ? "Void this match? Both players are eliminated and any deposit is returned." : "Award this match? The bracket advances and a rejected dispute's deposit goes to the other player.")) return;
-    btn.disabled = true;
-    session.client.rpc("rib_room_resolve", { p_room_id: id, p_action: action, p_winner_id: winner || null, p_note: note || null }).then(function (r) {
-      if (r.error) { btn.disabled = false; showMessage(out, errorText(r.error, "Couldn't resolve it."), false); return; }
-      showMessage(out, "Resolved.", true);
-      setTimeout(loadOps, 600);
+    confirmAction(action === "void"
+      ? { title: "Void this match?", body: "Both players are eliminated and any deposit is returned.", ok: "Void match", danger: true }
+      : { title: "Award this match to " + btn.textContent.replace(/^Award /, "") + "?", body: "The bracket advances and a rejected dispute's deposit goes to the other player.", ok: "Award match" },
+    ).then(function (ok) {
+      if (!ok) return;
+      btn.disabled = true;
+      session.client.rpc("rib_room_resolve", { p_room_id: id, p_action: action, p_winner_id: winner || null, p_note: note || null }).then(function (r) {
+        if (r.error) { btn.disabled = false; showMessage(out, errorText(r.error, "Couldn't resolve it."), false); return; }
+        showMessage(out, "Resolved.", true);
+        setTimeout(loadOps, 600);
+      }).catch(function () { btn.disabled = false; showMessage(out, "Network error. Try again.", false); });
     });
   };
   card.querySelectorAll("[data-award]").forEach(function (b) {

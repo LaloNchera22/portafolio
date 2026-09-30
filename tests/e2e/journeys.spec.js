@@ -9,6 +9,29 @@ test("landing states test mode and loads without errors", async ({ page, api }) 
   expect(api.calls.every((c) => !c.path.startsWith("/rest/"))).toBe(true);
 });
 
+test("landing prize table follows the bracket size", async ({ page }) => {
+  await page.goto("/index.html");
+  await page.getByRole("button", { name: "Decline" }).click();
+  const champion = page.locator('#prizes tr[data-fee="1000"] [data-prize="first"]');
+  await champion.scrollIntoViewIfNeeded();
+  await expect(champion).toHaveText("25.2");
+  await page.getByRole("radio", { name: "8 players" }).check();
+  await expect(champion).toHaveText("50.4");
+  await expect(page.locator("[data-size-label]")).toHaveText("8");
+});
+
+test("mobile menu opens, traps the page and closes with Escape", async ({ page, isMobile }) => {
+  test.skip(!isMobile, "the menu toggle only shows on phones");
+  await page.goto("/how-it-works.html");
+  const toggle = page.locator("[data-nav-toggle]");
+  await toggle.click();
+  await expect(toggle).toHaveAttribute("aria-expanded", "true");
+  await expect(page.locator("#nav-links")).toBeVisible();
+  await page.keyboard.press("Escape");
+  await expect(toggle).toHaveAttribute("aria-expanded", "false");
+  await expect(toggle).toBeFocused();
+});
+
 test("sign-up requires the age confirmation", async ({ page, api }) => {
   await page.goto("/signup.html");
   await page.fill("#signup-username", "new_player");
@@ -41,17 +64,60 @@ test.describe("console", () => {
   });
 
   test("joins Quick Play in one tap and waits for the last seat", async ({ page, api }) => {
-    page.on("dialog", (dialog) => dialog.accept());
     await page.goto("/console.html");
     const tier = page.locator('#play-tiers [data-tier="1000:4"]');
     await expect(tier).toContainText("3 waiting");
     await expect(tier).toContainText("Champion 25.2 rcoin");
     await expect(page.locator("#play-tiers [data-tier]")).toHaveCount(12);
     await tier.click();
+    // A paid entry is confirmed in the page's own dialog, with the prizes spelled out.
+    const dialog = page.locator("#confirm-dialog");
+    await expect(dialog).toBeVisible();
+    await expect(dialog).toContainText("Enter for 10 rcoin?");
+    await expect(dialog).toContainText("The champion wins 25.2 rcoin, the runner-up 10.8 rcoin");
+    await expect(page.locator("#confirm-cancel")).toBeFocused();
+    expect(api.calls.some((c) => c.path === "/rest/v1/rpc/rib_quick_join")).toBe(false);
+    await page.click("#confirm-ok");
     await expect.poll(() => api.calls.find((c) => c.path === "/rest/v1/rpc/rib_quick_join")?.body)
       .toEqual({ p_entry_fee_cents: 1000, p_size: 4 });
     await expect(page.locator("#play-waiting")).toContainText("Wild Rift 4 · 10 rcoin");
     await expect(page.locator('#play-waiting [data-leave="t-9"]')).toBeVisible();
+    await expect(page.locator("#play-waiting .seats")).toHaveAttribute("aria-label", "2 of 4 seats taken");
+  });
+
+  test("cancelling the entry dialog sends nothing", async ({ page, api }) => {
+    await page.goto("/console.html");
+    await page.locator('#play-tiers [data-tier="1000:4"]').click();
+    await expect(page.locator("#confirm-dialog")).toBeVisible();
+    await page.keyboard.press("Escape");
+    await expect(page.locator("#confirm-dialog")).toBeHidden();
+    await expect(page.locator('#play-tiers [data-tier="1000:4"]')).toBeFocused();
+    expect(api.calls.some((c) => c.path === "/rest/v1/rpc/rib_quick_join")).toBe(false);
+  });
+
+  test("moves focus to the new page's heading and back with the keyboard menu", async ({ page, isMobile }) => {
+    test.skip(isMobile, "the account menu is keyboard-driven on desktop");
+    await page.goto("/console.html");
+    await expect(page.locator('#play-tiers [data-tier="0:4"]')).toBeVisible();
+    await page.locator("#acct-avatar").focus();
+    await page.keyboard.press("Enter");
+    await expect(page.locator('#acct-menu [data-page="page-profile"]')).toBeFocused();
+    await page.keyboard.press("Escape");
+    await expect(page.locator("#acct-menu")).toBeHidden();
+    await expect(page.locator("#acct-avatar")).toBeFocused();
+    await page.click('.capp__tabs a[data-page="page-wallet"]');
+    await expect(page.locator("#page-wallet h1")).toBeFocused();
+  });
+
+  test("no page scrolls sideways on a 320px phone", async ({ page }) => {
+    await page.setViewportSize({ width: 320, height: 640 });
+    for (const hash of ["#page-compete", "#page-wallet", "#page-ranking", "#page-profile", "#page-profile/settings", "#page-profile/security"]) {
+      await page.goto("/console.html" + hash);
+      await expect(page.locator("#capp")).toBeVisible();
+      await page.waitForTimeout(150);
+      const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
+      expect(overflow, hash).toBeLessThanOrEqual(0);
+    }
   });
 
   test("creates a custom Wild Rift tournament", async ({ page, api }) => {
