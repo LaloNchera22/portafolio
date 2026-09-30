@@ -40,17 +40,32 @@ test.describe("console", () => {
     expect(api.calls.some((c) => c.path === "/rest/v1/wallets")).toBe(true);
   });
 
-  test("creates a 4-player tournament", async ({ page, api }) => {
+  test("joins Quick Play in one tap and waits for the last seat", async ({ page, api }) => {
+    page.on("dialog", (dialog) => dialog.accept());
+    await page.goto("/console.html");
+    const tier = page.locator('#play-tiers [data-tier="1000:4"]');
+    await expect(tier).toContainText("3 waiting");
+    await expect(tier).toContainText("Champion 25.2 rcoin");
+    await expect(page.locator("#play-tiers [data-tier]")).toHaveCount(12);
+    await tier.click();
+    await expect.poll(() => api.calls.find((c) => c.path === "/rest/v1/rpc/rib_quick_join")?.body)
+      .toEqual({ p_entry_fee_cents: 1000, p_size: 4 });
+    await expect(page.locator("#play-waiting")).toContainText("Wild Rift 4 · 10 rcoin");
+    await expect(page.locator('#play-waiting [data-leave="t-9"]')).toBeVisible();
+  });
+
+  test("creates a custom Wild Rift tournament", async ({ page, api }) => {
     await page.goto("/console.html#page-compete");
-    await expect(page.locator(".tcard")).toContainText("Friday Cup");
-    await expect(page.locator(".tcard")).toContainText("3/4 players");
+    await page.click('#compete-seg [data-seg="custom"]');
+    await expect(page.locator("#tournament-list .tcard")).toContainText("Friday Cup");
+    await expect(page.locator("#tournament-list .tcard")).toContainText("3/4 players");
     await page.click("#tournament-new");
+    await expect(page.locator("#tournament-game")).toHaveCount(0);
     await page.fill("#tournament-name", "Night Cup");
-    await page.fill("#tournament-game", "Wild Rift");
     await expect(page.locator("#tournament-prize")).toContainText("Platform (10%)");
     await page.click("#tournament-save");
     await expect.poll(() => api.calls.find((c) => c.path === "/rest/v1/rpc/rib_tournament_create")?.body)
-      .toMatchObject({ p_name: "Night Cup", p_game: "Wild Rift", p_entry_fee_cents: 1000, p_size: 4 });
+      .toMatchObject({ p_name: "Night Cup", p_game: "Wild Rift", p_network: "riot", p_entry_fee_cents: 1000, p_size: 4 });
   });
 
   test("shows the ranking with my standing", async ({ page }) => {

@@ -111,6 +111,15 @@ const HINTS = {
   live_keys_unavailable: "Live keys become available when real-money play launches. Use a test key for now.",
   close_account_blocked: "Finish or leave your open games, friendlies and tournaments before closing your account.",
   wallet_frozen: "Your wallet is on hold after a reversed payment. Contact support to restore it.",
+  // Wild Rift engine (0026).
+  invalid_tier: "Pick one of the Quick Play tiers.",
+  already_queued: "You're already waiting in this tier. We'll start as soon as it fills.",
+  riot_account_required: "Link your Riot ID (Name#TAG) in Profile to enter Wild Rift tournaments.",
+  invalid_riot_id: "Enter your Riot ID as Name#TAG, for example Player#NA1.",
+  riot_account_taken: "That Riot ID is already linked to another Runinback account.",
+  riot_id_locked: "You can't change your Riot ID while you're in a tournament or match. Try again once it's over.",
+  evidence_duplicate: "That screenshot was already used in another match. Upload the end screen of this one.",
+  evidence_not_pending: "This screenshot has already been checked.",
 };
 
 // Ordered rules (legacy fallback): the first substring that matches the (normalized) backend

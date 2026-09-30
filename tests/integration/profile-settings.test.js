@@ -40,9 +40,24 @@ const replies = {
   },
 };
 
+// Riot ID: the linked account rows, and what the riot-account function says.
+let riotRows = [];
+let riotReply = null;
+const invoked = [];
+replies.rib_game_account_set = (args) => {
+  riotRows = [{ network: args.p_network, handle: args.p_handle, verified_at: null }];
+  return { data: riotRows[0] };
+};
 const client = {
-  from: () => new Proxy({}, { get: (_, prop) => prop === "then" ? (res) => Promise.resolve({ data: [], error: null }).then(res) : () => client.from() }),
+  from: (table) => new Proxy({}, { get: (_, prop) => prop === "then" ? (res) => Promise.resolve({ data: table === "game_accounts" ? riotRows : [], error: null }).then(res) : () => client.from(table) }),
   rpc: (name, args) => { calls.push([name, args]); return Promise.resolve(Object.assign({ error: null }, replies[name] ? replies[name](args || {}) : { data: null })); },
+  functions: {
+    invoke: (name, opts) => {
+      invoked.push([name, opts.body]);
+      if (riotReply && riotReply.data && riotReply.data.verified) riotRows = riotRows.map((r) => Object.assign({}, r, { verified_at: "2026-09-29T00:00:00Z" }));
+      return Promise.resolve(riotReply);
+    },
+  },
   auth: {
     signInWithPassword: (a) => { auth.push(["signIn", a.password]); return Promise.resolve(a.password === "right-password" ? { data: {}, error: null } : { data: null, error: { message: "Invalid login credentials" } }); },
     updateUser: (a) => { auth.push(["update", Object.keys(a)[0]]); return Promise.resolve({ data: {}, error: null }); },
@@ -67,6 +82,7 @@ beforeAll(async () => {
   ctx.initContext(client, "u1");
   nav.initNavigation({ "page-player": () => player.loadPlayer(nav.currentRouteArg()) });
   profile.initProfile();
+  profile.initGameAccounts();
   settingsMod.initSettings();
   security.initSecurity();
   player.initPlayer();
@@ -115,6 +131,94 @@ describe("profile", () => {
   });
 });
 
+describe("Riot ID", () => {
+  const link = async (value) => {
+    $("game-account-handle").value = value;
+    $("game-account-form").dispatchEvent(new Event("submit", { cancelable: true }));
+    await tick();
+    await tick();
+  };
+
+  it("checks the Name#TAG shape before calling the server", async () => {
+    await link("Faker");
+    expect(last("rib_game_account_set")).toBeUndefined();
+    expect($("game-account-msg").textContent).toBe("Add your tagline after a #, like Name#TAG.");
+    expect($("game-account-handle").getAttribute("aria-invalid")).toBe("true");
+  });
+
+  it("links it, confirms it with Riot and shows the Verified badge", async () => {
+    riotReply = { data: { verified: true, game_name: "Faker", tag_line: "KR1" }, error: null };
+    await link(" Faker#KR1 ");
+    expect(last("rib_game_account_set")[1]).toEqual({ p_network: "riot", p_handle: "Faker#KR1" });
+    expect(invoked.pop()).toEqual(["riot-account", { game_name: "Faker", tag_line: "KR1" }]);
+    expect($("game-account-msg").textContent).toBe("Riot ID linked and verified with Riot.");
+    expect($("game-accounts").textContent).toContain("Faker#KR1");
+    expect($("game-accounts").querySelector(".tag--good").textContent).toBe("Verified");
+    expect($("game-account-save").textContent).toBe("Change Riot ID");
+  });
+
+  it("keeps it linked without a badge, and without alarm, when Riot can't be asked", async () => {
+    riotReply = { data: { verified: false, reason: "unavailable" }, error: null };
+    await link("Caps#EUW");
+    expect($("game-account-msg").textContent).toBe("Riot ID linked.");
+    expect($("game-account-msg").className).toContain("msg--ok");
+    expect($("game-accounts").querySelector(".tag--good")).toBeNull();
+    riotReply = { data: null, error: { message: "503", context: { json: () => Promise.resolve({ error: "riot_unavailable" }) } } };
+    await link("Caps#EUW");
+    expect($("game-account-msg").textContent).toBe("Riot ID linked.");
+  });
+
+  it("asks to check the name and tag when Riot doesn't know it", async () => {
+    riotReply = { data: { verified: false, reason: "not_found" }, error: null };
+    await link("Nobody#000");
+    expect($("game-account-msg").textContent).toContain("Riot doesn't know Nobody#000. Check the name and the tag.");
+  });
+
+  it("takes the player back to the tier they were joining", async () => {
+    riotReply = { data: { verified: false, reason: "unavailable" }, error: null };
+    profile.prepareLink("link/riot/q/1000/4");
+    await link("Faker#KR1");
+    const toasts = document.querySelectorAll(".rib-toast");
+    const act = toasts[toasts.length - 1].querySelector(".rib-toast__act");
+    expect(act.textContent).toBe("Join now");
+    act.click();
+    expect(location.hash).toMatch(/^#page-compete\//);
+    expect(nav.currentRouteArg()).toBe("q/1000/4");
+  });
+
+  it("locks the Riot ID while a tournament or a room uses it", async () => {
+    await profile.loadGameAccounts();
+    document.dispatchEvent(new CustomEvent("rib:mine", { detail: [{ id: "t1", status: "active" }] }));
+    expect($("game-account-handle").disabled).toBe(true);
+    expect($("game-account-save").disabled).toBe(true);
+    expect($("game-accounts").querySelector("[data-unlink]").disabled).toBe(true);
+    expect($("game-account-hint").textContent).toBe("You can change your Riot ID after your current tournament.");
+    document.dispatchEvent(new CustomEvent("rib:mine", { detail: [{ id: "t1", status: "finished" }] }));
+    expect($("game-account-handle").disabled).toBe(false);
+    expect($("game-account-hint").textContent).toContain("Name (3–16 characters)");
+    document.dispatchEvent(new CustomEvent("rib:live", { detail: [{ id: "r1", status: "live" }] }));
+    expect($("game-account-handle").disabled).toBe(true);
+    document.dispatchEvent(new CustomEvent("rib:live", { detail: [] }));
+    expect($("game-account-handle").disabled).toBe(false);
+  });
+
+  it("shows the server's lock when the console couldn't tell", async () => {
+    const set = replies.rib_game_account_set;
+    replies.rib_game_account_set = () => ({ data: null, error: { message: "locked", hint: "riot_id_locked" } });
+    await link("Other#EUW");
+    expect($("game-account-msg").textContent).toBe("You can change your Riot ID after your current tournament.");
+    replies.rib_game_account_set = set;
+  });
+
+  it("offers no way back for a link route that doesn't lead to Play", async () => {
+    const before = document.querySelectorAll(".rib-toast__act").length;
+    profile.prepareLink("link/riot/page-wallet");
+    expect(document.activeElement.id).toBe("game-account-handle");
+    await link("Faker#KR1");
+    expect(document.querySelectorAll(".rib-toast__act").length).toBe(before);
+  });
+});
+
 describe("settings", () => {
   it("renders switches and this month's spend against the limit", async () => {
     await settingsMod.loadSettings();
@@ -159,7 +263,7 @@ describe("settings", () => {
     await tick();
     expect(last("rib_settings_update")[1]).toEqual({ p_patch: { cooloff_days: 30 } });
     expect($("cooloff-on").hidden).toBe(false);
-    expect($("cooloff-text").textContent).toContain("Free games and friendlies stay open.");
+    expect($("cooloff-text").textContent).toContain("Free tournaments stay open.");
     confirm.mockRestore();
   });
 });

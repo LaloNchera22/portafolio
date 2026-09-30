@@ -1,6 +1,6 @@
 /* ============================================================================
- * Runinback — console profile: identity (photo, handle, bio, country), linked
- * game accounts and account closure. Writes go through RPCs (migration 0024):
+ * Runinback — console profile: identity (photo, handle, bio, country), the
+ * linked Riot ID and account closure. Writes go through RPCs (migration 0024):
  * the database enforces the username rules, so the form only pre-checks.
  * The Settings and Security sections live in settings.js and security.js.
  * ========================================================================== */
@@ -11,14 +11,13 @@ import { sortedCountries } from "../lib/countries.js";
 import { byId as $, escapeHtml as esc, showMessage } from "../lib/dom.js";
 import { functionError, toast } from "../lib/errors.js";
 import { formatDate } from "../lib/format.js";
+import { RIOT_NETWORK, parseRiotId, playReturn } from "../lib/wild-rift.js";
 import { confirmAction } from "./confirm.js";
 import { errorText, rememberUsername, session } from "./context.js";
 import { goToPage } from "./navigation.js";
-import { NETWORKS, networkLabel } from "./networks.js";
 import { forgetPlayer } from "./player.js";
 
 export const USERNAME_PATTERN = /^[a-zA-Z0-9_]{3,24}$/;
-const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const SECTIONS = ["profile", "settings", "security"];
 
 const state = {
@@ -321,20 +320,25 @@ export function initAccountClosure() {
   });
 }
 
-/* ---- game accounts ---------------------------------------------------------
- * The names a player uses on each network (Riot ID, gamertag, ...). A room
- * shows them to the opponent, and a tournament or friendly can require one.
+/* ---- Riot ID ----------------------------------------------------------------
+ * The one game account that matters: the Riot ID a player uses in Wild Rift.
+ * The room shows it to the opponent (who invites it to the custom game) and
+ * every tournament requires it. Linking saves it (rib_game_account_set), then
+ * asks Riot whether it exists (riot-account); a confirmed one gets a badge.
  * -------------------------------------------------------------------------- */
-let onAccountsChanged = function () {};
-
-/** Called after a link or unlink (the Compete forms refresh their selects). */
-export function setGameAccountsListener(fn) {
-  onAccountsChanged = typeof fn === "function" ? fn : function () {};
-}
 
 // Last successful read. Linking and unlinking happen on this page and
-// re-read, so Compete can reuse it instead of fetching on every visit.
+// re-read, so Play can reuse it instead of fetching on every visit.
 let accountsRead = null;
+
+function accountsHtml(rows) {
+  const riot = rows.find(function (a) { return a.network === RIOT_NETWORK; });
+  if (!riot) return '<p class="muted">No Riot ID linked yet.</p>';
+  return '<div class="panel"><div class="row row--proj"><div><div class="row__name">' + esc(riot.handle) +
+    (riot.verified_at ? ' <span class="tag tag--good" title="Confirmed with Riot on ' + esc(formatDate(riot.verified_at)) + '">Verified</span>' : "") +
+    '</div><div class="row__meta">Riot ID · Wild Rift</div></div><div class="row__end"><button type="button" class="btn btn--sm" data-unlink="' +
+    RIOT_NETWORK + '" aria-label="Remove Riot ID ' + esc(riot.handle) + '">Remove</button></div></div></div>';
+}
 
 /**
  * Resolves to the linked accounts, or null when they couldn't be read.
@@ -345,18 +349,15 @@ export function loadGameAccounts(opts) {
   if (!box) return Promise.resolve(null);
   if (opts && opts.cached && accountsRead) return accountsRead;
   box.setAttribute("aria-busy", "true");
-  const read = session.client.from("game_accounts").select("network, handle").order("network")
+  const read = Promise.resolve(session.client.from("game_accounts").select("network, handle, verified_at").order("network"))
     .then(function (r) {
-      if (r.error) { box.innerHTML = '<p class="muted">Couldn\'t load your game accounts. Refresh to try again.</p>'; return null; }
+      if (r.error) { box.innerHTML = '<p class="muted">Couldn\'t load your Riot ID. Refresh to try again.</p>'; return null; }
       const rows = r.data || [];
-      box.innerHTML = rows.length
-        ? '<div class="panel">' + rows.map(function (a) {
-            const label = networkLabel(a.network);
-            return '<div class="row row--proj"><div><div class="row__name">' + esc(a.handle) + '</div><div class="row__meta">' +
-              esc(label) + '</div></div><div class="row__end"><button type="button" class="btn btn--sm" data-unlink="' +
-              esc(a.network) + '" aria-label="Remove ' + esc(label + " " + a.handle) + '">Remove</button></div></div>';
-          }).join("") + "</div>"
-        : '<p class="muted">No game accounts linked yet.</p>';
+      box.innerHTML = accountsHtml(rows);
+      const save = $("game-account-save");
+      if (save) save.textContent = rows.some(function (a) { return a.network === RIOT_NETWORK; }) ? "Change Riot ID" : "Link Riot ID";
+      if (rows.some(function (a) { return a.network === RIOT_NETWORK; })) checkLock();
+      else applyLock();
       return rows;
     })
     .catch(function () {
@@ -372,16 +373,61 @@ export function loadGameAccounts(opts) {
   return pending;
 }
 
+/* A Riot ID can't change while it's in play: an open or active tournament
+ * entry, or a live room (the server says riot_id_locked). Play and the live
+ * watcher share what they read; the profile reads it itself only when that
+ * is missing or stale. */
+const LOCK_FRESH_MS = 15000;
+const LOCK_TEXT = "You can change your Riot ID after your current tournament.";
+const lock = { tournaments: null, at: 0, rooms: [], reading: null };
+document.addEventListener("rib:mine", function (e) { lock.tournaments = e.detail || []; lock.at = Date.now(); applyLock(); });
+document.addEventListener("rib:live", function (e) { lock.rooms = e.detail || []; applyLock(); });
+
+function riotLocked() {
+  const entry = (lock.tournaments || []).some(function (t) { return t.status === "open" || t.status === "active"; });
+  const room = lock.rooms.some(function (m) { return m.status === "ready_check" || m.status === "live" || m.status === "disputed"; });
+  return entry || room;
+}
+
+function applyLock() {
+  const input = $("game-account-handle");
+  if (!input) return;
+  const linked = !!document.querySelector('#game-accounts [data-unlink]');
+  const locked = linked && riotLocked();
+  input.disabled = locked;
+  $("game-account-save").disabled = locked;
+  document.querySelectorAll("#game-accounts [data-unlink]").forEach(function (b) { b.disabled = locked; });
+  const hint = $("game-account-hint");
+  if (hint) {
+    if (!hint.dataset.base) hint.dataset.base = hint.textContent;
+    hint.textContent = locked ? LOCK_TEXT : hint.dataset.base;
+  }
+}
+
+function checkLock() {
+  if (lock.tournaments && Date.now() - lock.at < LOCK_FRESH_MS) { applyLock(); return Promise.resolve(); }
+  if (!lock.reading) {
+    lock.reading = Promise.resolve(session.client.rpc("rib_my_tournaments", { p_limit: 30 })).then(function (r) {
+      if (r && !r.error && Array.isArray(r.data)) { lock.tournaments = r.data; lock.at = Date.now(); }
+    }).catch(function () { /* unknown: the server still enforces it */ }).finally(function () { lock.reading = null; });
+  }
+  return lock.reading.then(applyLock);
+}
+
 function unlink(button) {
-  const network = button.getAttribute("data-unlink");
   const msg = $("game-account-msg");
   button.disabled = true;
-  session.client.rpc("rib_game_account_remove", { p_network: network })
+  session.client.rpc("rib_game_account_remove", { p_network: RIOT_NETWORK })
     .then(function (res) {
-      if (res.error) { button.disabled = false; showMessage(msg, errorText(res.error, "Couldn't remove it."), false); return; }
-      showMessage(msg, networkLabel(network) + " removed.", true);
-      return loadGameAccounts().then(function (rows) {
-        onAccountsChanged(rows);
+      if (res.error) {
+        button.disabled = false;
+        const locked = res.error.hint === "riot_id_locked";
+        showMessage(msg, locked ? LOCK_TEXT : errorText(res.error, "Couldn't remove it."), false);
+        if (locked) { lock.at = 0; checkLock(); }
+        return;
+      }
+      showMessage(msg, "Riot ID removed.", true);
+      return loadGameAccounts().then(function () {
         // The button is gone: keep keyboard focus in the section.
         const title = $("game-accounts-title");
         if (title) title.focus();
@@ -390,36 +436,45 @@ function unlink(button) {
     .catch(function () { button.disabled = false; showMessage(msg, "Network error. Try again.", false); });
 }
 
-// Came from "Link X to join": after linking, offer the way back.
+// Came from "Link your Riot ID to join": after linking, offer the way back.
 let returnTo = null;
 document.addEventListener("rib:page", function (e) { if (e.detail !== "page-profile") returnTo = null; });
 
-/** Preselect a network to link (route arg "link/<network>/<tournament id>"). */
+/** Focus the Riot ID field (route arg "link/riot[/<way back to Play>]"). */
 export function prepareLink(arg) {
   const parts = String(arg || "").split("/");
-  if (parts[0] !== "link" || !parts[1]) return;
-  if (!NETWORKS.some(function (n) { return n.id === parts[1]; })) return;
-  const select = $("game-account-network");
-  if (!select) return;
-  select.value = parts[1];
-  select.dispatchEvent(new Event("change"));
-  returnTo = parts[2] && UUID_PATTERN.test(parts[2]) ? parts[2] : null;
+  if (parts[0] !== "link" || parts[1] !== RIOT_NETWORK) return;
+  returnTo = playReturn(parts.slice(2).join("/"));
   const sec = $("game-accounts-sec");
   if (sec && sec.scrollIntoView) sec.scrollIntoView({ block: "start" });
-  $("game-account-handle").focus({ preventScroll: true });
+  const input = $("game-account-handle");
+  if (input) input.focus({ preventScroll: true });
+}
+
+// Ask Riot whether the ID exists. Only a clear "not found" is worth a word:
+// an unavailable check leaves it linked, unverified, without alarming anyone.
+function verifyRiotId(id) {
+  if (!session.client.functions) return Promise.resolve(null);
+  return session.client.functions.invoke("riot-account", { body: { game_name: id.gameName, tag_line: id.tagLine } })
+    .then(function (r) {
+      if (r.error) {
+        return functionError(r.error).then(function (err) {
+          return err.hint === "riot_account_taken" || err.hint === "invalid_game_name" || err.hint === "invalid_tag_line" ? err : null;
+        }).catch(function () { return null; });
+      }
+      return r.data || null;
+    })
+    .catch(function () { return null; });
+}
+
+function goBack(target) {
+  const label = target === "new" ? "Back to your tournament" : target.indexOf("q/") === 0 ? "Join now" : "Back to the tournament";
+  toast("Riot ID linked. You can join now.", "ok", { label: label, onClick: function () { goToPage("page-compete", { arg: target }); } });
 }
 
 export function initGameAccounts() {
   const form = $("game-account-form");
   if (!form) return;
-  const select = $("game-account-network");
-  select.innerHTML = NETWORKS.map(function (n) { return '<option value="' + n.id + '">' + esc(n.label) + "</option>"; }).join("");
-  const syncHint = function () {
-    const n = NETWORKS.find(function (x) { return x.id === select.value; });
-    $("game-account-handle").placeholder = n ? n.hint : "";
-  };
-  select.addEventListener("change", syncHint);
-  syncHint();
   $("game-accounts").addEventListener("click", function (e) {
     const b = e.target.closest("[data-unlink]");
     if (b && !b.disabled) unlink(b);
@@ -429,27 +484,38 @@ export function initGameAccounts() {
     e.preventDefault();
     if (saving) return;
     const msg = $("game-account-msg");
-    const handle = ($("game-account-handle").value || "").trim();
-    if (handle.length < 2) { showMessage(msg, "Enter the name you use in the game.", false); $("game-account-handle").focus(); return; }
-    const network = select.value; // captured now: the select may change while this runs
-    const label = networkLabel(network);
+    const input = $("game-account-handle");
+    const id = parseRiotId(input.value);
+    if (id.error) { input.setAttribute("aria-invalid", "true"); showMessage(msg, id.error, false); input.focus(); return; }
+    input.removeAttribute("aria-invalid");
     const btn = $("game-account-save");
+    const label = btn.textContent;
     saving = true;
     btn.disabled = true;
-    session.client.rpc("rib_game_account_set", { p_network: network, p_handle: handle })
+    btn.textContent = "Linking…";
+    session.client.rpc("rib_game_account_set", { p_network: RIOT_NETWORK, p_handle: id.gameName + "#" + id.tagLine })
       .then(function (r) {
-        if (r.error) { showMessage(msg, errorText(r.error, "Couldn't link the account."), false); return; }
-        $("game-account-handle").value = "";
-        showMessage(msg, label + " linked.", true);
-        loadGameAccounts().then(onAccountsChanged);
-        if (returnTo) {
-          const id = returnTo;
-          returnTo = null;
-          toast(label + " linked. You can join now.", "ok",
-            { label: "Back to the tournament", onClick: function () { goToPage("page-compete", { arg: "t/" + id }); } });
+        if (r.error) {
+          const locked = r.error.hint === "riot_id_locked";
+          showMessage(msg, locked ? LOCK_TEXT : errorText(r.error, "Couldn't link your Riot ID."), false);
+          if (locked) { lock.at = 0; checkLock(); }
+          return;
         }
+        input.value = "";
+        return verifyRiotId(id).then(function (check) {
+          if (check && check.hint) showMessage(msg, errorText(check, "Riot didn't accept that Riot ID. Check the name and the tag."), false);
+          else if (check && check.verified) showMessage(msg, "Riot ID linked and verified with Riot.", true);
+          else if (check && check.reason === "not_found") showMessage(msg, "Linked, but Riot doesn't know " + id.gameName + "#" + id.tagLine + ". Check the name and the tag.", false);
+          else showMessage(msg, "Riot ID linked.", true);
+          return loadGameAccounts();
+        }).then(function () {
+          if (!returnTo) return;
+          const target = returnTo;
+          returnTo = null;
+          goBack(target);
+        });
       })
       .catch(function () { showMessage(msg, "Network error. Try again.", false); })
-      .finally(function () { saving = false; btn.disabled = false; });
+      .finally(function () { saving = false; btn.disabled = false; if (btn.textContent === "Linking…") btn.textContent = label; applyLock(); });
   });
 }

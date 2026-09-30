@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 // Console flows against the real console.html markup with a fake Supabase
-// client: challenge lobby, custom stake composer, posting and accepting a
-// challenge, and the ranking page.
+// client: Quick Play (tiers, one-tap join, waiting card, straight into the
+// room), custom Wild Rift tournaments, brackets, and the ranking page.
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { beforeAll, describe, expect, it, vi } from "vitest";
@@ -12,39 +12,36 @@ const tick = () => new Promise((r) => setTimeout(r, 10));
 const calls = [];
 const tables = {
   wallets: [{ test_balance_cents: 2000, test_locked_cents: 0 }],
-  challenges: [{
-    id: "c9", creator_id: "u1", opponent_id: "u2", target_id: null, game: "CS2", mode: "1v1",
-    stake_cents: 0, status: "active", room_id: "r9", matched_at: "2026-01-01T00:00:00Z", created_at: "2026-01-01T00:00:00Z",
-  }],
   profiles: [{ id: "u2", username: "rival" }],
-  game_accounts: [{ network: "riot", handle: "Me#NA1" }],
+  game_accounts: [{ network: "riot", handle: "Me#NA1", verified_at: "2026-09-01T00:00:00Z" }],
 };
+const activeT3 = { id: "t3", name: "Monday Cup", game: "Wild Rift", network: "riot", entry_fee_cents: 500, size: 4, status: "active", entrants: 4, placement: null, winner_username: null, prize_pool_cents: 1800, created_at: new Date().toISOString() };
+let myTournaments = [activeT3];
 const rpcData = {
-  rib_open_challenges: [
-    { id: "a1", game: "Valorant", mode: "1v1", stake_cents: 0, created_at: new Date(Date.now() - 300000).toISOString(), creator_id: "u3", creator_username: "neo", network: "riot" },
-    { id: "a2", game: "FIFA", mode: "bo3", stake_cents: 0, created_at: new Date(Date.now() - 7200000).toISOString(), creator_id: "u4", creator_username: "trinity", network: null },
+  rib_quick_tiers: () => [
+    { entry_fee_cents: 1000, size: 4, waiting: 3, open_events: 1 },
+    { entry_fee_cents: 0, size: 8, waiting: 0, open_events: 0 },
   ],
-  rib_open_tournaments: [
-    { id: "t1", name: "Friday Cup", game: "Valorant", network: "riot", entry_fee_cents: 1000, size: 4, entrants: 3, created_at: new Date().toISOString(), creator_username: "neo", joined: false },
-    { id: "t2", name: "Free Cup", game: "Chess", network: null, entry_fee_cents: 0, size: 8, entrants: 2, created_at: new Date().toISOString(), creator_username: "me", joined: true },
+  rib_quick_join: () => ({ id: "t9", name: "Wild Rift 4 · 10 rcoin", status: "open", tier_key: "1000:4", entry_fee_cents: 1000, max_players: 4 }),
+  rib_open_tournaments: () => [
+    { id: "t1", name: "Friday Cup", game: "Wild Rift", network: "riot", entry_fee_cents: 1000, size: 4, entrants: 3, created_at: new Date().toISOString(), creator_username: "neo", joined: false },
+    { id: "t2", name: "Free Cup", game: "Wild Rift", network: "riot", entry_fee_cents: 0, size: 8, entrants: 2, created_at: new Date().toISOString(), creator_username: "me", joined: true },
   ],
-  rib_my_tournaments: [
-    { id: "t3", name: "Monday Cup", game: "CS2", network: null, entry_fee_cents: 500, size: 4, status: "active", entrants: 4, placement: null, winner_username: null, prize_pool_cents: 1800, created_at: new Date().toISOString() },
-  ],
-  rib_tournament_bracket: [
+  rib_my_tournaments: () => myTournaments,
+  rib_tournament_bracket: () => [
     { room_id: "r1", round: 1, slot: 0, player_a: "u1", player_b: "u2", a_username: "me", b_username: "rival", status: "ready_check", winner_id: null, walkover: false },
     { room_id: "r2", round: 1, slot: 1, player_a: "u3", player_b: "u4", a_username: "neo", b_username: "trinity", status: "done", winner_id: "u3", walkover: false },
     { room_id: "r3", round: 2, slot: 0, player_a: null, player_b: "u3", a_username: null, b_username: "neo", status: "waiting", winner_id: null, walkover: false },
   ],
-  rib_my_rooms: [
-    { id: "r1", kind: "tournament", game: "CS2", status: "ready_check", round: 1, tournament_id: "t3", tournament_name: "Monday Cup", opponent_username: "rival", ready_deadline: new Date(Date.now() + 600000).toISOString(), confirm_deadline: null },
+  rib_my_rooms: () => [
+    { id: "r1", kind: "tournament", game: "Wild Rift", status: "ready_check", round: 1, tournament_id: "t3", tournament_name: "Monday Cup", opponent_username: "rival", ready_deadline: new Date(Date.now() + 600000).toISOString(), confirm_deadline: null },
   ],
-  rib_leaderboard: [
+  rib_leaderboard: () => [
     { rank: 1, user_id: "u3", username: "neo", net_cents: 12000, won_cents: 20000, wins: 7, losses: 2 },
     { rank: 2, user_id: "u1", username: "me", net_cents: 900, won_cents: 3000, wins: 3, losses: 3 },
     { rank: 4, user_id: "u5", username: "smith", net_cents: -400, won_cents: 0, wins: 0, losses: 2 },
   ],
-  rib_my_standing: [{ rank: 2, net_cents: 900, won_cents: 3000, wins: 3, losses: 3 }],
+  rib_my_standing: () => [{ rank: 2, net_cents: 900, won_cents: 3000, wins: 3, losses: 3 }],
 };
 
 // Chainable PostgREST-like query builder resolving to canned rows.
@@ -64,45 +61,132 @@ function query(table) {
 }
 const client = {
   from: (table) => query(table),
-  rpc: (name, args) => { calls.push([name, args]); return Promise.resolve({ data: rpcData[name] ?? {}, error: null }); },
+  rpc: (name, args) => { calls.push([name, args]); return Promise.resolve({ data: rpcData[name] ? rpcData[name]() : {}, error: null }); },
   functions: { invoke: () => Promise.resolve({ data: null, error: null }) },
 };
 
 const $ = (id) => document.getElementById(id);
 const lastCall = (name) => calls.filter((c) => c[0] === name).pop();
+const count = (name) => calls.filter((c) => c[0] === name).length;
 
+let tournaments, nav;
 beforeAll(async () => {
   document.documentElement.innerHTML = HTML.replace(/^[\s\S]*?<html[^>]*>/i, "").replace(/<\/html>\s*$/i, "");
   window.scrollTo = () => {};
   vi.spyOn(window, "confirm").mockReturnValue(true);
   const ctx = await import("../../src/scripts/console/context.js");
-  const nav = await import("../../src/scripts/console/navigation.js");
-  const tournaments = await import("../../src/scripts/console/tournaments.js");
+  nav = await import("../../src/scripts/console/navigation.js");
+  tournaments = await import("../../src/scripts/console/tournaments.js");
+  const profile = await import("../../src/scripts/console/profile.js");
   const ranking = await import("../../src/scripts/console/leaderboard.js");
   const wallet = await import("../../src/scripts/console/wallet.js");
+  const live = await import("../../src/scripts/console/live.js");
   ctx.initContext(client, "u1");
   nav.initNavigation({});
   nav.initAmountChips(() => {});
+  profile.initGameAccounts();
   tournaments.initTournaments();
   ranking.initRanking();
   await wallet.refreshWallet();
-  tournaments.loadTournaments();
+  await tournaments.loadTournaments();
+  await live.refreshLive();
   ranking.loadRanking();
   ranking.loadProfileRecord();
   await tick();
 });
 
+describe("Quick Play", () => {
+  it("shows every tier (fee × size) with the prize and live waiting counts", () => {
+    const tiers = $("play-tiers").querySelectorAll("[data-tier]");
+    expect(tiers).toHaveLength(12);
+    const ten = $("play-tiers").querySelector('[data-tier="1000:4"]');
+    expect(ten.textContent).toContain("10 rcoin");
+    expect(ten.textContent).toContain("4 players");
+    expect(ten.textContent).toContain("Champion 25.2 rcoin");
+    expect(ten.textContent).toContain("3 waiting");
+    expect(ten.getAttribute("aria-label")).toBe("10 rcoin entry, 4 players, champion wins 25.2 rcoin, 3 waiting");
+    const free = $("play-tiers").querySelector('[data-tier="0:8"]');
+    expect(free.textContent).toContain("Free");
+    expect(free.textContent).toContain("Start one");
+    expect($("play-status").textContent).toBe("3 players waiting");
+  });
 
-describe("tournaments", () => {
-  it("lists tournaments waiting for players with fill and prizes", () => {
+  it("reuses fresh counts instead of refetching on every visit", async () => {
+    const before = count("rib_quick_tiers");
+    await tournaments.loadTournaments();
+    expect(count("rib_quick_tiers")).toBe(before);
+    expect(count("rib_my_tournaments")).toBe(1);
+  });
+
+  it("has no game or network field anywhere: Wild Rift and Riot ID are fixed", () => {
+    expect($("tournament-game")).toBeNull();
+    expect($("tournament-network")).toBeNull();
+    expect($("challenge-form")).toBeNull();
+    expect($("page-games")).toBeNull();
+  });
+
+  it("joins a tier in one tap after confirming the entry fee, then shows the waiting card", async () => {
+    window.confirm.mockClear();
+    myTournaments = [{ id: "t9", name: "Wild Rift 4 · 10 rcoin", game: "Wild Rift", network: "riot", entry_fee_cents: 1000, size: 4, tier_key: "1000:4", status: "open", entrants: 2, created_at: new Date().toISOString() }, activeT3];
+    $("play-tiers").querySelector('[data-tier="1000:4"]').click();
+    await tick();
+    await tick();
+    expect(window.confirm).toHaveBeenCalledOnce();
+    expect(lastCall("rib_quick_join")[1]).toEqual({ p_entry_fee_cents: 1000, p_size: 4 });
+    const waiting = $("play-waiting");
+    expect(waiting.textContent).toContain("Wild Rift 4 · 10 rcoin");
+    expect(waiting.textContent).toContain("2/4 players · 2 to go");
+    expect(waiting.querySelector(".seats").getAttribute("aria-label")).toBe("2 of 4 seats taken");
+    expect(waiting.querySelector('[data-leave="t9"]')).not.toBeNull();
+    expect(waiting.querySelector('[data-invite="t9"]')).not.toBeNull();
+    // The tier knows I'm in (by its Quick Play name, even without tier_key).
+    expect($("play-tiers").querySelector('[data-tier="1000:4"]').textContent).toContain("You're in");
+  });
+
+  it("doesn't send a second join for a tier I'm already waiting in", async () => {
+    const before = count("rib_quick_join");
+    $("play-tiers").querySelector('[data-tier="1000:4"]').click();
+    await tick();
+    expect(count("rib_quick_join")).toBe(before);
+  });
+
+  it("goes straight into the first room when the event fills", async () => {
+    document.dispatchEvent(new CustomEvent("rib:live", { detail: [{ id: "r5", tournament_id: "t9", status: "ready_check", round: 1 }] }));
+    expect(nav.currentRouteArg()).toBe("r5");
+    expect($("page-room").hidden).toBe(false);
+    expect($("play-waiting").textContent).toBe("");
+    nav.goToPage("page-compete");
+  });
+
+  it("leaves from the waiting card for a refund", async () => {
+    myTournaments = [{ id: "t8", name: "Wild Rift 8 · Free", game: "Wild Rift", network: "riot", entry_fee_cents: 0, size: 8, tier_key: "0:8", status: "open", entrants: 3, created_at: new Date().toISOString() }];
+    // A visit after the cached list went stale reads it again.
+    const later = Date.now() + 20000;
+    const now = vi.spyOn(Date, "now").mockReturnValue(later);
+    await tournaments.loadTournaments();
+    now.mockRestore();
+    await tick();
+    $("play-waiting").querySelector('[data-leave="t8"]').click();
+    await tick();
+    expect(lastCall("rib_tournament_leave")[1]).toEqual({ p_tournament_id: "t8" });
+    myTournaments = [activeT3];
+    await tick();
+  });
+});
+
+describe("custom tournaments", () => {
+  it("lists open ones with fill and prizes on the Custom tab", async () => {
+    document.querySelector('#compete-seg [data-seg="custom"]').click();
+    await tick();
     const list = $("tournament-list");
+    expect($("compete-custom").hidden).toBe(false);
     expect(list.querySelectorAll(".tcard")).toHaveLength(2);
     expect(list.textContent).toContain("3/4 players · 1 seat left");
-    expect(list.textContent).toContain("Riot ID required");
     expect(list.textContent).toContain("Champion 25.2 rcoin · runner-up 10.8 rcoin");
     expect(list.querySelector(".seats").getAttribute("aria-label")).toBe("3 of 4 seats taken");
     expect(list.querySelectorAll('[data-tid="t1"] .seat.is-taken')).toHaveLength(3);
     expect(list.querySelector('[data-leave="t2"]')).not.toBeNull();
+    expect(lastCall("rib_open_tournaments")[1]).toMatchObject({ p_game: null });
   });
 
   it("joins through the tournament RPC", async () => {
@@ -118,15 +202,28 @@ describe("tournaments", () => {
     expect($("tournament-prize").textContent).toContain("Pool80 rcoin");
   });
 
-  it("creates a sit & go with the chosen size and fee", async () => {
+  it("creates a Wild Rift bracket with the chosen size and fee", async () => {
     $("tournament-new").click();
+    expect($("tournament-form").hidden).toBe(false);
     $("tournament-name").value = "Cup";
-    $("tournament-game").value = "Wild Rift";
     $("tournament-form").dispatchEvent(new Event("submit", { cancelable: true }));
     await tick();
-    expect(lastCall("rib_tournament_create")[1]).toMatchObject({ p_name: "Cup", p_game: "Wild Rift", p_entry_fee_cents: 1000, p_size: 8 });
+    await tick();
+    expect(lastCall("rib_tournament_create")[1]).toEqual({ p_name: "Cup", p_game: "Wild Rift", p_network: "riot", p_entry_fee_cents: 1000, p_size: 8 });
+    expect($("tournament-form").hidden).toBe(true);
   });
 
+  it("asks for a name before calling the server", () => {
+    const before = count("rib_tournament_create");
+    $("tournament-new").click();
+    $("tournament-name").value = "  ";
+    $("tournament-form").dispatchEvent(new Event("submit", { cancelable: true }));
+    expect(count("rib_tournament_create")).toBe(before);
+    expect($("tournament-msg").textContent).toBe("Give the tournament a name.");
+  });
+});
+
+describe("my tournaments", () => {
   it("shows the match waiting for me", () => {
     expect($("live-rooms").hidden).toBe(false);
     expect($("live-rooms").textContent).toContain("Monday Cup");
@@ -134,6 +231,8 @@ describe("tournaments", () => {
   });
 
   it("draws my bracket by round with an Open room button on my live match", async () => {
+    document.querySelector('#compete-seg [data-seg="mine"]').click();
+    await tick();
     $("tournament-mine").querySelector('[data-bracket="t3"]').click();
     await tick();
     const bracket = $("bracket-t3");

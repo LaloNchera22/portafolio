@@ -65,7 +65,7 @@ function render(s) {
   $("cooloff-off").hidden = active;
   $("cooloff-on").hidden = !active;
   if (active) {
-    $("cooloff-text").textContent = "Paid tournaments are paused until " + when(s.cooloff_until) + ". Free games and friendlies stay open.";
+    $("cooloff-text").textContent = "Paid tournaments are paused until " + when(s.cooloff_until) + ". Free tournaments stay open.";
     $("cooloff-end").hidden = !!s.pending_cooloff_end_at;
     $("cooloff-pending").hidden = !s.pending_cooloff_end_at;
     if (s.pending_cooloff_end_at) $("cooloff-pending-text").textContent = "Your cool-off ends early on " + when(s.pending_cooloff_end_at) + ".";

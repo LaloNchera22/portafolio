@@ -8,12 +8,20 @@ const USER = { id: "00000000-0000-0000-0000-0000000000e2", email: "e2e@example.t
 
 export const data = {
   wallet: { test_balance_cents: 12000, test_locked_cents: 0 },
-  lobby: [
-    { id: "c-1", game: "Valorant", mode: "1v1", stake_cents: 0, created_at: new Date().toISOString(), creator_id: "u-2", creator_username: "neo", network: null },
-  ],
   tournaments: [
-    { id: "t-1", name: "Friday Cup", game: "Valorant", network: null, entry_fee_cents: 1000, size: 4, entrants: 3, created_at: new Date().toISOString(), creator_username: "neo", joined: false },
+    { id: "t-1", name: "Friday Cup", game: "Wild Rift", network: "riot", entry_fee_cents: 1000, size: 4, entrants: 3, created_at: new Date().toISOString(), creator_username: "neo", joined: false },
   ],
+  quickTiers: [
+    { entry_fee_cents: 1000, size: 4, waiting: 3, open_events: 1 },
+    { entry_fee_cents: 0, size: 8, waiting: 5, open_events: 1 },
+  ],
+  quickJoin: { id: "t-9", name: "Wild Rift 4 · 10 rcoin", game: "Wild Rift", network: "riot", entry_fee_cents: 1000, max_players: 4, status: "open", tier_key: "1000:4" },
+  // What rib_my_tournaments returns once the player joined Quick Play.
+  quickWaiting: { id: "t-9", name: "Wild Rift 4 · 10 rcoin", game: "Wild Rift", network: "riot", entry_fee_cents: 1000, size: 4, status: "open", entrants: 2, tier_key: "1000:4", created_at: new Date().toISOString() },
+  // Edge Functions: the end-screen check fast-tracks, never settles; Riot can't be asked in tests.
+  verifyResult: { status: "verified", settled: false, fast_tracked: true },
+  riotAccount: { verified: false, reason: "unavailable" },
+  gameAccounts: [{ network: "riot", handle: "E2E#NA1", verified_at: "2026-09-01T00:00:00Z" }],
   profile: { username: "e2e_player", display_name: null, bio: null, country: null, avatar_version: 0, created_at: "2026-09-01T00:00:00Z", username_next_change_at: null },
   settings: {
     match_toasts: true, product_emails: false, show_on_leaderboard: true, show_game_accounts: false, monthly_cap_cents: null,
@@ -37,6 +45,7 @@ export const test = base.extend({
   // Every request to the fake project URL is answered here; calls are recorded.
   api: [async ({ page }, use) => {
     const calls = [];
+    let queued = false;
     await page.route(SUPABASE + "/**", async (route) => {
       const request = route.request();
       const url = new URL(request.url());
@@ -52,9 +61,11 @@ export const test = base.extend({
       if (path === "/auth/v1/logout") return route.fulfill({ status: 204 });
       if (path.startsWith("/rest/v1/rpc/")) {
         const fn = path.slice("/rest/v1/rpc/".length);
-        if (fn === "rib_open_challenges") return json(route, data.lobby);
         if (fn === "rib_open_tournaments") return json(route, data.tournaments);
-        if (fn === "rib_my_tournaments" || fn === "rib_my_rooms") return json(route, []);
+        if (fn === "rib_quick_tiers") return json(route, data.quickTiers);
+        if (fn === "rib_quick_join") { queued = true; return json(route, data.quickJoin); }
+        if (fn === "rib_my_tournaments") return json(route, queued ? [data.quickWaiting] : []);
+        if (fn === "rib_my_rooms") return json(route, []);
         if (fn === "rib_leaderboard") return json(route, data.leaderboard);
         if (fn === "rib_my_standing") return json(route, [{ rank: 2, net_cents: 700, won_cents: 1400, wins: 1, losses: 0 }]);
         if (fn === "rib_my_profile") return json(route, data.profile);
@@ -64,6 +75,7 @@ export const test = base.extend({
         return json(route, {});
       }
       if (path === "/rest/v1/wallets") return json(route, data.wallet);
+      if (path === "/rest/v1/game_accounts") return json(route, data.gameAccounts);
       if (path === "/rest/v1/profiles") {
         const single = (request.headers()["accept"] || "").includes("vnd.pgrst.object");
         const profile = { username: "e2e_player", display_name: null, created_at: "2026-09-01T00:00:00Z" };
@@ -73,6 +85,8 @@ export const test = base.extend({
         const single = (request.headers()["accept"] || "").includes("vnd.pgrst.object");
         return json(route, single ? null : []);
       }
+      if (path === "/functions/v1/verify-result") return json(route, data.verifyResult);
+      if (path === "/functions/v1/riot-account") return json(route, data.riotAccount);
       if (path.startsWith("/functions/v1/")) return json(route, { error: "not_mocked" }, 500);
       return route.abort();
     });
