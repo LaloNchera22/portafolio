@@ -1,7 +1,7 @@
 /* ============================================================================
- * Runinback — console wallet: balance, USD purchase, withdrawals, activity.
+ * Runinback — console wallet: balance, rcoin purchase, withdrawals, activity.
  *
- * The 5% commission is charged once, on the way in (buying USD), and shown
+ * The 5% commission is charged once, on the way in (buying rcoin), and shown
  * as a clear rate. Withdrawals are 1:1 with no exit fee. The balance is only
  * ever credited server-side: by the verified Stripe / Coinbase webhooks, or by
  * the test RPC while the platform is in test mode.
@@ -10,7 +10,7 @@ import { config } from "../lib/config.js";
 import { replayClass, tweenNumber } from "../lib/motion.js";
 import { byId as $, escapeHtml as esc, showMessage } from "../lib/dom.js";
 import {
-  centsToUSD, formatDate, formatUSD, formatUsd, parseDollarsToCents, parseUSDToCents, quotePurchase,
+  centsToRcoin, formatDate, formatRcoin, formatUsd, parseDollarsToCents, parseRcoinToCents, quotePurchase,
 } from "../lib/format.js";
 import { functionError, toast } from "../lib/errors.js";
 import { errorText, session } from "./context.js";
@@ -22,12 +22,12 @@ const MIN_WITHDRAW_CENTS = 100;
 
 const PAY_NOTES = {
   card: "Secure card checkout via Stripe.",
-  Stripe: "Pay in USDC/USDT on Base and other chains via Coinbase.",
+  crypto: "Pay in USDC/USDT on Base and other chains via Coinbase.",
 };
 
 // Which real payment rails are live. When more than one is on, the buyer picks
 // between them; when just one, it's used silently; when none, the test RPC.
-let payMethod = config.stripeEnabled ? "card" : (config.StripeEnabled ? "Stripe" : null);
+let payMethod = config.stripeEnabled ? "card" : (config.cryptoEnabled ? "crypto" : null);
 
 function setText(id, text) {
   const node = $(id);
@@ -41,8 +41,8 @@ function renderCommitted() {
   const el = $("wallet-locked");
   if (!el) return;
   const parts = [];
-  if (inTournamentsCents > 0) parts.push("In tournaments: " + formatUSD(inTournamentsCents));
-  if (session.lockedCents > 0) parts.push("Held: " + formatUSD(session.lockedCents));
+  if (inTournamentsCents > 0) parts.push("In tournaments: " + formatRcoin(inTournamentsCents));
+  if (session.lockedCents > 0) parts.push("Held: " + formatRcoin(session.lockedCents));
   el.textContent = parts.join(" · ");
   el.hidden = parts.length === 0;
 }
@@ -63,24 +63,24 @@ export function refreshWallet() {
     .then(function (r) {
       // Never show a made-up zero: on failure keep the last known balance.
       if (r.error || !r.data) {
-        if (session.balanceCents == null) { setText("wallet-chip", "— USD"); $("wallet-chip").setAttribute("aria-label", "Balance unavailable. Open wallet"); }
+        if (session.balanceCents == null) { setText("wallet-chip", "— rcoin"); $("wallet-chip").setAttribute("aria-label", "Balance unavailable. Open wallet"); }
         return null;
       }
       const w = r.data;
       const previous = session.balanceCents;
       session.balanceCents = w.test_balance_cents;
       document.dispatchEvent(new CustomEvent("rib:balance", { detail: w.test_balance_cents }));
-      $("wallet-chip").setAttribute("aria-label", "Balance " + formatUSD(w.test_balance_cents) + ". Open wallet");
+      $("wallet-chip").setAttribute("aria-label", "Balance " + formatRcoin(w.test_balance_cents) + ". Open wallet");
       // A changed balance counts to its new value (and the chip bumps once) so
       // a win, a refund or a purchase is noticed; the first load just renders.
       const from = previous == null ? w.test_balance_cents : previous;
       tweenNumber($("wallet-chip"), from, w.test_balance_cents, function (v) {
         const cents = Math.round(v);
-        setText("wallet-chip", formatUSD(cents));
-        if ($("games-balance")) $("games-balance").innerHTML = centsToUSD(cents) + " <small>USD</small>";
-        setText("wallet-balance", formatUSD(cents));
+        setText("wallet-chip", formatRcoin(cents));
+        if ($("games-balance")) $("games-balance").innerHTML = centsToRcoin(cents) + " <small>rcoin</small>";
+        setText("wallet-balance", formatRcoin(cents));
         setText("wallet-usd", formatUsd(cents));
-        setText("dev-balance", formatUSD(cents));
+        setText("dev-balance", formatRcoin(cents));
       });
       if (previous != null && previous !== w.test_balance_cents) replayClass($("wallet-chip"), "is-bumped");
       session.lockedCents = w.test_locked_cents || 0;
@@ -102,15 +102,15 @@ export function loadLedger() {
       if (r.error) { box.innerHTML = '<p class="muted">Couldn\'t load your activity.</p>'; return; }
       if (!rows.length) {
         box.innerHTML = session.balanceCents > 0
-          ? '<div class="empty"><h3>No activity yet</h3><p>You have ' + esc(formatUSD(session.balanceCents)) + '. Enter a tournament to put it to work.</p><p><button type="button" class="btn btn--cta btn--sm" data-go-compete>Find a tournament</button></p></div>'
-          : '<div class="empty"><h3>No activity yet</h3><p>Buy USD above to enter your first tournament.</p></div>';
+          ? '<div class="empty"><h3>No activity yet</h3><p>You have ' + esc(formatRcoin(session.balanceCents)) + '. Enter a tournament to put it to work.</p><p><button type="button" class="btn btn--cta btn--sm" data-go-compete>Find a tournament</button></p></div>'
+          : '<div class="empty"><h3>No activity yet</h3><p>Buy rcoin above to enter your first tournament.</p></div>';
         return;
       }
       box.innerHTML = '<div class="panel">' + rows.map(function (m) {
         const positive = m.amount_cents >= 0;
         return '<div class="row row--led"><div><div class="row__name">' + esc(m.memo || m.kind) +
           '</div><div class="row__meta">' + formatDate(m.created_at) + "</div></div>" +
-          '<span class="amt ' + (positive ? "pos" : "neg") + '">' + (positive ? "+" : "") + formatUSD(m.amount_cents) + "</span></div>";
+          '<span class="amt ' + (positive ? "pos" : "neg") + '">' + (positive ? "+" : "") + formatRcoin(m.amount_cents) + "</span></div>";
       }).join("") + "</div>";
     });
 }
@@ -118,20 +118,20 @@ export function loadLedger() {
 export function updatePurchaseQuote() {
   const pay = parseDollarsToCents($("buy-amount").value);
   const quote = quotePurchase(pay);
-  const receive = centsToUSD(quote.receiveCents);
+  const receive = centsToRcoin(quote.receiveCents);
   const tooLow = !isFinite(pay) || pay < MIN_PURCHASE_CENTS;
   setText("buy-pay", formatUsd(quote.payCents));
   setText("buy-fee", formatUsd(quote.feeCents));
-  setText("buy-receive", receive + " USD");
-  // Say why the button is disabled instead of offering "Buy 0 USD".
-  setText("buy-submit", tooLow ? "Enter at least $1" : "Buy " + receive + " USD");
+  setText("buy-receive", receive + " rcoin");
+  // Say why the button is disabled instead of offering "Buy 0 rcoin".
+  setText("buy-submit", tooLow ? "Enter at least $1" : "Buy " + receive + " rcoin");
   $("buy-submit").disabled = tooLow || quote.receiveCents <= 0;
 }
 
 function updateWithdrawQuote() {
   let amount = parseFloat(String($("withdraw-amount").value).replace(",", "."));
   if (!isFinite(amount) || amount < 0) amount = 0;
-  // Whole USD only (the server rounds), paid out 1:1.
+  // Whole rcoin only (the server rounds), paid out 1:1.
   setText("withdraw-receive", "$" + Math.round(amount).toFixed(2));
 }
 
@@ -147,7 +147,7 @@ function initPayMethod() {
   const wrap = $("pay-method");
   if (!wrap) return;
   // Show the chooser only when both rails are live (a real choice to make).
-  if (config.stripeEnabled && config.StripeEnabled) {
+  if (config.stripeEnabled && config.cryptoEnabled) {
     wrap.hidden = false;
     document.querySelectorAll('[data-chips="pay-method"] button').forEach(function (btn) {
       btn.addEventListener("click", function () { setPayMethod(btn.getAttribute("data-method")); });
@@ -177,11 +177,11 @@ function startCheckout(functionName, payCents, btn) {
 
 function withdraw(amountInput, msgNode, btn, onDone) {
   const text = String(amountInput.value).trim();
-  if (!/^\d+$/.test(text)) { showMessage(msgNode, "Enter whole USD, no decimals.", false); return; }
-  const amount = parseUSDToCents(text);
-  if (amount < MIN_WITHDRAW_CENTS) { showMessage(msgNode, "Minimum 1 USD.", false); return; }
+  if (!/^\d+$/.test(text)) { showMessage(msgNode, "Enter whole rcoin, no decimals.", false); return; }
+  const amount = parseRcoinToCents(text);
+  if (amount < MIN_WITHDRAW_CENTS) { showMessage(msgNode, "Minimum 1 rcoin.", false); return; }
   if (session.balanceCents != null && amount > session.balanceCents) {
-    showMessage(msgNode, "You have " + formatUSD(session.balanceCents) + " available.", false);
+    showMessage(msgNode, "You have " + formatRcoin(session.balanceCents) + " available.", false);
     return;
   }
   btn.disabled = true;
@@ -196,7 +196,7 @@ function withdraw(amountInput, msgNode, btn, onDone) {
     .finally(function () { btn.disabled = false; });
 }
 
-// Came from "Add USD to join": prefill what's missing, offer the way back.
+// Came from "Add rcoin to join": prefill what's missing, offer the way back.
 let returnTo = null;
 
 /** Prefill a top-up (route arg "buy/<missing cents>/<tournament id>"). */
@@ -210,7 +210,7 @@ export function prepareTopUp(arg) {
   document.querySelectorAll('[data-chips="buy-amount"] button').forEach(function (x) { x.classList.remove("on"); });
   updatePurchaseQuote();
   returnTo = parts[2] || null;
-  showMessage($("wallet-msg"), "Add at least " + formatUSD(missing) + " to join. We've filled in the amount.", true);
+  showMessage($("wallet-msg"), "Add at least " + formatRcoin(missing) + " to join. We've filled in the amount.", true);
   $("buy-amount").focus();
 }
 
@@ -239,10 +239,10 @@ export function initWallet() {
     btn.disabled = true;
 
     if (payMethod === "card") { startCheckout("stripe-checkout", pay, btn); return; }
-    if (payMethod === "Stripe") { startCheckout("Stripe-checkout", pay, btn); return; }
+    if (payMethod === "crypto") { startCheckout("crypto-checkout", pay, btn); return; }
 
     // Test path (no payment rails yet): instant credit via the test RPC.
-    session.client.rpc("rib_buy_USD_test", { p_pay_cents: pay })
+    session.client.rpc("rib_buy_rcoin_test", { p_pay_cents: pay })
       .then(function (r) {
         if (r.error) { showMessage($("wallet-msg"), errorText(r.error, "Couldn't complete the purchase."), false); return; }
         showMessage($("wallet-msg"), "Purchase complete.", true);
@@ -251,7 +251,7 @@ export function initWallet() {
         if (returnTo) {
           const id = returnTo;
           returnTo = null;
-          toast("USD added. You can join now.", "ok", { label: "Back to the tournament", onClick: function () { goToPage("page-compete", { arg: "t/" + id }); } });
+          toast("rcoin added. You can join now.", "ok", { label: "Back to the tournament", onClick: function () { goToPage("page-compete", { arg: "t/" + id }); } });
         }
       })
       .catch(function () { showMessage($("wallet-msg"), "Network error.", false); })
@@ -266,9 +266,6 @@ export function initWallet() {
     });
   });
 
-  $("dev-withdraw-submit").addEventListener("click", function () {
-    withdraw($("dev-withdraw-amount"), $("dev-withdraw-msg"), $("dev-withdraw-submit"), refreshWallet);
-  });
 }
 
 /**
@@ -285,7 +282,7 @@ export function handleCheckoutReturn(goToPage) {
   try { window.history.replaceState({}, "", window.location.pathname); } catch (e) { /* ignore */ }
   if (result === "success") {
     goToPage("page-wallet");
-    showMessage($("wallet-msg"), "Payment received. Your USD will appear here in a few seconds.", true);
+    showMessage($("wallet-msg"), "Payment received. Your rcoin will appear here in a few seconds.", true);
     let tries = 0;
     const poll = setInterval(function () {
       tries++;
@@ -293,7 +290,7 @@ export function handleCheckoutReturn(goToPage) {
       loadLedger();
       if (tries >= 5) {
         clearInterval(poll);
-        showMessage($("wallet-msg"), "Still processing. Card payments usually land within a minute and Stripe can take a few more; your activity updates as soon as it does.", true);
+        showMessage($("wallet-msg"), "Still processing. Card payments usually land within a minute and crypto can take a few more; your activity updates as soon as it does.", true);
       }
     }, 2000);
   } else if (result === "cancel") {

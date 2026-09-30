@@ -7,7 +7,7 @@
 import { avatarInner, avatarUrl } from "../lib/avatar.js";
 import { countryName } from "../lib/countries.js";
 import { byId as $, escapeHtml as esc } from "../lib/dom.js";
-import { formatDate, formatUSD } from "../lib/format.js";
+import { formatDate, formatRcoin } from "../lib/format.js";
 import { session } from "./context.js";
 import { goToPage } from "./navigation.js";
 import { networkLabel } from "./networks.js";
@@ -17,7 +17,7 @@ const cache = new Map(); // lower(username) -> { at, data }
 let request = 0;
 
 function signed(cents) {
-  const v = formatUSD(cents);
+  const v = formatRcoin(cents);
   return cents > 0 ? "+" + v : v;
 }
 
@@ -52,7 +52,7 @@ function render(p) {
     html += '<div class="statline">' +
       "<div><span class=\"n\">" + (s.rank_all ? "#" + Number(s.rank_all).toLocaleString("en") : "—") + '</span><span class="k">all-time rank</span></div>' +
       '<div><span class="n ' + (s.net_cents >= 0 ? "pos" : "neg") + '">' + esc(signed(s.net_cents)) + '</span><span class="k">net won</span></div>' +
-      '<div><span class="n">' + esc(formatUSD(s.won_cents)) + '</span><span class="k">prizes</span></div>' +
+      '<div><span class="n">' + esc(formatRcoin(s.won_cents)) + '</span><span class="k">prizes</span></div>' +
       '<div><span class="n">' + s.wins + "–" + s.losses + '</span><span class="k">wins–losses</span></div></div>';
     if (p.is_me && !p.ranked) html += '<p class="muted">Only you see this: you\'re hidden from the ranking.</p>';
   } else {
