@@ -147,7 +147,9 @@ function outcome(ctx: Ctx) {
 }
 
 async function sha256Hex(bytes: Uint8Array): Promise<string> {
-  return toHex(await crypto.subtle.digest("SHA-256", bytes));
+  // Uint8Array<ArrayBufferLike> may be backed by a SharedArrayBuffer in the
+  // type system; the downloaded bytes never are.
+  return toHex(await crypto.subtle.digest("SHA-256", bytes as Uint8Array<ArrayBuffer>));
 }
 
 /** One hit on the platform-wide daily model budget per model call. */

@@ -127,7 +127,7 @@ function stripFences(text) {
 
 /**
  * Parse and validate the model's JSON (string or already-parsed object).
- * @returns {{ ok: true, value: object } | { ok: false, error: string }}
+ * @returns {{ ok: true, value: Record<string, unknown> } | { ok: false, error: string }}
  */
 export function parseModelOutput(raw) {
   let data = raw;
@@ -305,7 +305,7 @@ export function shouldEscalate(parsed) {
 
 /**
  * Derive the check to apply from a parsed model reading.
- * @param {{ ok: boolean, value?: object, error?: string }} parsed  parseModelOutput() result
+ * @param {{ ok: boolean, value?: Record<string, unknown>, error?: string } | null} parsed  parseModelOutput() result (null when the model call failed)
  * @param {object} ctx  normalizeEvidenceContext() result
  * @returns {{ status: "verified"|"contradicts"|"unreadable", winner: string|null, confidence: number, reason: string, matched: {a:boolean,b:boolean} }}
  */
@@ -341,6 +341,9 @@ export function deriveCheck(parsed, ctx) {
 /**
  * The audit record stored in room_evidence.check_detail. Never contains the
  * image or any key: only what the model read and how it was decided.
+ * @param {{ check?: { reason: string, matched: { a: boolean, b: boolean } } | null,
+ *           parsed?: { ok: boolean, value?: Record<string, unknown>, error?: string } | null,
+ *           model?: string | null, escalated?: boolean, error?: string | null }} input
  */
 export function buildDetail({ check, parsed, model, escalated, error }) {
   const v = parsed && parsed.ok ? parsed.value : null;
