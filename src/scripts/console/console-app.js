@@ -5,9 +5,15 @@
  * move goes through SECURITY DEFINER RPC functions (atomic escrow).
  * TEST MODE: the balance is simulated until legal review.
  *
- * Rarely used pages (the public player card, Settings, Security and the
- * operators' dispute queue) load on demand with import(), so the first
- * paint only pays for Play, the room, the wallet, the ranking and Profile.
+ * Rarely used pages (the public player card, Settings, Security, the
+ * operators' dispute queue and the hosted-tournament pages: Hosting, an
+ * invite link, a hosted tournament) load on demand with import(), so the
+ * first paint only pays for Play, the room, the wallet, the ranking and
+ * Profile.
+ *
+ * A shared invite link (#join/<CODE>) also works signed out: it renders a
+ * preview with "Sign in to join", and the code is remembered in this browser
+ * so the console reopens the same link right after login.
  * ========================================================================== */
 import { isBackendConfigured } from "../lib/config.js";
 import { byId as $, setVisible } from "../lib/dom.js";
@@ -15,7 +21,8 @@ import { toast } from "../lib/errors.js";
 import { getClient, getSession } from "../lib/supabase-client.js";
 import { initContext } from "./context.js";
 import { initRanking, loadProfileRecord, loadRanking } from "./leaderboard.js";
-import { currentRouteArg, goToPage, initAmountChips, initNavigation, initialPage } from "./navigation.js";
+import { PENDING_JOIN_KEY, PENDING_JOIN_TTL_MS, isInviteCode, normalizeInviteCode } from "../lib/hosted.js";
+import { currentRouteArg, goToPage, initAmountChips, initNavigation, initialPage, parseHash } from "./navigation.js";
 import {
   initAccountClosure, initGameAccounts, initProfile, loadGameAccounts, loadProfile, prepareLink, showProfileSection,
 } from "./profile.js";
@@ -54,6 +61,32 @@ const settingsModule = lazy(function () { return import("./settings.js"); }, "in
 const securityModule = lazy(function () { return import("./security.js"); }, "initSecurity");
 const playerModule = lazy(function () { return import("./player.js"); }, "initPlayer");
 const opsModule = lazy(function () { return import("./ops.js"); });
+const hostingModule = lazy(function () { return import("./hosting.js"); }, "initHosting");
+const joinModule = lazy(function () { return import("./join.js"); });
+const eventModule = lazy(function () { return import("./event.js"); }, "initEvent");
+
+// "Sign in to join" remembered the invite code: reopen that link after login.
+// Read without consuming; it's removed only once it's used (or stale), so a
+// deep link that wins this boot doesn't lose it.
+function readPendingJoin() {
+  let saved = null;
+  try { saved = JSON.parse(window.localStorage.getItem(PENDING_JOIN_KEY) || "null"); } catch (e) { /* storage blocked or corrupt */ }
+  if (!saved) return null;
+  if (!isInviteCode(saved.code) || !(Date.now() - Number(saved.at) < PENDING_JOIN_TTL_MS)) { forgetPendingJoin(); return null; }
+  return normalizeInviteCode(saved.code);
+}
+
+function forgetPendingJoin() {
+  try { window.localStorage.removeItem(PENDING_JOIN_KEY); } catch (e) { /* storage blocked */ }
+}
+
+// Hosts see matches that need them as a badge on Hosting from any page. Only
+// browsers that have hosted pay for the read (rib_host_dashboard).
+function initHostBadge() {
+  let hosts = false;
+  try { hosts = window.localStorage.getItem("rib:hosts") === "1"; } catch (e) { /* storage blocked */ }
+  if (hosts) hostingModule().then(function (m) { m.refreshHostBadge(); }, function () { /* the badge can wait */ });
+}
 
 function chunkFailed() {
   toast("This page didn't load. Check your connection and try again.", "err");
@@ -81,6 +114,18 @@ const PAGE_LOADERS = {
     if (currentRouteArg()) prepareTopUp(currentRouteArg());
   },
   "page-ranking": loadRanking,
+  "page-hosting": function () {
+    const arg = currentRouteArg();
+    hostingModule().then(function (m) { m.loadHosting(arg); }, chunkFailed);
+  },
+  "page-join": function () {
+    const arg = currentRouteArg();
+    joinModule().then(function (m) { m.loadJoin(arg); }, chunkFailed);
+  },
+  "page-event": function () {
+    const arg = currentRouteArg();
+    eventModule().then(function (m) { m.loadEvent(arg); }, chunkFailed);
+  },
   "page-profile": function () {
     const section = showProfileSection(currentRouteArg());
     if (section === "settings") { settingsModule().then(function (m) { m.loadSettings(); }, chunkFailed); return; }
@@ -110,7 +155,19 @@ export function initConsole() {
   }
 
   getSession().then(function (current) {
-    if (!current) { redirectToLanding(); return; }
+    if (!current) {
+      // A shared invite link previews without an account; anything else needs one.
+      const route = parseHash(location.hash);
+      if (route.id === "page-join") {
+        joinModule().then(function (m) {
+          if (loading) loading.style.display = "none";
+          m.renderGuest(route.arg);
+        }, redirectToLanding);
+        return;
+      }
+      redirectToLanding();
+      return;
+    }
     initContext(getClient(), current.user.id);
     if (loading) loading.style.display = "none";
     setVisible($("capp"), true);
@@ -134,6 +191,12 @@ export function initConsole() {
 
     refreshWallet();
     loadProfile();
+    // Back from "Sign in to join": straight to that invite link.
+    const pendingJoin = readPendingJoin();
+    if (pendingJoin && !initialPage()) {
+      forgetPendingJoin();
+      try { window.history.replaceState(null, "", "#join/" + pendingJoin); } catch (e) { /* ignore */ }
+    }
     // Honor a deep link (#page-wallet) and give the first page a history state.
     const start = initialPage() || "page-compete";
     try { window.history.replaceState({ page: start, arg: currentRouteArg() }, "", window.location.href); } catch (e) { /* ignore */ }
@@ -146,6 +209,7 @@ export function initConsole() {
       if (urgent && !deepLinked) openRoom(urgent.id);
     });
     handleCheckoutReturn(goToPage);
+    initHostBadge();
   }).catch(function (e) {
     // A bug during boot must not look like "signed out" without a trace.
     console.error("console boot failed", e);

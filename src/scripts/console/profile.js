@@ -485,7 +485,11 @@ function verifyRiotId(id) {
 
 function goBack(target) {
   const label = target === "new" ? "Back to your tournament" : target.indexOf("q/") === 0 ? "Join now" : "Back to the tournament";
-  toast("Riot ID linked. You can join now.", "ok", { label: label, onClick: function () { goToPage("page-compete", { arg: target }); } });
+  // "j/<code>": back to the invite link the player came from.
+  const back = target.indexOf("j/") === 0
+    ? function () { goToPage("page-join", { arg: target.slice(2) }); }
+    : function () { goToPage("page-compete", { arg: target }); };
+  toast("Riot ID linked. You can join now.", "ok", { label: label, onClick: back });
 }
 
 export function initGameAccounts() {

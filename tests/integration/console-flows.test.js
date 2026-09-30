@@ -195,31 +195,57 @@ describe("custom tournaments", () => {
     expect(lastCall("rib_tournament_join")[1]).toEqual({ p_tournament_id: "t1" });
   });
 
-  it("previews the prize split before creating", async () => {
+  it("previews the hosted split (winner 85%, host 5%, platform 10%) before creating", async () => {
     expect($("tournament-prize").textContent).toContain("Platform (10%)");
     document.querySelector('[data-chips="tournament-size"] [data-amt="8"]').click();
     await new Promise((r) => setTimeout(r, 400)); // the numbers count to their new values
-    expect($("tournament-prize").textContent).toContain("Pool80 rcoin");
+    const text = $("tournament-prize").textContent;
+    expect(text).toContain("Prize pool (full)80 rcoin");
+    expect(text).toContain("Winner (85%)68 rcoin");
+    expect(text).toContain("Host commission (5%)4 rcoin");
+    expect(text).toContain("Platform (10%)8 rcoin");
   });
 
-  it("creates a Wild Rift bracket with the chosen size and fee", async () => {
+  it("hosts a tournament with the chosen size, fee, visibility and rules", async () => {
     $("tournament-new").click();
     expect($("tournament-form").hidden).toBe(false);
     $("tournament-name").value = "Cup";
+    document.querySelector('#tournament-visibility [data-vis="private"]').click();
+    $("tournament-rules").value = "Best of 1";
     $("tournament-form").dispatchEvent(new Event("submit", { cancelable: true }));
     await tick();
     await tick();
-    expect(lastCall("rib_tournament_create")[1]).toEqual({ p_name: "Cup", p_game: "Wild Rift", p_network: "riot", p_entry_fee_cents: 1000, p_size: 8 });
+    expect(lastCall("rib_hosted_create")[1]).toEqual({ p_name: "Cup", p_size: 8, p_entry_fee_cents: 1000, p_visibility: "private", p_rules: "Best of 1" });
     expect($("tournament-form").hidden).toBe(true);
   });
 
-  it("asks for a name before calling the server", () => {
-    const before = count("rib_tournament_create");
+  it("asks for a name and a whole-rcoin fee before calling the server", () => {
+    const before = count("rib_hosted_create");
     $("tournament-new").click();
     $("tournament-name").value = "  ";
     $("tournament-form").dispatchEvent(new Event("submit", { cancelable: true }));
-    expect(count("rib_tournament_create")).toBe(before);
+    expect(count("rib_hosted_create")).toBe(before);
     expect($("tournament-msg").textContent).toBe("Give the tournament a name.");
+    $("tournament-name").value = "Cup";
+    $("tournament-fee").value = "2.5";
+    $("tournament-form").dispatchEvent(new Event("submit", { cancelable: true }));
+    expect(count("rib_hosted_create")).toBe(before);
+    expect($("tournament-fee").getAttribute("aria-invalid")).toBe("true");
+    $("tournament-fee").value = "10";
+  });
+
+  it("opens an invite code typed with a dash, or a pasted link", () => {
+    $("invite-code-input").value = "abcde-fgh23";
+    $("invite-code-form").dispatchEvent(new Event("submit", { cancelable: true }));
+    expect(location.hash).toBe("#join/ABCDEFGH23");
+    nav.goToPage("page-compete");
+    $("invite-code-input").value = "https://runinback.com/console.html#join/abcdefgh23";
+    $("invite-code-form").dispatchEvent(new Event("submit", { cancelable: true }));
+    expect(location.hash).toBe("#join/ABCDEFGH23");
+    nav.goToPage("page-compete");
+    $("invite-code-input").value = "nope";
+    $("invite-code-form").dispatchEvent(new Event("submit", { cancelable: true }));
+    expect($("invite-code-msg").hidden).toBe(false);
   });
 });
 

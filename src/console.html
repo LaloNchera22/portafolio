@@ -24,6 +24,7 @@
         </a>
         <nav class="capp__tabs only-desktop" aria-label="Main">
           <a href="#page-compete" data-page="page-compete" aria-current="page">Play<span class="nav-badge" data-live-badge hidden></span></a>
+          <a href="#page-hosting" data-page="page-hosting">Hosting<span class="nav-badge" data-host-badge hidden></span></a>
           <a href="#page-ranking" data-page="page-ranking">Ranking</a>
           <a href="#page-wallet" data-page="page-wallet">Wallet</a>
         </nav>
@@ -41,7 +42,7 @@
         <div class="n" id="acct-email">—</div>
       </div>
       <a href="#page-profile" role="menuitem" data-page="page-profile">Profile <span class="chev">›</span></a>
-      <a href="#page-ops" role="menuitem" data-page="page-ops" id="acct-ops" hidden>Dispute queue <span class="chev">Ops ›</span></a>
+      <a href="#page-ops" role="menuitem" data-page="page-ops" id="acct-ops" hidden>Disputes and appeals <span class="chev">Ops ›</span></a>
       <button type="button" role="menuitem" class="acct-menu__out" data-auth-signout>Log out</button>
     </div>
 
@@ -55,7 +56,7 @@
         <div class="head">
           <div><p class="eyebrow">Wild Rift 1v1 brackets</p><h1 tabindex="-1">Play.</h1></div>
           <div class="head__r">
-            <button type="button" class="btn btn--sm" id="tournament-new">New tournament</button>
+            <button type="button" class="btn btn--sm" id="tournament-new">Host a tournament</button>
           </div>
         </div>
         <aside class="onboard" id="onboard" hidden aria-label="How Quick Play works">
@@ -70,13 +71,13 @@
         <div class="seg" id="compete-seg" role="group" aria-label="Play">
           <button type="button" data-seg="play" aria-pressed="true">Quick Play</button>
           <button type="button" data-seg="mine" aria-pressed="false">My tournaments</button>
-          <button type="button" data-seg="custom" aria-pressed="false">Custom</button>
+          <button type="button" data-seg="custom" aria-pressed="false">Hosted</button>
         </div>
 
-        <!-- new custom tournament (Wild Rift, Riot ID required) -->
+        <!-- host a tournament (docs/hosted-tournaments.md): the host runs it and doesn't play -->
         <form id="tournament-form" class="card-box tournament-form" hidden novalidate>
-          <h2 class="form-title">New tournament</h2>
-          <p class="field__hint">A Wild Rift bracket with your own name, to share with friends. Every player needs a linked Riot ID.</p>
+          <h2 class="form-title">Host a tournament</h2>
+          <p class="field__hint">A Wild Rift bracket you run: share the link, post each match's lobby and pick the winners. As the host you don't play in it.</p>
           <div class="field"><label for="tournament-name">Name</label><input id="tournament-name" type="text" maxlength="80" placeholder="Friday Cup" autocomplete="off" /></div>
           <div class="field--row">
             <div class="field">
@@ -84,24 +85,33 @@
               <div class="chips" data-chips="tournament-size" role="group" aria-labelledby="tournament-size-label">
                 <button type="button" data-amt="4" class="on" aria-pressed="true">4</button>
                 <button type="button" data-amt="8" aria-pressed="false">8</button>
+                <button type="button" data-amt="16" aria-pressed="false">16</button>
+                <button type="button" data-amt="32" aria-pressed="false">32</button>
               </div>
             </div>
             <div class="field">
-              <span class="field__label" id="tournament-fee-label">Entry fee (rcoin)</span>
-              <div class="chips" data-chips="tournament-fee" role="group" aria-labelledby="tournament-fee-label">
-                <button type="button" data-amt="0" aria-pressed="false">Free</button>
-                <button type="button" data-amt="100" aria-pressed="false">1</button>
-                <button type="button" data-amt="500" aria-pressed="false">5</button>
-                <button type="button" data-amt="1000" class="on" aria-pressed="true">10</button>
-                <button type="button" data-amt="2500" aria-pressed="false">25</button>
-                <button type="button" data-amt="5000" aria-pressed="false">50</button>
-              </div>
+              <label for="tournament-fee">Entry fee (rcoin)</label>
+              <input id="tournament-fee" type="number" min="0" max="500" step="1" inputmode="numeric" value="10" aria-describedby="tournament-fee-hint" />
+              <p class="field__hint" id="tournament-fee-hint">0 for a free tournament. Whole rcoin, up to 500 (25 until you've played 3 matches).</p>
             </div>
           </div>
+          <div class="field">
+            <span class="field__label" id="tournament-vis-label">Who can join</span>
+            <div class="chips" id="tournament-visibility" role="group" aria-labelledby="tournament-vis-label" aria-describedby="tournament-vis-hint">
+              <button type="button" data-vis="public" class="on" aria-pressed="true">Public</button>
+              <button type="button" data-vis="private" aria-pressed="false">Private</button>
+            </div>
+            <p class="field__hint" id="tournament-vis-hint">Public tournaments are listed under Hosted. Private ones are reachable only with your link or code.</p>
+          </div>
+          <div class="field">
+            <label for="tournament-rules">Rules (optional)</label>
+            <textarea id="tournament-rules" rows="3" maxlength="1000" placeholder="For example: best of 1, first blood or first tower wins, no Flash." aria-describedby="tournament-rules-count"></textarea>
+            <p class="field__hint field__count" id="tournament-rules-count" aria-live="polite">0 / 1000</p>
+          </div>
           <dl class="tprize" id="tournament-prize" aria-live="polite"></dl>
-          <p class="field__hint">You're the first entrant. It starts as soon as it fills; if it doesn't fill in 24 hours, every entry fee is refunded.</p>
+          <p class="field__hint">It starts when it fills, or earlier when you start it with at least 4 players. Your host commission is paid with the prize, after the 24-hour appeal window.</p>
           <div class="head__r">
-            <button type="submit" class="btn btn--cta" id="tournament-save">Create and join</button>
+            <button type="submit" class="btn btn--cta" id="tournament-save">Create tournament</button>
             <button type="button" class="btn" id="tournament-cancel">Cancel</button>
           </div>
           <p class="msg" id="tournament-msg" role="status" hidden></p>
@@ -123,17 +133,51 @@
           <div class="sec"><div id="tournament-mine" aria-busy="true"></div></div>
         </div>
 
-        <!-- custom tournaments waiting for players -->
+        <!-- hosted tournaments waiting for players, and join by invite code -->
         <div id="compete-custom" hidden>
+          <form class="invite-code" id="invite-code-form" novalidate>
+            <label for="invite-code-input">Have an invite code?</label>
+            <div class="invite-code__row">
+              <input id="invite-code-input" type="text" maxlength="120" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="ABCDE-FGH23 or the link" />
+              <button type="submit" class="btn btn--sm">Open</button>
+            </div>
+            <p class="msg" id="invite-code-msg" hidden></p>
+          </form>
           <form class="lobby-filters" id="tournament-filters">
             <div class="chips" data-tsize role="group" aria-label="Players">
               <button type="button" data-size="" class="on" aria-pressed="true">Any size</button>
-              <button type="button" data-size="4" aria-pressed="false">4 players</button>
-              <button type="button" data-size="8" aria-pressed="false">8 players</button>
+              <button type="button" data-size="4" aria-pressed="false">4</button>
+              <button type="button" data-size="8" aria-pressed="false">8</button>
+              <button type="button" data-size="16" aria-pressed="false">16</button>
+              <button type="button" data-size="32" aria-pressed="false">32</button>
             </div>
           </form>
           <div class="sec"><div id="tournament-list" aria-busy="true"></div></div>
         </div>
+      </section>
+
+      <!-- ========================== HOSTING ========================== -->
+      <section class="page" id="page-hosting" hidden>
+        <div class="head">
+          <div><p class="eyebrow">Your tournaments</p><h1 id="hosting-title" tabindex="-1">Hosting.</h1></div>
+          <div class="head__r"><button type="button" class="btn btn--sm" id="hosting-new">Host a tournament</button></div>
+        </div>
+        <div id="hosting-root" aria-busy="true"><div class="skel skel--rows" aria-hidden="true"><span class="skel__l"></span><span class="skel__l"></span></div></div>
+      </section>
+
+      <!-- an invite link (#join/<CODE>): preview, then join -->
+      <section class="page" id="page-join" hidden>
+        <div class="head"><div><p class="eyebrow">Invite</p><h1 id="join-title" tabindex="-1">Join a tournament.</h1></div></div>
+        <div id="join-root" aria-busy="true"></div>
+      </section>
+
+      <!-- a hosted tournament as a player sees it: bracket, my match, appeal, payout -->
+      <section class="page" id="page-event" hidden>
+        <div class="head">
+          <div><p class="eyebrow" id="event-eyebrow">Hosted tournament</p><h1 id="event-title" tabindex="-1">Tournament.</h1></div>
+          <div class="head__r"><button type="button" class="btn btn--sm" data-page="page-compete">Back to Play</button></div>
+        </div>
+        <div id="event-root" aria-busy="true"></div>
       </section>
 
       <!-- ========================== RANKING ========================== -->
@@ -418,6 +462,17 @@
       <!-- ============================= OPS ============================= -->
       <section class="page" id="page-ops" hidden>
         <div class="head"><div><p class="eyebrow">Runinback team</p><h1 tabindex="-1">Dispute queue.</h1></div></div>
+        <div class="sec ops-sec" id="ops-appeals-sec">
+          <div class="sec__head"><h2>Appeals</h2><span class="sec__note" id="ops-appeals-count"></span></div>
+          <p class="muted sec__lead">Hosted tournaments whose payout is on hold. Uphold pays the result as the host decided. Overturn pays the player you pick, forfeits the host commission to them and gives the host a strike. Refund all returns every entry fee and gives the host a strike.</p>
+          <div id="ops-appeals" aria-busy="true"></div>
+        </div>
+        <div class="sec ops-sec" id="ops-flagged-sec">
+          <div class="sec__head"><h2>Hosted matches past the decision window</h2><span class="sec__note" id="ops-flagged-count"></span></div>
+          <p class="muted sec__lead">Live hosted matches the host hasn't decided within 60 minutes. Open the room, read the chat and the end screens, and decide it if the host doesn't.</p>
+          <div id="ops-flagged" aria-busy="true"></div>
+        </div>
+        <div class="sec__head ops-sec__head"><h2>Match disputes</h2></div>
         <p class="muted sec__lead">Oldest first. Read both reports, the room chat and the end screens (with their automatic check), then award the match to one player (the bracket advances) or void it (both are out). A rejected dispute's deposit goes to the other player.</p>
         <div id="ops-root" aria-busy="true"><div class="skel skel--rows" aria-hidden="true"><span class="skel__l"></span><span class="skel__l"></span></div></div>
       </section>
@@ -443,6 +498,8 @@
     <nav class="capp__bnav only-mobile" aria-label="Main">
       <a href="#page-compete" data-page="page-compete" aria-current="page">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 21h8M12 17v4M6 4h12v5a6 6 0 0 1-12 0zM6 6H3v2a3 3 0 0 0 3 3M18 6h3v2a3 3 0 0 1-3 3"/></svg><span>Play</span><span class="nav-badge" data-live-badge hidden></span></a>
+      <a href="#page-hosting" data-page="page-hosting">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 21V4M4 4h13l-2.5 4L17 12H4"/></svg><span>Hosting</span><span class="nav-badge" data-host-badge hidden></span></a>
       <a href="#page-ranking" data-page="page-ranking">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20V11h4v9M10 20V5h4v15M16 20v-6h4v6"/></svg><span>Ranking</span></a>
       <a href="#page-wallet" data-page="page-wallet">
@@ -450,6 +507,14 @@
       <a href="#page-profile" data-page="page-profile">
         <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg><span>Profile</span></a>
     </nav>
+  </div>
+
+  <!-- a shared invite link opened while signed out: preview, then sign in (join-guest in join.js) -->
+  <div class="capp capp--guest" id="join-guest" hidden>
+    <main class="capp__wrap" id="join-guest-main">
+      <div class="head"><div><p class="eyebrow">Invite</p><h1 tabindex="-1">Join a tournament.</h1></div></div>
+      <div id="join-guest-root" aria-busy="true"></div>
+    </main>
   </div>
 
   <div id="console-loading" class="muted is-loading" role="status" style="min-height:60vh;display:grid;place-content:center;text-align:center;padding:24px;">Loading your console…</div>
