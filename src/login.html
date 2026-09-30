@@ -84,10 +84,15 @@
       </div>
       </div>
       <aside class="auth-aside" aria-hidden="true">
-        <video poster="/media/hero-poster.webp" class="auth-aside__video" muted loop playsinline preload="none" aria-hidden="true">
-          <source src="/media/hero-loop-v2.mp4" type="video/mp4" />
-        </video>
-        <div class="auth-aside__glass"></div>
+        <div class="backdrop backdrop--stage" aria-hidden="true">
+          <div class="backdrop__grid"></div>
+          <svg class="backdrop__ridge" viewBox="0 0 1440 360" preserveAspectRatio="xMaxYMax meet" focusable="false">
+          <g class="backdrop__ridge-back"><path pathLength="1" d="M0 320L170 272L290 302L470 222L590 268L760 186L880 238L1020 152L1130 200L1290 96L1440 150"/></g>
+          <g class="backdrop__ridge-front"><path pathLength="1" d="M0 360L230 300L350 330L610 244L740 290L1040 170L1170 222L1440 120"/></g>
+          <g class="backdrop__marks"><path pathLength="1" d="M610 230V216M1040 156V142M1290 82V68M603 216H617M1033 142H1047M1283 68H1297"/></g>
+          <g class="backdrop__spark"><path pathLength="1" d="M1316 50L1344 22L1338 44L1372 12"/></g>
+        </svg>
+        </div>
         <img class="auth-aside__logo" src="/logo-lockup.png" width="300" height="50" alt="Runinback" />
       </aside>
     </section>

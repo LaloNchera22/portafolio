@@ -4,7 +4,7 @@ import { expect, signIn, test } from "./fixtures.js";
 test("landing states test mode and loads without errors", async ({ page, api }) => {
   await page.goto("/index.html");
   await expect(page.locator(".announce")).toContainText("Test mode");
-  await expect(page.locator("#hero-video")).toHaveAttribute("poster", "/media/hero-poster.webp");
+  await expect(page.locator(".hero .backdrop--stage")).toHaveCount(1); await expect(page.locator("video")).toHaveCount(0);
   await expect(page.locator("h1")).toBeVisible();
   expect(api.calls.every((c) => !c.path.startsWith("/rest/"))).toBe(true);
 });

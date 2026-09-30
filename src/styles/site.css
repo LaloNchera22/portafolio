@@ -518,28 +518,6 @@ ol.steps {
   align-items: center;
 }
 
-/* Background clip: blurred and scrimmed so type and the bracket stay legible. */
-.hero__video {
-  position: absolute;
-  inset: 0;
-  z-index: 0;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  pointer-events: none;
-  filter: blur(8px) brightness(0.8);
-  transform: scale(1.1); /* hide the blurred edges */
-}
-.hero__scrim {
-  position: absolute;
-  inset: 0;
-  z-index: 0;
-  pointer-events: none;
-  background:
-    linear-gradient(90deg, rgba(14, 16, 15, 0.94) 0%, rgba(14, 16, 15, 0.82) 50%, rgba(14, 16, 15, 0.7) 100%),
-    linear-gradient(0deg, var(--surface-canvas), transparent 45%);
-}
-
 /* Angular decorative backdrop — replaces organic blobs */
 .backdrop {
   position: absolute;
@@ -579,6 +557,88 @@ ol.steps {
   0%   { transform: translate(0, 0) scale(1); opacity: 0.85; }
   100% { transform: translate(-40px, 30px) scale(1.12); opacity: 1; }
 }
+
+/* Stage backdrop (landing hero + auth split panel): the same grid tilted into
+   a slow perspective drift, the one glow, and a faint angular ridge in the
+   peak-mark language that draws itself once and then breathes. Pure CSS/SVG,
+   transform + opacity only after the one-off draw; static under reduced motion. */
+.backdrop--stage { background: var(--surface-canvas); }
+.backdrop--stage::before { content: none; }
+.backdrop__grid {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  perspective: 900px;
+  perspective-origin: 60% 0%;
+  -webkit-mask: radial-gradient(120% 85% at 68% 30%, #000 0%, rgba(0, 0, 0, 0.4) 50%, transparent 80%);
+  mask: radial-gradient(120% 85% at 68% 30%, #000 0%, rgba(0, 0, 0, 0.4) 50%, transparent 80%);
+}
+.backdrop__grid::before {
+  content: "";
+  position: absolute;
+  left: -40%;
+  right: -40%;
+  top: -136px;
+  bottom: -40%;
+  background-image:
+    linear-gradient(var(--grid-line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
+  background-size: 68px 68px;
+  transform-origin: 50% 0%;
+  transform: rotateX(28deg);
+  will-change: transform;
+  animation: stage-grid 16s linear infinite;
+}
+@keyframes stage-grid {
+  from { transform: rotateX(28deg) translate3d(0, 0, 0); }
+  to   { transform: rotateX(28deg) translate3d(0, 68px, 0); }
+}
+.backdrop__ridge {
+  position: absolute;
+  right: 0;
+  bottom: 6%;
+  width: max(100%, 760px);
+  height: auto;
+  overflow: visible;
+  fill: none;
+  stroke-linecap: square;
+  stroke-linejoin: miter;
+}
+.backdrop__ridge path {
+  stroke-dasharray: 1;
+  animation: stage-draw 2.6s var(--ease-in-out) both;
+}
+.backdrop__ridge-back { stroke: rgba(255, 252, 225, 0.07); stroke-width: 1; }
+.backdrop__ridge-back path { animation-delay: 0.2s; }
+.backdrop__ridge-front { stroke: rgba(255, 252, 225, 0.11); stroke-width: 1.25; }
+.backdrop__ridge-front path { animation-delay: 0.5s; }
+.backdrop__spark {
+  stroke: rgba(255, 255, 255, 0.5);
+  stroke-width: 1.5;
+  animation: stage-pulse 5s ease-in-out 3s infinite alternate;
+}
+.backdrop__spark path { animation-delay: 2.4s; animation-duration: 0.9s; }
+.backdrop__marks {
+  stroke: rgba(255, 252, 225, 0.22);
+  stroke-width: 1;
+  animation: stage-pulse 5s ease-in-out 3.6s infinite alternate;
+}
+.backdrop__marks path { animation-delay: 2.2s; animation-duration: 0.6s; }
+@keyframes stage-draw {
+  from { stroke-dashoffset: 1; }
+  to   { stroke-dashoffset: 0; }
+}
+@keyframes stage-pulse {
+  from { opacity: 1; }
+  to   { opacity: 0.35; }
+}
+/* Keep the left, copy side of the hero calm: fade the ridge out behind the text. */
+.hero .backdrop__ridge {
+  -webkit-mask: linear-gradient(90deg, rgba(0, 0, 0, 0.25) 0%, rgba(0, 0, 0, 0.6) 40%, #000 70%);
+  mask: linear-gradient(90deg, rgba(0, 0, 0, 0.25) 0%, rgba(0, 0, 0, 0.6) 40%, #000 70%);
+}
+/* Soft hand-off from the hero into the next band. */
+.hero .backdrop--stage { -webkit-mask: linear-gradient(180deg, #000 78%, transparent); mask: linear-gradient(180deg, #000 78%, transparent); }
 
 .hero > .shell {
   position: relative;
@@ -849,11 +909,11 @@ ol.steps {
   border-radius: var(--radius-lg);
   padding: clamp(26px, 4vw, 40px);
 }
-/* The video half is decorative and only shows on wide screens. */
+/* The backdrop half is decorative and only shows on wide screens. */
 .auth-aside { display: none; }
 
-/* Wide screens: a split with no page scroll — form on one half, the looping
-   hero clip behind a 50% glass panel with the logo centered on the other. */
+/* Wide screens: a split with no page scroll — form on one half, the animated
+   stage backdrop with the logo centered on the other. */
 @media (min-width: 1024px) {
   .auth-page {
     padding: 0;
@@ -899,21 +959,7 @@ ol.steps {
     overflow: hidden;
     background: var(--surface-canvas);
   }
-  .auth-aside__video {
-    position: absolute;
-    inset: 0;
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-  }
-  .auth-aside__glass {
-    position: absolute;
-    inset: 0;
-    background: rgba(14, 16, 15, 0.5);
-    -webkit-backdrop-filter: blur(16px) saturate(112%);
-    backdrop-filter: blur(16px) saturate(112%);
-    border-left: 1px solid var(--color-surface-25);
-  }
+  .auth-aside { border-left: 1px solid var(--color-surface-25); }
   .auth-aside__logo {
     position: absolute;
     top: 50%;
@@ -923,9 +969,6 @@ ol.steps {
     height: auto;
     z-index: 1;
   }
-}
-@media (min-width: 1024px) and (prefers-reduced-motion: reduce) {
-  .auth-aside__video { display: none; }
 }
 .auth-card .auth-title { font-size: var(--text-heading-sm); margin-top: 10px; }
 .field__labelrow { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
@@ -1200,7 +1243,11 @@ ol.steps {
     opacity: 1;
     transform: none;
   }
-  .backdrop::after { animation: none; }
+  .backdrop::after,
+  .backdrop__grid::before,
+  .backdrop__ridge path,
+  .backdrop__spark,
+  .backdrop__marks { animation: none; }
   [data-magnetic] { transform: none !important; }
 }
 
@@ -1971,46 +2018,39 @@ html.js .timing:not(.is-visible) .timing__fill { transform: scaleX(0); }
   .lx-stats { animation: hero-rise 0.8s var(--ease-out) 0.35s both; }
 }
 
-/* --- Ticker: full-bleed hairline marquee ------------------------------- */
-.lx-ticker {
-  position: relative;
-  overflow: hidden;
+/* --- Highlights: a static, hairline-bordered strip of product facts ----
+   Each phrase once, centered and wrapping; a small peak (the brand mark's
+   angle) leads each item. Items fade in once, staggered, on reveal. */
+.lx-strip {
   border-block: 1px solid var(--lx-hairline);
-  padding-block: var(--spacing-16);
-  -webkit-mask: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent);
-  mask: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent);
+  padding-block: var(--spacing-20);
 }
-.lx-ticker__track {
+.lx-strip__list {
+  list-style: none;
+  margin: 0 auto;
   display: flex;
-  width: max-content;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--spacing-12) var(--spacing-32);
 }
-.lx-ticker__track span {
+.lx-strip__item {
   display: inline-flex;
   align-items: center;
-  gap: var(--spacing-24);
-  padding-right: var(--spacing-24);
+  gap: var(--spacing-12);
   font-size: var(--text-body-sm);
   color: var(--color-surface-cream);
   white-space: nowrap;
 }
-/* A small peak between phrases, echoing the brand mark. */
-.lx-ticker__track span::after {
+.lx-strip__item::before {
   content: "";
+  flex: none;
   width: 7px;
   height: 7px;
   border-top: 1px solid var(--lx-muted);
   border-left: 1px solid var(--lx-muted);
   transform: rotate(45deg) translate(2px, 2px);
 }
-@keyframes lx-ticker {
-  to { transform: translateX(-50%); } /* the track holds the phrases twice */
-}
-@media (prefers-reduced-motion: no-preference) {
-  /* Two passes, then it holds still (WCAG 2.2.2); hover or focus pauses it. */
-  .lx-ticker__track { animation: lx-ticker 48s linear 2 forwards; }
-  .lx-ticker:hover .lx-ticker__track,
-  .lx-ticker:focus-within .lx-ticker__track { animation-play-state: paused; }
-}
+.lx-strip__item[data-reveal]:not(.is-visible) { transform: translateY(8px); }
 
 /* --- Spotlight (shared by paths + fair play) ---------------------------
    landing.js writes --mx/--my (px inside the card) on fine pointers. A
@@ -2448,7 +2488,6 @@ html.js .lx-calc[data-reveal]:not(.is-visible) .lx-split__bar { width: 0; }
 
 /* --- Reduced motion: everything lands in its final state --------------- */
 @media (prefers-reduced-motion: reduce) {
-  .lx-ticker__track,
   .lx-words .lx-word,
   .lx-cta::before { animation: none; }
   .lx-split__bar { transition: none; }

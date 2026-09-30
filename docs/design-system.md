@@ -24,10 +24,11 @@ display headlines, and a discipline-based color taxonomy.
    mark** (see the logos). It appears as the nav/footer/favicon logo (an inline
    SVG that draws itself on load) and as the visual language for illustrations:
    crafted angular SVG art replaces organic blur-blobs, emoji icons and flat
-   gradient placeholders. The landing hero is an exception: it runs a blurred,
-   dark-scrimmed **looping background video** (see the hero row below) in place of
-   the mountain mark and reactive grid, and the landing's feature blocks are
-   text-only (no illustration panels).
+   gradient placeholders. The landing hero and the auth split panel carry the
+   **stage backdrop** (see the row below): the technical grid, the one glow and
+   a faint angular ridge in the mark's language. The site ships no raster or
+   video backgrounds, and never game art or third-party IP. The landing's
+   feature blocks are text-only (no illustration panels).
 7. **Depth via geometry, never shadow.** No decorative `box-shadow`; separation
    comes from surface steps, hairlines, a fine technical grid and a single
    restrained brand glow — no blurry blob soup.
@@ -69,7 +70,7 @@ theming and the draw-on-load animation.
 | Context | Where | Composition | Rendered size |
 |---------|-------|-------------|---------------|
 | **Wordmark lockup** | Nav + footer, every page (`.brand` + `.brand__mark`) | Mark (viewBox `0 0 44 36`, peak stroke 5.2 + spark 4.2) followed by the "Runinback" wordmark in Inter Tight 20px | Mark `30 × 25px` |
-| **Hero background video** | Landing hero only (`.hero__video` + `.hero__scrim`) | A 7-second looping clip (`public/media/hero-loop-v2.mp4`, 640×360), blurred and darkened by a scrim so white type stays legible; native `loop`, muted, plays only while on screen and never under reduced motion | cover, full-bleed |
+| **Stage backdrop** | Landing hero + login/signup split panel (`.backdrop.backdrop--stage`, inline, `aria-hidden`) | The fine technical grid tilted in perspective (`rotateX(28deg)`) drifting one cell every 16s; the single brand glow (`.backdrop::after`); an inline-SVG ridge of two angular peak lines with survey ticks and a detached spark (the mark's language) that draws in once, then the spark and ticks breathe in opacity. Low contrast (cream at 7–22% alpha); in the hero it fades toward the copy side and the band edge. Pure CSS + SVG, no requests; continuous motion is transform/opacity only | full-bleed; ridge `max(100%, 760px)` wide, right-anchored |
 | **Favicon** | `<link rel="icon">`, all pages | Mark on a `#0e100f` rounded square (rx 7), green stroke, viewBox `0 0 32 32` | `32px` |
 | **PWA / app icon** | `site.webmanifest` | Solid green rounded square (rx 128), no interior mark, for maskable app tiles | `512px` (`sizes: any`) |
 
@@ -80,8 +81,8 @@ theming and the draw-on-load animation.
   — use the mark alone (favicon variant) instead of shrinking the lockup.
 - **Favicon:** `32px` is the floor; the square backing keeps the mark readable at
   tab size where a bare stroke would disappear.
-- **Hero background video:** decorative only (`aria-hidden`); it carries no brand
-  meaning, so no legibility floor applies.
+- **Stage backdrop:** decorative only (`aria-hidden`), so no legibility floor
+  applies; it must stay low-contrast so the headline and the bracket lead.
 
 ### Clear space
 
@@ -98,9 +99,10 @@ theming and the draw-on-load animation.
   the header (the wordmark hides below 460px). The header holds only the logo
   and the account actions (Log in + Sign up), so there is no collapsed menu at
   any width; both actions fit next to the mark at 320px.
-- The **hero background video** covers the hero at every breakpoint, blurred and
-  scrimmed; it is muted, `playsinline`, loops seconds 0–7, and pauses entirely
-  under `prefers-reduced-motion`.
+- The **stage backdrop** covers the hero at every breakpoint (320px → wide);
+  below 760px the ridge keeps its size and crops from the left, so the summit
+  and spark stay in view. Under `prefers-reduced-motion` it is fully static:
+  the grid holds still, the ridge renders fully drawn and nothing pulses.
 - All logo motion (the `mark-draw` stroke animation on load, the hover lift) and
   the hero grid's animation are **fully disabled under
   `prefers-reduced-motion: reduce`**; the grid renders as a static lattice.
@@ -111,7 +113,7 @@ Static, dependency-free site (HTML + CSS + vanilla JS).
 
 | File | Purpose |
 |------|---------|
-| `src/index.html` | Landing: video hero + stats, ticker, two ways in (Play / Host), prize calculator (`#prizes`), how it works timeline (`#how`), fair play (`#fair`), FAQ (`#faq`), CTA |
+| `src/index.html` | Landing: hero (stage backdrop + bracket) + stats, highlights strip, two ways in (Play / Host), prize calculator (`#prizes`), how it works timeline (`#how`), fair play (`#fair`), FAQ (`#faq`), CTA |
 | `src/contact.html` | Contact channels + form |
 | `src/login.html`, `src/signup.html` | Auth pages |
 | `src/terms.html`, `src/privacy.html`, `src/cookies.html` | Legal pages |
@@ -132,8 +134,8 @@ Static, dependency-free site (HTML + CSS + vanilla JS).
   and feature bullets cascade — all on the decisive `--ease-in-out` curve. On the
   landing, body copy (including muted greys) reads in cream via
   `body.home #main { --color-surface-50: var(--color-surface-cream) }`.
-- **Hero video** loops seconds 0–7 of the background clip, muted and `playsinline`;
-  paused under reduced motion.
+- **Stage backdrop** (hero + auth panel): CSS-only grid drift and a one-off ridge
+  draw, then a slow opacity pulse on the spark; static under reduced motion.
 - **Self-drawing SVG** — the brand mark, hero mark and feature illustrations
   animate their strokes (`stroke-dashoffset`) on load / on reveal.
 - **Scroll progress bar** pinned to the top of the viewport.
@@ -150,8 +152,11 @@ Static, dependency-free site (HTML + CSS + vanilla JS).
     last sentence carries the brand gradient as text. This is the page's one
     orchestrated entrance, done in CSS so the LCP paints on the first frame.
   - *Stats* under the hero (`.lx-stats`): three facts on hairlines; numbers count up.
-  - *Ticker* (`.lx-ticker`): a full-bleed, hairline-bordered marquee of product
-    facts that scrolls in CSS, pauses on hover and is static under reduced motion.
+  - *Highlights* (`.lx-strip`): a static, full-bleed hairline-bordered strip of
+    product facts, each phrase once, as a centered wrapping list
+    (`<ul aria-label="Highlights">`) with a small peak glyph leading each item.
+    No marquee; items fade in once, staggered, on reveal (none under reduced
+    motion).
   - *Two ways in* (`.lx-path`): Play is blue (matchmaking), Host is orange
     (escrow / commission). Cards with `[data-spotlight]` get a pointer-tracked
     radial glow on the surface and the 1px border (`--mx/--my`, fine pointers

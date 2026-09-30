@@ -1137,4 +1137,32 @@ begin
 end;
 $$;
 
+-- 0028: every constraint 0027 added NOT VALID is validated.
+do $$
+begin
+  perform pg_temp.expect(
+    (select count(*)::text from pg_constraint
+      where contype = 'c' and not convalidated
+        and conrelid in ('public.tournaments'::regclass, 'public.match_rooms'::regclass,
+                         'public.room_messages'::regclass, 'public.tournament_disputes'::regclass,
+                         'public.wallet_ledger'::regclass)),
+    '0', 'hosted-tournament check constraints are validated');
+end;
+$$;
+
+-- 0028: a signed-out preview of a private tournament names nobody, champion included.
+do $$
+declare v_id uuid; v_code text; v_json jsonb;
+begin
+  select id, invite_code into v_id, v_code from public.tournaments where name = 'Private Cup' and mode = 'hosted';
+  update public.tournaments set winner_id = (select user_id from public.tournament_entries where tournament_id = v_id limit 1) where id = v_id;
+  v_json := pg_temp.scalar_anon(format('select public.rib_tournament_preview(%L)::text', v_code))::jsonb;
+  perform pg_temp.expect(coalesce(v_json ->> 'winner_username', 'hidden'), 'hidden', 'a signed-out private preview hides the champion');
+  perform pg_temp.expect(((pg_temp.scalar_as((select creator_id from public.tournaments where id = v_id),
+    format('select public.rib_tournament_preview(%L)::text', v_code))::jsonb ->> 'winner_username') is not null)::text, 'true',
+    'signed in, the preview names the champion');
+  update public.tournaments set winner_id = null where id = v_id;
+end;
+$$;
+
 \echo 'rpc-smoke: all expectations passed'

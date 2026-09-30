@@ -1,5 +1,6 @@
 /* ============================================================================
- * Runinback — Play: Wild Rift sit & go brackets of 4 or 8 players.
+ * Runinback — Play: Quick Play sit & go brackets of 4 or 8 players, plus
+ * hosted tournaments of 4 to 32.
  *
  * Quick Play is the front door: a grid of tiers (entry fee × size) with how
  * many players are waiting in each. One tap joins the oldest open event of
