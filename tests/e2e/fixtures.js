@@ -62,6 +62,8 @@ export const test = base.extend({
       if (path.startsWith("/rest/v1/rpc/")) {
         const fn = path.slice("/rest/v1/rpc/".length);
         if (fn === "rib_open_tournaments") return json(route, data.tournaments);
+        if (fn === "rib_hosted_create") return json(route, { id: "t-night", name: body.p_name, status: "open", mode: "hosted", visibility: body.p_visibility, invite_code: "NIGHTCUP23", max_players: body.p_size, entry_fee_cents: body.p_entry_fee_cents, entrants: 0 });
+        if (fn === "rib_host_dashboard") return json(route, { host: { hosted_completed: 0, host_strikes: 0, live_limit: 3, paid_allowed: true, max_entry_fee_cents: 2500 }, tournaments: [] });
         if (fn === "rib_quick_tiers") return json(route, data.quickTiers);
         if (fn === "rib_quick_join") { queued = true; return json(route, data.quickJoin); }
         if (fn === "rib_my_tournaments") return json(route, queued ? [data.quickWaiting] : []);
