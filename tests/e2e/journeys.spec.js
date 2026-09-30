@@ -29,6 +29,54 @@ test("landing prize calculator splits entry fees by bracket size", async ({ page
   await expect(calc.locator('[data-calc="pool"]')).toHaveText("1600");
 });
 
+test("landing has no highlights strip and tells all six steps in #how", async ({ page }) => {
+  await page.goto("/index.html");
+  await expect(page.locator(".lx-strip")).toHaveCount(0);
+  const how = page.locator("#how");
+  await expect(how.getByRole("heading", { level: 2 })).toHaveText("One bracket, start to finish.");
+  await expect(how.getByRole("heading", { level: 3 })).toHaveText([
+    "Create and share",
+    "Seats fill",
+    "The host opens the lobby",
+    "The host decides, the winner advances",
+    "24 hours to appeal 24h",
+    "Everyone gets paid",
+  ]);
+});
+
+test("landing Player and Host tabs switch with the keyboard", async ({ page }) => {
+  await page.goto("/index.html");
+  await page.getByRole("button", { name: "Decline" }).click();
+  const tabs = page.getByRole("tablist", { name: "Choose your side" });
+  const player = tabs.getByRole("tab", { name: "Player" });
+  const host = tabs.getByRole("tab", { name: "Host" });
+  await expect(player).toHaveAttribute("aria-selected", "true");
+  await expect(page.locator("#side-play")).toBeVisible();
+  await expect(page.locator("#side-host")).toBeHidden();
+  await player.focus();
+  await page.keyboard.press("ArrowRight");
+  await expect(host).toBeFocused();
+  await expect(host).toHaveAttribute("aria-selected", "true");
+  await expect(player).toHaveAttribute("tabindex", "-1");
+  await expect(page.getByRole("tabpanel", { name: "Host" })).toContainText("Run a tournament");
+  await expect(page.locator("#side-play")).toBeHidden();
+  await page.keyboard.press("Home");
+  await expect(player).toBeFocused();
+  await expect(page.getByRole("tabpanel", { name: "Player" })).toContainText("Join a bracket");
+});
+
+test("landing hero bracket can be paused", async ({ page }) => {
+  await page.goto("/index.html");
+  const bracket = page.locator("[data-bracket]").locator("visible=true");
+  const toggle = bracket.locator("[data-bk-toggle]");
+  await expect(toggle).toHaveText("Pause");
+  await toggle.click();
+  await expect(toggle).toHaveText("Play");
+  await expect(bracket).toHaveClass(/is-paused/);
+  await toggle.click();
+  await expect(toggle).toHaveText("Pause");
+});
+
 test("landing nav shows only Log in and Sign up, with no menu toggle", async ({ page }) => {
   await page.goto("/index.html");
   const nav = page.locator("header.nav nav");
