@@ -14,6 +14,17 @@
  * confirmation deadlines, silence-confirms, walkovers, deposits, advancement
  * and payouts. This module renders the state and stays live through Realtime.
  *
+ * Hosted tournaments (docs/hosted-tournaments.md, migration 0027): the
+ * room waits in `setup` until the host posts the lobby (a room_messages row
+ * of kind 'lobby': code, password, screenshot in the private room-lobby
+ * bucket). Players still say "I won" and upload the end screen, but the host
+ * decides; host messages are marked in the chat. The host can open the room
+ * too, to read and write the chat; decisions live on the Hosting page.
+ *
+ * Chat cache: only the open room's messages are kept, at most 200. When the
+ * room ends (done / void) its Realtime channel is removed and its messages
+ * are dropped from memory; leaving the page does the same.
+ *
  * Structure: the room's shell (stepper, state card, lobby, players, captures,
  * chat) is built once per room; Realtime updates only patch the parts that
  * change, so a message being typed, an open dispute form or an error message
@@ -26,6 +37,7 @@ import { formatRcoin } from "../lib/format.js";
 import { replayClass, tweenNumber } from "../lib/motion.js";
 import { prizeSplit, roundName } from "../lib/tournament.js";
 import { WILD_RIFT } from "../lib/wild-rift.js";
+import { LOBBY_BUCKET, hostedSplit } from "../lib/hosted.js";
 import { peakArt } from "./art.js";
 import { confirmAction } from "./confirm.js";
 import { errorText, session } from "./context.js";
@@ -41,10 +53,14 @@ const FAST_SECONDS = 180;    // rib_verified_confirm_window(): after a verified 
 const CHECK_FRESH_MS = 120000; // a pending check older than this isn't running
 const MAX_WIDTH = 1600;      // screenshots are read at this size (verify-result skips > 3.75 MB)
 const STEPS = ["Lobby", "Ready", "Playing", "Report", "Result"];
+const HOSTED_STEPS = ["Pairing", "Lobby", "Playing", "Host decides", "Result"];
+const MAX_MESSAGES = 200;
+const TERMINAL = { done: true, void: true };
 
 const room = {
   id: null, r: null, info: null, messages: [], evidence: [], channel: null, timer: 0,
   busy: false, shellFor: null, lastStatus: null, celebrated: {}, checking: {},
+  lobbyUrls: {},    // lobby image path -> signed URL (this room only)
 };
 
 function rememberRoom(id) {
@@ -63,13 +79,27 @@ export function openRoom(id) {
   goToPage("page-room", { arg: id });
 }
 
-/** Stop Realtime and timers (when another page opens). */
-export function closeRoom() {
+function unsubscribe() {
   if (room.channel) { try { session.client.removeChannel(room.channel); } catch (e) { /* already gone */ } }
   room.channel = null;
+}
+
+/** Stop Realtime and timers, and forget the chat (when another page opens). */
+export function closeRoom() {
+  unsubscribe();
   room.shellFor = null;
+  room.messages = [];
+  room.lobbyUrls = {};
   clearInterval(room.timer);
   room.timer = 0;
+}
+
+// The room ended: nobody writes here anymore. Stop listening and let go of
+// the messages (the server keeps them for appeals until the tournament ends).
+function dropChat() {
+  unsubscribe();
+  room.messages = [];
+  room.lobbyUrls = {};
 }
 
 /** Page loader for #page-room. */
@@ -107,7 +137,7 @@ function fetchRoom() {
   return Promise.all([
     session.client.from("match_rooms").select("*").eq("id", id).single(),
     session.client.rpc("rib_room_info", { p_room_id: id }),
-    session.client.from("room_messages").select("id, user_id, body, created_at").eq("room_id", id).order("id", { ascending: true }).limit(200),
+    session.client.from("room_messages").select("id, user_id, body, created_at, kind, image_path").eq("room_id", id).order("id", { ascending: false }).limit(MAX_MESSAGES),
     session.client.from("room_evidence").select("id, room_id, user_id, storage_path, source, created_at, check_status, checked_at").eq("room_id", id).order("id", { ascending: true }),
   ]).then(function (res) {
     if (id !== room.id) return;
@@ -119,8 +149,10 @@ function fetchRoom() {
     }
     room.r = res[0].data;
     room.info = (Array.isArray(res[1].data) && res[1].data[0]) || {};
-    room.messages = Array.isArray(res[2].data) ? res[2].data : [];
+    // Newest 200, shown oldest first.
+    room.messages = Array.isArray(res[2].data) ? res[2].data.slice().sort(function (x, y) { return x.id - y.id; }) : [];
     room.evidence = Array.isArray(res[3].data) ? res[3].data : [];
+    if (TERMINAL[room.r.status]) dropChat();
     if (room.shellFor !== id) renderShell();
     update();
     renderChat();
@@ -138,6 +170,7 @@ function subscribe(id) {
       const was = room.r && room.r.status;
       room.r = Object.assign({}, room.r, payload.new);
       if (was !== room.r.status) refreshWallet();
+      if (TERMINAL[room.r.status] && !TERMINAL[was]) { dropChat(); renderChat(); }
       if (room.shellFor === id) update();
     })
     .on("postgres_changes", { event: "INSERT", schema: "public", table: "room_messages", filter: "room_id=eq." + id }, function (payload) {
@@ -159,10 +192,22 @@ function subscribe(id) {
 
 /* ---- derived state -------------------------------------------------------- */
 function me() { return session.uid; }
+// rib_room_info says whether the room is hosted and whether I'm its host.
+function isHosted() { return (room.info && room.info.mode === "hosted") || room.r.status === "setup"; }
+function amPlayer() { return room.r.player_a === me() || room.r.player_b === me(); }
+function amHost() { return !amPlayer() && !!(room.info && room.info.is_host === true); }
+// In a hosted room the only other writer besides the two players is the host
+// (operators speak as the Runinback team in reviews, not here).
+function isHostMessage(m) {
+  if (!isHosted() || !m.user_id) return false;
+  if (room.info && room.info.host_id) return m.user_id === room.info.host_id;
+  return m.kind === "lobby" || (m.user_id !== room.r.player_a && m.user_id !== room.r.player_b);
+}
 function amA() { return room.r.player_a === me(); }
 function opponentId() { return amA() ? room.r.player_b : room.r.player_a; }
 function nameOf(uid) {
   if (uid === me()) return "you";
+  if (uid && isHosted() && uid !== room.r.player_a && uid !== room.r.player_b) return "the host";
   const i = room.info || {};
   const n = uid === room.r.player_a ? i.a_username : i.b_username;
   return n ? "@" + n : "your opponent";
@@ -176,6 +221,13 @@ function depositCents() { return Math.max(100, Math.floor((room.info.entry_fee_c
 function isFinal() { return room.r.kind === "tournament" && !!room.info.rounds && room.r.round === room.info.rounds; }
 
 function stepIndex(r) {
+  if (isHosted()) {
+    if (r.status === "waiting") return 0;
+    if (r.status === "setup") return 1;
+    if (r.status === "live") return r.a_report || r.b_report ? 3 : 2;
+    if (r.status === "disputed") return 3;
+    return 4;
+  }
   if (r.status === "waiting") return 0;
   if (r.status === "ready_check") return 1;
   if (r.status === "live") return r.a_report || r.b_report ? 3 : 2;
@@ -208,7 +260,7 @@ function renderShell() {
   $("room-root").innerHTML =
     '<p class="room-context" id="room-context"></p>' +
     '<ol class="room-steps" id="room-steps" aria-label="Match progress">' +
-      STEPS.map(function (s) { return "<li><span>" + s + "</span></li>"; }).join("") + "</ol>" +
+      (isHosted() ? HOSTED_STEPS : STEPS).map(function (s) { return "<li><span>" + s + "</span></li>"; }).join("") + "</ol>" +
     '<div class="room">' +
       '<div class="room__main">' +
         '<div class="room-state" id="room-state"></div>' +
@@ -222,7 +274,7 @@ function renderShell() {
         '<ol class="room-chat" id="room-chat"></ol>' +
         '<button type="button" class="chip chip--match room-chat__new" id="room-chat-new" hidden>New message</button>' +
         '<form class="room-chat__form" id="room-chat-form"><label for="room-chat-input" class="visually-hidden">Message</label>' +
-          '<input id="room-chat-input" type="text" maxlength="500" autocomplete="off" placeholder="Message your opponent" />' +
+          '<input id="room-chat-input" type="text" maxlength="500" autocomplete="off" placeholder="' + (amHost() ? "Message both players" : isHosted() ? "Message your opponent and the host" : "Message your opponent") + '" />' +
           '<button type="submit" class="btn btn--sm">Send</button></form>' +
         '<p class="muted room-chat__closed" id="room-chat-closed" hidden>This room is closed.</p>' +
       "</aside>" +
@@ -235,12 +287,13 @@ function renderShell() {
 function update() {
   const r = room.r;
   const i = room.info || {};
-  const live = r.status === "ready_check" || r.status === "live" || r.status === "disputed";
+  const live = r.status === "ready_check" || r.status === "live" || r.status === "disputed" || r.status === "setup";
   $("room-title").textContent = WILD_RIFT + " 1v1.";
   $("room-context").innerHTML = contextLine(r, i);
   renderSteps(r);
   renderPlayers(r, i);
-  $("room-lobby").innerHTML = live && r.room_code ? lobbyBox(r, i) : "";
+  if (isHosted()) renderHostedLobby(r);
+  else $("room-lobby").innerHTML = live && r.room_code ? lobbyBox(r, i) : "";
   renderState(r);
   renderEvidence();
   $("room-chat-form").hidden = !live;
@@ -254,7 +307,8 @@ function update() {
 
 function contextLine(r, i) {
   const round = i.rounds ? roundName(r.round, i.rounds) : "Round " + r.round;
-  return esc(i.tournament_name || "Tournament") + " · " + round + " · " + (i.entry_fee_cents ? formatRcoin(i.entry_fee_cents) + " entry" : "free");
+  const hostLine = isHosted() ? " · hosted by " + (amHost() ? "you" : i.host_username ? "@" + esc(i.host_username) : "the host") : "";
+  return esc(i.tournament_name || "Tournament") + " · " + round + " · " + (i.entry_fee_cents ? formatRcoin(i.entry_fee_cents) + " entry" : "free") + hostLine;
 }
 
 function renderSteps(r) {
@@ -268,7 +322,7 @@ function renderSteps(r) {
     if (idx === cur) li.setAttribute("aria-current", "step");
     else li.removeAttribute("aria-current");
   });
-  steps.querySelector("li:nth-child(4) span").textContent = r.status === "disputed" ? "In review" : "Report";
+  steps.querySelector("li:nth-child(4) span").textContent = r.status === "disputed" ? "In review" : isHosted() ? "Host decides" : "Report";
 }
 
 function playerChip(r, uid) {
@@ -278,6 +332,7 @@ function playerChip(r, uid) {
     const ready = isA ? r.a_ready_at : r.b_ready_at;
     return '<span class="chip' + (ready ? " chip--match" : "") + '" data-chip="' + (ready ? "ready" : "wait") + '">' + (ready ? "Ready" : "Not ready") + "</span>";
   }
+  if (r.status === "setup") return '<span class="chip" data-chip="setup">Waiting for the lobby</span>';
   if (r.status === "live" || r.status === "disputed") {
     const rep = isA ? r.a_report : r.b_report;
     if (!rep) return '<span class="chip" data-chip="playing">Playing</span>';
@@ -337,6 +392,59 @@ function lobbyBox(r, i) {
   "</div>";
 }
 
+// Hosted: the host's lobby card, from the newest lobby message.
+function latestLobby() {
+  for (let k = room.messages.length - 1; k >= 0; k--) if (room.messages[k].kind === "lobby") return room.messages[k];
+  return null;
+}
+
+function renderHostedLobby(r) {
+  const box = $("room-lobby");
+  if (r.status !== "live" && r.status !== "setup") { box.innerHTML = ""; return; }
+  if (r.status === "setup") {
+    box.innerHTML = '<div class="room-lobby room-lobby--wait"><p class="muted room-lobby__how">' +
+      (amHost() ? "Post the lobby on the Hosting page: the code, a password if it has one, and a screenshot if you like." : "The host is setting up the Wild Rift custom game. The lobby code shows here the moment it's posted.") + "</p></div>";
+    return;
+  }
+  // The room row is authoritative for the code and password (the host may
+  // re-post them); the newest lobby message only carries the screenshot.
+  const msg = latestLobby();
+  const code = r.lobby_name || null;
+  const password = r.lobby_password || null;
+  const image = msg && msg.image_path;
+  const sig = [code, password, image].join("|");
+  if (box.getAttribute("data-sig") === sig && box.firstChild) return;
+  const fresh = box.hasAttribute("data-sig");
+  box.setAttribute("data-sig", sig);
+  const copy = function (value, label) {
+    return '<button type="button" class="btn btn--sm room-copy" data-copy="' + esc(value) + '" aria-label="Copy ' + label + '">Copy</button>';
+  };
+  box.innerHTML = '<div class="room-lobby room-lobby--host">' +
+    '<p class="room-lobby__by"><span class="chip chip--settle">Host</span> posted the lobby' +
+      (msg && msg.created_at ? " at " + esc(new Date(msg.created_at).toLocaleTimeString("en", { hour: "2-digit", minute: "2-digit" })) : "") + "</p>" +
+    (code ? '<div class="room-lobby__code"><span class="k">Lobby code</span><span class="v">' + esc(code) + "</span>" + copy(code, "lobby code") + "</div>" : "") +
+    (password ? '<dl class="room-lobby__creds"><div><dt>Password</dt><dd><code>' + esc(password) + "</code>" + copy(password, "password") + "</dd></div></dl>" : "") +
+    (image ? '<a class="room-lobby__shot" data-lobby-img="' + esc(image) + '" target="_blank" rel="noopener"><img alt="Screenshot of the lobby from the host" /></a>' : "") +
+    '<p class="muted room-lobby__how">Join this custom game in Wild Rift and play 1v1 to the end. Then report the result and upload the end screen: the host decides.</p></div>';
+  if (fresh) replayClass(box.firstChild, "is-changed");
+  if (image) signLobbyImage(image);
+}
+
+function signLobbyImage(path) {
+  const apply = function (url) {
+    const a = document.querySelector('#room-lobby [data-lobby-img="' + String(path).replace(/"/g, "") + '"]');
+    if (!a || !url) return;
+    a.href = url;
+    a.querySelector("img").src = url;
+  };
+  if (room.lobbyUrls[path]) { apply(room.lobbyUrls[path]); return; }
+  if (!session.client.storage) return;
+  Promise.resolve(session.client.storage.from(LOBBY_BUCKET).createSignedUrl(path, 600)).then(function (r) {
+    const url = r && r.data && r.data.signedUrl;
+    if (url) { room.lobbyUrls[path] = url; apply(url); }
+  }).catch(function () { /* the code is enough */ });
+}
+
 function renderState(r) {
   const box = $("room-state");
   // Keep an open dispute form (and what's typed in it) across updates.
@@ -363,6 +471,9 @@ function renderState(r) {
 // The state card's color: blue while you act, cream while you wait, orange
 // in review, pink for a win, dim for a loss or no result.
 function stateTone(r) {
+  if (amHost()) return r.status === "done" || r.status === "void" ? "void" : r.status === "setup" || r.status === "live" ? "act" : "wait";
+  if (r.status === "setup") return "wait";
+  if (isHosted() && r.status === "live") return myReport() ? "wait" : "act";
   if (r.status === "ready_check") return myReady() ? "wait" : "act";
   if (r.status === "live") {
     const mine = myReport(); const theirs = theirReport();
@@ -402,6 +513,12 @@ function celebrate(r, wasStatus) {
 function prizeLine(won) {
   const i = room.info || {};
   if (!isPaid() || !isFinal()) return "";
+  if (isHosted()) {
+    if (!won) return "";
+    const cents = hostedSplit(i.entry_fee_cents, i.entrants || i.tournament_size).winner;
+    return '<p class="room-prize"><span class="room-prize__v" id="room-prize" data-cents="' + cents + '">' + formatRcoin(cents) +
+      "</span> is yours after the 24-hour appeal window.</p>";
+  }
   const split = prizeSplit(i.entry_fee_cents, i.tournament_size);
   const cents = won ? (room.r.walkover ? split.prizes : split.first) : room.r.walkover ? 0 : split.second;
   if (!cents) return "";
@@ -413,7 +530,62 @@ function nextActions(buttons) {
   return '<div class="room-actions">' + buttons.join("") + "</div>";
 }
 
+function hostStateHtml(r) {
+  const tid = esc(r.tournament_id || "");
+  const manage = nextActions(['<button type="button" class="btn btn--cta btn--sm" data-hosting="' + tid + '">Manage on Hosting</button>']);
+  if (r.status === "setup") return "<h2>You host this match</h2><p>Create the custom game, invite both Riot IDs, then post the lobby. Use the chat to reach the players.</p>" + manage;
+  if (r.status === "live") return "<h2>Match on</h2><p>When it ends, pick the winner on the Hosting page. Their reports and end screens are shown there.</p>" + manage;
+  if (r.status === "done") return "<h2>Decided</h2><p>" + esc(nameOf(r.winner_id)) + " won" + (r.walkover ? " by walkover" : "") + "." + (r.host_note ? " Your note: " + esc(r.host_note) : "") + "</p>" + manage;
+  if (r.status === "void") return "<h2>No result</h2><p>" + esc(r.host_note || r.resolution_note || "This match ended without a winner.") + "</p>" + manage;
+  return "<h2>Waiting for players</h2><p>This match opens when the previous round decides who plays.</p>" + manage;
+}
+
+// Hosted, as a player: the host posts the lobby and decides.
+function hostedStateHtml(r) {
+  const opp = esc(nameOf(opponentId()));
+  const i = room.info || {};
+  const tid = esc(r.tournament_id || "");
+  const toEvent = '<button type="button" class="btn btn--sm" data-event="' + tid + '">Tournament</button>';
+  if (r.status === "setup") {
+    return "<h2>Waiting for the host to post the lobby</h2><p>The host creates the Wild Rift custom game for you and " + opp +
+      ". The lobby code shows here the moment it's up; stay on this page or keep the chat open.</p>";
+  }
+  if (r.status === "live") {
+    const mine = myReport();
+    if (!mine) {
+      return "<h2>Match on</h2><p>Play the match in the host's lobby. When it ends, report the result and upload the end screen: the host decides the winner and sees both.</p>" +
+        nextActions(['<button type="button" class="btn btn--cta" data-act="won">I won</button>', '<button type="button" class="btn" data-act="lost">I lost</button>']);
+    }
+    return "<h2>Waiting for the host</h2><p>You reported that " + (mine === me() ? "you" : opp) + " won. The host decides the match" +
+      (theirReport() ? ", with both reports" : "") + ". Upload the end screen so they can see it.</p>" +
+      nextActions(['<button type="button" class="btn btn--cta" data-act="upload">Upload the end screen</button>']);
+  }
+  if (r.status === "void") {
+    return "<h2>No result</h2><p>" + esc(r.host_note || r.resolution_note || "The host voided this match.") + "</p>" + nextActions([toEvent]);
+  }
+  if (r.status === "done") {
+    const won = r.winner_id === me();
+    const how = r.walkover ? (won ? "Your opponent didn't show up. " : "The host gave the match to " + opp + " by walkover. ") : "";
+    const note = r.host_note ? "Host's note: " + esc(r.host_note) + ". " : "";
+    if (isFinal()) {
+      return '<h2 class="' + (won ? "is-win" : "is-loss") + '">' + (won ? "You're the champion." : "Runner-up.") + "</h2>" +
+        "<p>" + how + note + (won ? "You won " + esc(i.tournament_name || "the tournament") + "." : opp + " won " + esc(i.tournament_name || "the tournament") + ". Well played.") +
+        " If a result was wrong, you can appeal from the tournament page during the next 24 hours.</p>" +
+        prizeLine(won) + nextActions(['<button type="button" class="btn btn--cta btn--sm" data-event="' + tid + '">Tournament and appeal</button>']);
+    }
+    if (won) {
+      return '<h2 class="is-win">You won.</h2><p>' + how + note + "The host sent you through to the " + roundName(r.round + 1, i.rounds || r.round + 1).toLowerCase() +
+        ". It opens as soon as your next opponent is known.</p>" + '<div class="room-next" id="room-next"></div>' + nextActions([toEvent]);
+    }
+    return '<h2 class="is-loss">' + opp + " won.</h2><p>" + how + note + "You're out in the " + roundName(r.round, i.rounds || r.round).toLowerCase() +
+      ". If the host got it wrong, appeal from the tournament page after the final.</p>" + nextActions([toEvent]);
+  }
+  return "<h2>Waiting for your opponent</h2><p>This match opens when the previous round decides who you play.</p>";
+}
+
 function stateHtml(r) {
+  if (amHost()) return hostStateHtml(r);
+  if (isHosted()) return hostedStateHtml(r);
   const opp = esc(nameOf(opponentId()));
   const i = room.info || {};
   if (r.status === "waiting") return "<h2>Waiting for your opponent</h2><p>This match opens when the previous round decides who you play.</p>";
@@ -511,7 +683,7 @@ function renderEvidence() {
   const box = $("room-evidence");
   if (!box || !room.r) return;
   const r = room.r;
-  const canAdd = r.status === "live" || r.status === "disputed";
+  const canAdd = (r.status === "live" || r.status === "disputed") && amPlayer();
   box.hidden = !canAdd && !room.evidence.length;
   if (box.hidden) return;
   const hasScreen = !!(navigator.mediaDevices && navigator.mediaDevices.getDisplayMedia);
@@ -543,6 +715,7 @@ const CHECK_TEXT = {
 
 function checkMessage(out) {
   if (out.status === "verified") {
+    if (isHosted()) return "Verified. The host sees it next to your report.";
     return out.fast_tracked ? "Verified. The result confirms in 3 minutes unless your opponent disputes it." : "Verified. It stays attached as evidence.";
   }
   return CHECK_TEXT[out.status] || "Screenshot added.";
@@ -583,25 +756,39 @@ function checkEvidence(id) {
 
 function messageHtml(m) {
   const mine = m.user_id === me();
-  return '<li class="' + (mine ? "is-me" : "") + '"><span class="room-chat__who">' + esc(mine ? "You" : nameOf(m.user_id)) +
+  const fromHost = isHostMessage(m);
+  if (m.kind === "system") return '<li class="room-chat__system"><span class="room-chat__body">' + esc(m.body) + "</span></li>";
+  const who = fromHost ? (mine ? "You" : "Host") + ' <span class="chip chip--settle room-chat__host">Host</span>' : esc(mine ? "You" : nameOf(m.user_id));
+  return '<li class="' + (mine ? "is-me" : "") + (fromHost ? " is-host" : "") + (m.kind === "lobby" ? " is-lobby" : "") + '"><span class="room-chat__who">' + who +
     '</span><span class="room-chat__body">' + esc(m.body) + "</span></li>";
 }
 
 function renderChat() {
   const list = $("room-chat");
   if (!list) return;
+  if (room.r && TERMINAL[room.r.status]) {
+    list.innerHTML = '<li class="room-chat__empty">This match is over, so its chat is closed.</li>';
+    return;
+  }
   list.innerHTML = room.messages.length
     ? room.messages.map(messageHtml).join("")
-    : '<li class="room-chat__empty">Say hi and agree who creates the lobby.</li>';
+    : '<li class="room-chat__empty">' + (amHost() ? "Say hi to both players." : isHosted() ? "Say hi. The host can read and write here too." : "Say hi and agree who creates the lobby.") + "</li>";
   list.scrollTop = list.scrollHeight;
 }
 
 // New messages are appended (the list isn't rebuilt); the view follows them
 // only if the reader was already at the bottom.
 function appendMessage(m) {
+  if (room.r && TERMINAL[room.r.status]) return;
   if (room.messages.some(function (x) { return x.id === m.id; })) return;
   room.messages.push(m);
   const list = $("room-chat");
+  // Only the newest 200 stay in memory and on screen.
+  while (room.messages.length > MAX_MESSAGES) {
+    room.messages.shift();
+    if (list && list.firstElementChild) list.firstElementChild.remove();
+  }
+  if (m.kind === "lobby" && room.r && isHosted()) renderHostedLobby(room.r);
   if (!list) return;
   const atBottom = list.scrollHeight - list.scrollTop - list.clientHeight < 40;
   const empty = list.querySelector(".room-chat__empty");
@@ -686,6 +873,13 @@ function onAction(name) {
     return function (ok) { if (ok) return act("rib_room_report", { p_room_id: r.id, p_winner_id: winner }, okText); };
   };
   if (name === "won") {
+    if (isHosted()) {
+      return confirmAction({
+        title: "Report that you won?",
+        body: "The host decides this match and sees your report. Upload the end screen next so they can check it.",
+        ok: "I won",
+      }).then(report(me(), "Result sent to the host. Upload the end screen next."));
+    }
     return confirmAction({
       title: "Report that you won?",
       body: "If your opponent confirms, or doesn't respond in 10 minutes, the win is yours. Upload the end screen next: when it clearly shows your win, it confirms in 3 minutes.",
@@ -727,6 +921,10 @@ function wireShell() {
     }
     const roomBtn = e.target.closest("[data-room]");
     if (roomBtn) { openRoom(roomBtn.getAttribute("data-room")); return; }
+    const eventBtn = e.target.closest("[data-event]");
+    if (eventBtn) { goToPage("page-event", { arg: eventBtn.getAttribute("data-event") }); return; }
+    const hostBtn = e.target.closest("[data-hosting]");
+    if (hostBtn) { goToPage("page-hosting", { arg: hostBtn.getAttribute("data-hosting") }); return; }
     const go = e.target.closest("[data-go]");
     if (go) {
       const target = go.getAttribute("data-go");

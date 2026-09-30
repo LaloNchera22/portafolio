@@ -7,16 +7,29 @@ let pageLoaders = {};
 let routeArg = null; // "#page-room/<id>" → "<id>": what a page should open
 
 // Pages that belong to a nav destination without being one themselves.
-const NAV_PARENT = { "page-room": "page-compete", "page-ops": "page-profile", "page-player": "page-ranking" };
+const NAV_PARENT = {
+  "page-room": "page-compete", "page-ops": "page-profile", "page-player": "page-ranking",
+  "page-join": "page-compete", "page-event": "page-compete",
+};
 
-/** Parse "#page-room/abc" into { id: "page-room", arg: "abc" }. */
-function parseHash(hash) {
+// Short public hashes: a share link is "#join/<CODE>", not "#page-join/<CODE>".
+const HASH_ALIAS = { join: "page-join" };
+const PAGE_HASH = { "page-join": "join" };
+
+/** Parse "#page-room/abc" into { id: "page-room", arg: "abc" } ("#join/X" → page-join). */
+export function parseHash(hash) {
   const raw = (hash || "").replace(/^#/, "");
   const cut = raw.indexOf("/");
-  if (cut === -1) return { id: raw, arg: null };
+  const head = cut === -1 ? raw : raw.slice(0, cut);
+  const id = HASH_ALIAS[head] || head;
+  if (cut === -1) return { id: id, arg: null };
   let arg = raw.slice(cut + 1);
   try { arg = decodeURIComponent(arg); } catch (e) { /* a malformed escape: keep it raw */ }
-  return { id: raw.slice(0, cut), arg: arg || null };
+  return { id: id, arg: arg || null };
+}
+
+function hashFor(id, arg) {
+  return "#" + (PAGE_HASH[id] || id) + (arg ? "/" + encodeURIComponent(arg) : "");
 }
 
 /** The argument of the current route (e.g. the room id), if any. */
@@ -30,7 +43,7 @@ export function clearRouteArg() {
   routeArg = null;
   const id = parseHash(location.hash).id;
   if (isPage(id)) {
-    try { history.replaceState({ page: id, arg: null }, "", "#" + id); } catch (e) { /* ignore */ }
+    try { history.replaceState({ page: id, arg: null }, "", hashFor(id, null)); } catch (e) { /* ignore */ }
   }
 }
 
@@ -71,7 +84,7 @@ export function goToPage(id, options) {
   if (!isPage(id)) return;
   const arg = options && options.arg ? String(options.arg) : null;
   routeArg = arg;
-  const hash = "#" + id + (arg ? "/" + encodeURIComponent(arg) : "");
+  const hash = hashFor(id, arg);
   if (!(options && options.fromHistory) && location.hash !== hash) {
     history.pushState({ page: id, arg: arg }, "", hash);
   }
@@ -143,6 +156,7 @@ function syncTabs() {
   if (bnav) {
     const links = Array.prototype.slice.call(bnav.querySelectorAll("a[data-page]"));
     const idx = links.findIndex(function (a) { return a.getAttribute("aria-current") === "page"; });
+    bnav.style.setProperty("--bn-n", String(links.length || 1));
     bnav.style.setProperty("--bn-i", String(Math.max(0, idx)));
     bnav.style.setProperty("--bn-o", idx === -1 ? "0" : "1");
   }

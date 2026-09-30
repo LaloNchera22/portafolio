@@ -1,0 +1,29 @@
+name: Room cleanup
+
+# Every hour, ask the room-cleanup Edge Function to delete the chat messages
+# and lobby screenshots of match rooms whose tournament is over (finished or
+# cancelled, appeals resolved). Uses the same repository secrets as
+# ops-alerts; without them this is a no-op.
+on:
+  schedule:
+    - cron: "17 * * * *"
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Purge finished rooms
+        env:
+          FUNCTIONS_URL: ${{ secrets.SUPABASE_FUNCTIONS_URL }}
+          OPS_SECRET: ${{ secrets.OPS_SECRET }}
+        run: |
+          if [ -z "$FUNCTIONS_URL" ] || [ -z "$OPS_SECRET" ]; then
+            echo "Room cleanup not configured; skipping."
+            exit 0
+          fi
+          curl --fail --silent --show-error --max-time 60 -X POST \
+            -H "x-ops-secret: $OPS_SECRET" "$FUNCTIONS_URL/room-cleanup"

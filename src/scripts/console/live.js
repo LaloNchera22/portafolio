@@ -37,12 +37,15 @@ function describe(m) {
   const where = esc(m.tournament_name || "Tournament") + (m.rounds ? " · " + roundName(m.round, m.rounds) : "");
   let state;
   let deadline = null;
-  if (m.status === "ready_check") {
+  if (m.status === "setup") {
+    state = "Waiting for the host to post the lobby";
+  } else if (m.status === "ready_check") {
     state = m.needs_me ? "Get into the lobby and press Ready" : "You're ready. Waiting for " + esc(opp);
     deadline = m.ready_deadline;
   } else if (m.status === "live") {
     if (m.confirm_deadline && m.needs_me) { state = "Confirm " + esc(opp) + "'s result"; deadline = m.confirm_deadline; }
     else if (m.confirm_deadline) { state = "Waiting for " + esc(opp) + " to confirm"; deadline = m.confirm_deadline; }
+    else if (m.my_report) state = "Result reported. Waiting for the decision";
     else state = "Match on. Report the result when it ends";
   } else {
     state = "In review by the Runinback team";
@@ -88,7 +91,9 @@ function announce() {
     const d = describe(m);
     const text = m.status === "ready_check"
       ? "Your match vs " + d.opp + " is ready. " + countdown(m.ready_deadline) + " to get in."
-      : d.opp + " reported a result. Confirm or dispute it.";
+      : m.confirm_deadline
+        ? d.opp + " reported a result. Confirm or dispute it."
+        : "Your match vs " + d.opp + " is on. The lobby is in the room.";
     toast(text, "match", { label: "Open room", onClick: function () { openRoom(m.id); } });
   });
   live.first = false;

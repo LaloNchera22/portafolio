@@ -37,3 +37,8 @@ verify_jwt = true
 # Scheduled health check; authenticated by the x-ops-secret header.
 [functions.ops-alerts]
 verify_jwt = false
+
+# Scheduled chat retention (room messages and lobby screenshots); authenticated
+# by the x-ops-secret header like ops-alerts.
+[functions.room-cleanup]
+verify_jwt = false

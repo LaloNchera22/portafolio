@@ -20,7 +20,16 @@ insert into auth.users (id, email, raw_user_meta_data) values
   ('a2000000-0000-0000-0000-00000000000a', 'w2@example.test', '{"username":"wr_two"}'),
   ('a3000000-0000-0000-0000-00000000000a', 'w3@example.test', '{"username":"wr_three"}'),
   ('a4000000-0000-0000-0000-00000000000a', 'w4@example.test', '{"username":"wr_four"}'),
-  ('a5000000-0000-0000-0000-00000000000a', 'w5@example.test', '{"username":"wr_five"}');
+  ('a5000000-0000-0000-0000-00000000000a', 'w5@example.test', '{"username":"wr_five"}'),
+  ('c0000000-0000-0000-0000-0000000000c0', 'host@example.test', '{"username":"host_one"}'),
+  ('c9000000-0000-0000-0000-0000000000c9', 'hop@example.test', '{"username":"hosted_ops"}'),
+  ('c1000000-0000-0000-0000-0000000000c1', 'hp1@example.test', '{"username":"hp_one"}'),
+  ('c2000000-0000-0000-0000-0000000000c2', 'hp2@example.test', '{"username":"hp_two"}'),
+  ('c3000000-0000-0000-0000-0000000000c3', 'hp3@example.test', '{"username":"hp_three"}'),
+  ('c4000000-0000-0000-0000-0000000000c4', 'hp4@example.test', '{"username":"hp_four"}'),
+  ('c5000000-0000-0000-0000-0000000000c5', 'hp5@example.test', '{"username":"hp_five"}'),
+  ('c6000000-0000-0000-0000-0000000000c6', 'hp6@example.test', '{"username":"hp_six"}'),
+  ('c7000000-0000-0000-0000-0000000000c7', 'hp7@example.test', '{"username":"hp_seven"}');
 
 -- Run a statement as a signed-in user; returns the SQL error hint (or 'ok').
 create function pg_temp.as_user(p_uid uuid, p_sql text) returns text
@@ -120,7 +129,7 @@ begin
   perform pg_temp.expect(
     (select string_agg(p.proname, ',') from pg_proc p join pg_namespace n on n.oid = p.pronamespace
       where n.nspname = 'public' and has_function_privilege('anon', p.oid, 'execute')),
-    null, 'anon cannot execute any public function');
+    'rib_tournament_preview', 'anon can execute only the invite preview');
 
   -- Fund the three players (staging behaviour).
   update public.platform_settings set value = 'true' where key = 'test_payments_enabled';
@@ -248,7 +257,7 @@ begin
   perform pg_temp.expect(pg_temp.scalar_as(v_opp, format('select prize_cents::text || '':'' || eliminated::text from public.rib_my_tournaments() where id = %L', v_tournament)), '2520:false', 'my tournaments show what I won');
   perform pg_temp.expect(pg_temp.scalar_as(b, format('select prize_cents::text || '':'' || eliminated::text || '':'' || my_round from public.rib_my_tournaments() where id = %L', v_tournament)), '0:true:1', 'my tournaments show where I went out');
   perform pg_temp.expect(pg_temp.scalar_as(e, format('select name from public.rib_tournament_summary(%L)', v_tournament)), 'Cup', 'a tournament can be looked up for an invite link');
-  perform pg_temp.expect((select count(*)::text from public.rib_tournament_bracket(v_tournament)), '3', 'the bracket is public');
+  perform pg_temp.expect(pg_temp.scalar_as(e, format('select jsonb_array_length(public.rib_tournament_bracket(%L) -> ''rooms'')::text', v_tournament)), '3', 'the bracket is public');
   perform pg_temp.as_user(c, 'select public.rib_tournament_create(''Cup R'', ''Valorant'', 0, 4, ''riot'')');
   perform pg_temp.expect(pg_temp.as_user(c, 'select public.rib_game_account_remove(''riot'')'), 'game_account_in_use', 'a linked account in use cannot be removed');
   perform pg_temp.as_user(c, format('select public.rib_tournament_leave(%L)', (select id from public.tournaments where name = 'Cup R')));
@@ -753,6 +762,378 @@ begin
     (select count(*)::text from public.wallets w
       where w.test_balance_cents <> coalesce((select sum(amount_cents) from public.wallet_ledger l where l.user_id = w.user_id), 0)),
     '0', 'ledger reconciles with balances');
+end;
+$$;
+
+-- ============================================================================
+-- Hosted tournaments (0027): host rules, invites, byes, host decisions,
+-- appeal window, 85/5/10 split, appeals, abandon sweep, chat purge.
+-- ============================================================================
+-- Run a scalar query before login (anon role).
+create function pg_temp.scalar_anon(p_sql text) returns text
+language plpgsql as $$
+declare v text;
+begin
+  perform set_config('request.jwt.claim.sub', '', true);
+  execute 'set local role anon';
+  execute p_sql into v;
+  execute 'reset role';
+  return v;
+end;
+$$;
+
+-- The host plays out every match of a tournament: lobby, then player A wins.
+create function pg_temp.host_plays(p_host uuid, p_tournament uuid) returns void
+language plpgsql as $$
+declare v_room uuid; v_a uuid;
+begin
+  loop
+    v_room := null;
+    select id, player_a into v_room, v_a from public.match_rooms
+     where tournament_id = p_tournament and status in ('setup','live') order by round, slot limit 1;
+    exit when v_room is null;
+    perform pg_temp.expect(pg_temp.as_user(p_host, format('select public.rib_host_room_lobby(%L, ''WR-LOBBY'')', v_room)), 'ok', 'the host posts the lobby');
+    perform pg_temp.expect(pg_temp.as_user(p_host, format('select public.rib_host_decide(%L, %L)', v_room, v_a)), 'ok', 'the host decides the match');
+  end loop;
+end;
+$$;
+
+-- Money conservation for one tournament: every ledger movement plus the
+-- platform revenue nets to zero.
+create function pg_temp.conserved(p_tournament uuid) returns text
+language sql as $$
+  select (coalesce((select sum(amount_cents) from public.wallet_ledger where ref_id = p_tournament), 0)
+        + coalesce((select amount_cents from public.platform_revenue where tournament_id = p_tournament), 0))::text
+$$;
+
+do $$
+declare
+  h  uuid := 'c0000000-0000-0000-0000-0000000000c0';
+  op uuid := 'c9000000-0000-0000-0000-0000000000c9';
+  hp uuid[] := array['c1000000-0000-0000-0000-0000000000c1', 'c2000000-0000-0000-0000-0000000000c2',
+                     'c3000000-0000-0000-0000-0000000000c3', 'c4000000-0000-0000-0000-0000000000c4',
+                     'c5000000-0000-0000-0000-0000000000c5', 'c6000000-0000-0000-0000-0000000000c6',
+                     'c7000000-0000-0000-0000-0000000000c7']::uuid[];
+  i int;
+  v_t uuid; v_priv uuid; v_small uuid; v_x uuid; v_free uuid;
+  v_code text; v_code2 text; v_json jsonb;
+  v_room uuid; v_ya uuid; v_yb uuid; v_final uuid; v_winner uuid; v_app uuid; v_out uuid;
+  v_before bigint; v_msgs int;
+begin
+  update public.platform_settings set value = 'true' where key = 'test_payments_enabled';
+  for i in 1..7 loop
+    perform pg_temp.as_user(hp[i], 'select public.rib_buy_rcoin_test(10000)');
+    perform pg_temp.expect(pg_temp.as_user(hp[i], format('select public.rib_game_account_set(''riot'', ''HostedP%s#NA1'')', i)), 'ok', 'hosted player links a Riot ID');
+  end loop;
+
+  -- Creating.
+  perform pg_temp.expect(pg_temp.as_user(h, $q$select public.rib_hosted_create('Bad', 6, 0, 'public')$q$), 'invalid_size', 'hosted sizes are 4, 8, 16 or 32');
+  perform pg_temp.expect(pg_temp.as_user(h, $q$select public.rib_hosted_create('Bad', 8, 150, 'public')$q$), 'invalid_entry_fee', 'hosted entry fees are whole rcoin');
+  perform pg_temp.expect(pg_temp.as_user(h, $q$select public.rib_hosted_create('Bad', 8, 0, 'secret')$q$), 'invalid_visibility', 'visibility is public or private');
+  perform pg_temp.expect(pg_temp.as_user(h, $q$select public.rib_hosted_create('Bad', 8, 3000, 'public')$q$), 'host_fee_limit', 'new hosts are capped at 25 rcoin');
+  perform pg_temp.expect(pg_temp.as_user(h, $q$select public.rib_hosted_create('Hosted Cup', 8, 1000, 'public', 'Best of one')$q$), 'ok', 'anyone signed in can host');
+  select id, invite_code into v_t, v_code from public.tournaments where name = 'Hosted Cup';
+  perform pg_temp.expect((select mode || ':' || visibility || ':' || entrants || ':' || (invite_code ~ '^[A-HJ-NP-Z2-9]{10}$')::text || ':' || game from public.tournaments where id = v_t),
+    'hosted:public:0:true:Wild Rift', 'a hosted tournament gets an invite code and no entrant');
+  perform pg_temp.expect(public.rib_tournament_rounds(16)::text || '/' || public.rib_tournament_rounds(32)::text, '4/5', 'brackets of 16 and 32');
+
+  -- The host can't play.
+  perform pg_temp.expect(pg_temp.as_user(h, format('select public.rib_tournament_join(%L)', v_t)), 'host_cannot_play', 'the host cannot join by id');
+  perform pg_temp.expect(pg_temp.as_user(h, format('select public.rib_tournament_join_by_code(%L)', v_code)), 'host_cannot_play', 'the host cannot join by code');
+
+  -- Private tournaments: by code only, never listed.
+  perform pg_temp.expect(pg_temp.as_user(h, $q$select public.rib_hosted_create('Private Cup', 4, 500, 'private', 'Private rules')$q$), 'ok', 'host a private tournament');
+  select id, invite_code into v_priv, v_code2 from public.tournaments where name = 'Private Cup';
+  perform pg_temp.expect(pg_temp.as_user(hp[1], format('select public.rib_tournament_join(%L)', v_priv)), 'tournament_private', 'a private tournament is not joinable by id');
+  v_before := pg_temp.balance(hp[1]);
+  perform pg_temp.expect(pg_temp.as_user(hp[1], format('select public.rib_tournament_join_by_code(%L)', lower(v_code2))), 'ok', 'a private tournament is joinable by code');
+  perform pg_temp.expect(pg_temp.as_user(hp[2], 'select public.rib_tournament_join_by_code(''ZZZZZZZZ'')'), 'invite_invalid', 'an unknown code is refused');
+  perform pg_temp.expect(pg_temp.scalar_as(hp[2], format('select count(*)::text from public.rib_open_tournaments() where id = %L', v_priv)), '0', 'private tournaments are not listed');
+  perform pg_temp.expect(pg_temp.scalar_as(hp[2], format('select count(*)::text from public.tournaments where id = %L', v_priv)), '0', 'nor readable by other players');
+  perform pg_temp.expect(pg_temp.scalar_as(hp[2], format('select count(*)::text from public.tournament_entries where tournament_id = %L', v_priv)), '0', 'private entries are hidden from other players');
+  perform pg_temp.expect(pg_temp.scalar_as(hp[1], format('select count(*)::text from public.tournament_entries where tournament_id = %L', v_priv)), '1', 'an entrant sees the private entries');
+  perform pg_temp.expect(pg_temp.scalar_as(h, format('select count(*)::text from public.tournament_entries where tournament_id = %L', v_priv)), '1', 'the host sees the private entries');
+  perform pg_temp.expect(pg_temp.scalar_as(hp[2], format('select (invite_code is not null)::text from public.tournaments where id = %L', v_t)), 'true', 'a public invite code is readable like the link');
+  perform pg_temp.expect(pg_temp.scalar_as(hp[2], format('select mode || '':'' || host_username || '':'' || is_host from public.rib_open_tournaments() where id = %L', v_t)), 'hosted:host_one:false', 'the lobby shows the host');
+  perform pg_temp.expect(pg_temp.scalar_as(h, format('select is_host::text from public.rib_open_tournaments() where id = %L', v_t)), 'true', 'the lobby flags my own hosted tournament');
+  v_json := pg_temp.scalar_anon(format('select public.rib_tournament_preview(%L)::text', v_code2))::jsonb;
+  perform pg_temp.expect((v_json ->> 'name') || ':' || coalesce(v_json ->> 'is_host', 'none') || ':' || (v_json ->> 'entrants') || ':'
+    || coalesce(v_json ->> 'host_username', 'hidden') || ':' || coalesce(v_json ->> 'rules', 'hidden'),
+    'Private Cup:none:1:hidden:hidden', 'the invite preview works before login and hides a private host and rules');
+  perform pg_temp.expect(pg_temp.scalar_as(hp[1], format('select (public.rib_tournament_preview(%L) ->> ''host_username'') || '':'' || (public.rib_tournament_preview(%L) ->> ''rules'')', v_code2, v_code2)),
+    'host_one:Private rules', 'signed in, the preview shows the host and rules');
+  perform pg_temp.expect(coalesce(pg_temp.scalar_anon('select public.rib_tournament_preview(''ABCDEFGHJK'')::text'), 'none'), 'none', 'an unknown code previews as nothing');
+  perform pg_temp.expect(pg_temp.scalar_as(h, format('select (public.rib_tournament_preview(%L) ->> ''is_host'')', v_code2)), 'true', 'the preview knows the host');
+  perform pg_temp.expect(pg_temp.scalar_as(hp[1], format('select (public.rib_tournament_preview(%L) ->> ''joined'')', v_code2)), 'true', 'the preview knows I joined');
+
+  -- At most 3 live hosted tournaments; early start needs 4 players.
+  perform pg_temp.expect(pg_temp.as_user(h, $q$select public.rib_hosted_create('Small Cup', 8, 0, 'public')$q$), 'ok', 'a third hosted tournament');
+  perform pg_temp.expect(pg_temp.as_user(h, $q$select public.rib_hosted_create('Fourth Cup', 8, 0, 'public')$q$), 'host_limit', 'a host runs up to 3 at a time');
+  select id into v_small from public.tournaments where name = 'Small Cup';
+  for i in 1..3 loop perform pg_temp.as_user(hp[i], format('select public.rib_tournament_join(%L)', v_small)); end loop;
+  perform pg_temp.expect(pg_temp.as_user(hp[1], format('select public.rib_host_start(%L)', v_small)), 'not_host', 'only the host starts');
+  perform pg_temp.expect(pg_temp.as_user(h, format('select public.rib_host_start(%L)', v_small)), 'not_enough_players', 'an early start needs 4 players');
+  perform pg_temp.expect(pg_temp.as_user(hp[3], format('select public.rib_tournament_leave(%L)', v_small)), 'ok', 'a player leaves a hosted tournament');
+  perform pg_temp.expect((select status from public.tournaments where id = v_small), 'open', 'a hosted tournament stays open for its host');
+  perform pg_temp.expect(pg_temp.as_user(h, format('select public.rib_host_cancel(%L)', v_priv)), 'ok', 'the host cancels before the start');
+  perform pg_temp.expect((select status from public.tournaments where id = v_priv), 'cancelled', 'cancelled');
+  perform pg_temp.expect((pg_temp.balance(hp[1]) - v_before)::text, '0', 'cancelling refunds every entry fee');
+  perform pg_temp.as_user(h, format('select public.rib_host_cancel(%L)', v_small));
+
+  -- Hosted Cup: 7 entrants x 10 rcoin.
+  for i in 1..7 loop
+    perform pg_temp.expect(pg_temp.as_user(hp[i], format('select public.rib_tournament_join_by_code(%L)', v_code)), 'ok', 'players join by the invite link');
+  end loop;
+  v_json := pg_temp.scalar_as(hp[1], format('select public.rib_tournament_preview(%L)::text', v_code))::jsonb;
+  perform pg_temp.expect((v_json -> 'prize_now' ->> 'platform_cents') || '/' || (v_json -> 'prize_now' ->> 'host_cents') || '/' || (v_json -> 'prize_now' ->> 'winner_cents'),
+    '700/350/5950', 'fee split on 7 entrants: platform 7, host 3.50, winner 59.50');
+  perform pg_temp.expect((v_json -> 'prize_full' ->> 'winner_cents'), '6800', 'winner gets 85% when full');
+  perform pg_temp.expect(pg_temp.as_user(h, format('select public.rib_host_rotate_invite(%L)', v_t)), 'ok', 'the host rotates the invite');
+  perform pg_temp.expect(pg_temp.as_user(hp[1], format('select public.rib_tournament_join_by_code(%L)', v_code)), 'invite_invalid', 'the old code stops working');
+  perform pg_temp.expect(pg_temp.as_user(h, format('select public.rib_host_start(%L)', v_t)), 'ok', 'the host starts early');
+  perform pg_temp.expect((select status || ':' || max_players from public.tournaments where id = v_t), 'active:8', 'the bracket is the next power of two');
+  perform pg_temp.expect((select string_agg(status || case when walkover then '*' else '' end, ',' order by slot) from public.match_rooms where tournament_id = v_t and round = 1),
+    'done*,setup,setup,setup', 'the top seed gets a bye (walkover); hosted rooms wait in setup');
+  perform pg_temp.expect((select count(*)::text || ':' || count(*) filter (where round = 1 and player_b is null)::text from public.match_rooms where tournament_id = v_t), '7:1', 'seven rooms, one bye');
+  perform pg_temp.expect((select (player_a is not null)::text || ':' || status from public.match_rooms where tournament_id = v_t and round = 2 and slot = 0), 'true:waiting', 'the bye winner moves up');
+  perform pg_temp.expect(pg_temp.scalar_as(hp[2], format('select (public.rib_tournament_bracket(%L) ->> ''rounds'') || '':'' || jsonb_array_length(public.rib_tournament_bracket(%L) -> ''rooms'')', v_t, v_t)), '3:7', 'the bracket reads as jsonb');
+  perform pg_temp.expect(pg_temp.scalar_as(h, format('select count(*)::text from public.match_rooms where tournament_id = %L', v_t)), '7', 'the host sees every room');
+
+  -- A hosted room: the host posts the lobby; player reports are advisory.
+  select id, player_a, player_b into v_room, v_ya, v_yb from public.match_rooms where tournament_id = v_t and round = 1 and slot = 1;
+  select player_a into v_out from public.match_rooms where tournament_id = v_t and round = 1 and slot = 2;
+  perform pg_temp.expect(pg_temp.as_user(v_ya, format('select public.rib_room_report(%L, %L)', v_room, v_ya)), 'challenge_not_started', 'no report before the lobby');
+  perform pg_temp.expect(pg_temp.as_user(v_ya, format('select public.rib_room_ready(%L)', v_room)), 'room_not_waiting', 'hosted rooms have no ready check');
+  perform pg_temp.expect(pg_temp.as_user(v_ya, format('select public.rib_host_room_lobby(%L, ''X'')', v_room)), 'not_host', 'players cannot post the lobby');
+  perform pg_temp.expect(pg_temp.as_user(h, format('select public.rib_host_room_lobby(%L, null)', v_room)), 'lobby_required', 'a lobby needs a code or a screenshot');
+  perform pg_temp.expect(pg_temp.as_user(h, format('select public.rib_host_room_lobby(%L, ''WR-12345'', ''pw'', ''elsewhere/x.png'')', v_room)), 'invalid_lobby', 'the screenshot lives in the room folder');
+  perform pg_temp.expect(pg_temp.as_user(h, format('select public.rib_host_room_lobby(%L, ''WR-12345'', ''pw'')', v_room)), 'ok', 'the host posts the lobby');
+  perform pg_temp.expect((select status || ':' || lobby_name from public.match_rooms where id = v_room), 'live:WR-12345', 'the lobby makes the room live');
+  perform pg_temp.expect(pg_temp.scalar_as(v_ya, format('select kind || '':'' || body from public.room_messages where room_id = %L order by id desc limit 1', v_room)),
+    'lobby:Lobby code: WR-12345 · Password: pw', 'players read the lobby message');
+  update public.tournaments set last_progress_at = now() - interval '1 hour' where id = v_t;
+  perform pg_temp.expect(pg_temp.as_user(h, format('select public.rib_host_room_lobby(%L, null, null, %L)', v_room, v_room || '/' || gen_random_uuid() || '.png')), 'ok', 'the host re-posts a lobby screenshot');
+  perform pg_temp.expect((select lobby_name || ':' || lobby_password from public.match_rooms where id = v_room) || ':' || (select (last_progress_at < now())::text from public.tournaments where id = v_t),
+    'WR-12345:pw:true', 'a re-post keeps the code and does not count as progress');
+  perform pg_temp.expect(pg_temp.scalar_as(h, format('select mode || '':'' || host_username || '':'' || is_host || '':'' || entrants || '':'' || (host_id = %L) from public.rib_room_info(%L)', h, v_room)), 'hosted:host_one:true:7:true', 'the room page knows the host');
+  perform pg_temp.expect(pg_temp.scalar_as(v_ya, format('select mode || '':'' || host_username || '':'' || is_host from public.rib_room_info(%L)', v_room)), 'hosted:host_one:false', 'players see who hosts');
+  perform pg_temp.expect(pg_temp.as_user(h, format('select public.rib_room_message(%L, ''good luck'')', v_room)), 'ok', 'the host chats in the room');
+  perform pg_temp.expect(pg_temp.scalar_as(h, format('select count(*)::text from public.room_messages where room_id = %L', v_room)), '3', 'the host reads the room chat');
+  perform pg_temp.expect(pg_temp.scalar_as(v_out, format('select count(*)::text from public.room_messages where room_id = %L', v_room)), '0', 'other entrants cannot read it');
+  perform pg_temp.expect(pg_temp.as_user(v_ya, format('select public.rib_room_report(%L, %L)', v_room, v_ya)), 'ok', 'a player reports');
+  perform pg_temp.expect(pg_temp.as_user(v_yb, format('select public.rib_room_report(%L, %L)', v_room, v_ya)), 'ok', 'the other agrees');
+  perform pg_temp.expect((select status || ':' || coalesce(confirm_deadline::text, 'none') from public.match_rooms where id = v_room), 'live:none', 'matching player reports do not settle a hosted room');
+  perform pg_temp.expect(pg_temp.as_user(v_yb, format('select public.rib_room_dispute(%L, ''the host will get this wrong'')', v_room)), 'host_decides', 'no room disputes in hosted matches');
+  update public.match_rooms set confirm_deadline = now() - interval '1 minute' where id = v_room;
+  perform public.rib_room_sweep();
+  perform pg_temp.expect((select status from public.match_rooms where id = v_room), 'live', 'the confirm sweep skips hosted rooms');
+  update public.match_rooms set confirm_deadline = null, started_at = now() - interval '2 hours' where id = v_room;
+  perform pg_temp.expect(pg_temp.as_user(h, 'select public.rib_hosted_sweep()'), '42501', 'the hosted sweep is server-only');
+  perform public.rib_hosted_sweep();
+  perform pg_temp.expect((select review_flag::text from public.match_rooms where id = v_room), 'true', 'an undecided live room is flagged after the decide window');
+  insert into public.operators (user_id) values (op);
+  perform pg_temp.expect(pg_temp.scalar_as(op, format('select (r ->> ''player_a'') || '':'' || (r ->> ''player_b'') from jsonb_array_elements(public.rib_ops_hosted_queue() -> ''flagged_rooms'') r where r ->> ''room_id'' = %L', v_room)),
+    v_ya || ':' || v_yb, 'flagged rooms carry both players');
+  perform pg_temp.expect(pg_temp.as_user(v_ya, format('select public.rib_host_decide(%L, %L)', v_room, v_ya)), 'not_host', 'players cannot decide');
+  perform pg_temp.expect(pg_temp.as_user(h, format('select public.rib_host_decide(%L, %L)', v_room, h)), 'invalid_winner', 'the winner is one of the two players');
+  perform pg_temp.expect(pg_temp.as_user(h, format('select public.rib_host_decide(%L, %L, false, ''Scoreboard shows B'')', v_room, v_yb)), 'ok', 'the host decides against the reports');
+  perform pg_temp.expect((select status || ':' || (winner_id = v_yb)::text || ':' || host_note from public.match_rooms where id = v_room), 'done:true:Scoreboard shows B', 'the host decision ends the room');
+  perform pg_temp.expect((select (player_b = v_yb)::text || ':' || status from public.match_rooms where tournament_id = v_t and round = 2 and slot = 0), 'true:setup', 'the winner advances and the next room opens');
+
+  -- Walkover (setup) and a void.
+  select id, player_a, player_b into v_room, v_ya, v_yb from public.match_rooms where tournament_id = v_t and round = 1 and slot = 2;
+  perform pg_temp.expect(pg_temp.as_user(h, format('select public.rib_host_decide(%L, %L, true, '' '')', v_room, v_ya)), 'note_required', 'a walkover needs a note');
+  perform pg_temp.expect(pg_temp.as_user(h, format('select public.rib_host_decide(%L, %L, true, ''B never joined'')', v_room, v_ya)), 'walkover_too_early', 'a walkover waits 10 minutes');
+  update public.match_rooms set setup_at = now() - interval '11 minutes' where id = v_room;
+  perform pg_temp.expect(pg_temp.as_user(h, format('select public.rib_host_decide(%L, %L, true, ''B never joined'')', v_room, v_ya)), 'ok', 'a walkover before the lobby');
+  perform pg_temp.expect((select walkover::text from public.match_rooms where id = v_room) || ':' || (select no_shows::text from public.player_reputation where user_id = v_yb), 'true:1', 'the absent player counts a no-show');
+  select id into v_room from public.match_rooms where tournament_id = v_t and round = 1 and slot = 3;
+  perform pg_temp.expect(pg_temp.as_user(h, format('select public.rib_host_void_room(%L, null)', v_room)), 'note_required', 'a void needs a note');
+  perform pg_temp.expect(pg_temp.as_user(h, format('select public.rib_host_void_room(%L, ''Nobody came'')', v_room)), 'walkover_too_early', 'a void waits 10 minutes');
+  update public.match_rooms set setup_at = now() - interval '11 minutes' where id = v_room;
+  perform pg_temp.expect(pg_temp.as_user(h, format('select public.rib_host_void_room(%L, ''Nobody came'')', v_room)), 'ok', 'the host voids a room nobody showed up to');
+  perform pg_temp.expect((select status || ':' || walkover::text || ':' || (winner_id = v_ya)::text from public.match_rooms where tournament_id = v_t and round = 2 and slot = 1), 'done:true:true', 'the opponent of a void advances by walkover');
+
+  -- Semifinal (a real match length) and final (decided at once: flagged).
+  select id, player_a into v_room, v_ya from public.match_rooms where tournament_id = v_t and round = 2 and slot = 0;
+  perform pg_temp.as_user(h, format('select public.rib_host_room_lobby(%L, ''WR-SEMI'')', v_room));
+  update public.match_rooms set started_at = now() - interval '9 minutes' where id = v_room;
+  perform pg_temp.expect(pg_temp.as_user(h, format('select public.rib_host_decide(%L, %L)', v_room, v_ya)), 'ok', 'the host decides the semifinal');
+  perform pg_temp.expect((select review_flag::text from public.match_rooms where id = v_room), 'false', 'a decision after a real match length is not flagged');
+  perform pg_temp.host_plays(h, v_t);
+  perform pg_temp.expect((select review_flag::text from public.match_rooms where tournament_id = v_t and round = 3), 'true', 'a decision right after the lobby is flagged for review');
+  select id, winner_id, case when winner_id = player_a then player_b else player_a end into v_final, v_winner, v_app
+    from public.match_rooms where tournament_id = v_t and round = 3;
+  perform pg_temp.expect((select status || ':' || (winner_id = v_winner)::text || ':' || (payout_at = now() + interval '72 hours')::text from public.tournaments where id = v_t),
+    'payout_pending:true:true', 'a new host''s paid final waits out a 72-hour appeal window');
+  perform pg_temp.expect((select count(*)::text from public.wallet_ledger where ref_id = v_t and kind in ('tournament_prize','host_commission')), '0', 'no money moves at the final');
+
+  -- Appeal.
+  perform pg_temp.expect(pg_temp.as_user(h, format('select public.rib_tournament_appeal(%L, ''The host picked wrong'')', v_t)), 'not_an_entrant', 'the host cannot appeal');
+  perform pg_temp.expect(pg_temp.as_user(v_winner, format('select public.rib_tournament_appeal(%L, ''I want a bigger prize'')', v_t)), 'not_an_entrant', 'the winner cannot appeal');
+  perform pg_temp.expect(pg_temp.as_user(v_app, format('select public.rib_tournament_appeal(%L, ''short'')', v_t)), 'dispute_reason_required', 'an appeal needs a reason');
+  v_before := pg_temp.balance(v_app);
+  perform pg_temp.expect(pg_temp.as_user(v_app, format('select public.rib_tournament_appeal(%L, ''The final was decided wrongly'', %L)', v_t, v_final)), 'ok', 'an entrant appeals');
+  perform pg_temp.expect((v_before - pg_temp.balance(v_app))::text || ':' || (select status from public.tournaments where id = v_t), '100:disputed', 'the appeal holds a deposit and the payout');
+  perform pg_temp.expect(pg_temp.as_user(v_app, format('select public.rib_tournament_appeal(%L, ''Again, the final was wrong'')', v_t)), 'already_appealed', 'one appeal per player');
+  update public.tournaments set payout_at = now() - interval '1 second' where id = v_t;
+  perform public.rib_tournament_payouts();
+  perform pg_temp.expect((select status from public.tournaments where id = v_t) || ':' || (select count(*) from public.wallet_ledger where ref_id = v_t and kind = 'tournament_prize'), 'disputed:0', 'the payout job skips an appealed tournament');
+  perform pg_temp.expect(pg_temp.as_user(v_app, format('select public.rib_appeal_resolve(%L, ''overturn'', %L)', v_t, v_app)), 'not_operator', 'only operators resolve appeals');
+  perform pg_temp.expect(pg_temp.scalar_as(op, 'select jsonb_array_length(public.rib_ops_hosted_queue() -> ''appeals'')::text'), '1', 'operators see the appeal queue');
+  perform pg_temp.expect(pg_temp.as_user(op, format('select public.rib_appeal_resolve(%L, ''overturn'', %L)', v_t, v_winner)), 'invalid_winner', 'overturning needs another entrant');
+  perform pg_temp.expect(pg_temp.as_user(op, format('select public.rib_appeal_resolve(%L, ''uphold'', null, ''Result stands'')', v_t)), 'ok', 'the operator upholds the result');
+  perform pg_temp.expect((select status from public.tournaments where id = v_t) || ':' ||
+    (select sum(amount_cents) from public.wallet_ledger where ref_id = v_t and kind = 'tournament_prize' and user_id = v_winner) || ':' ||
+    (select sum(amount_cents) from public.wallet_ledger where ref_id = v_t and kind = 'host_commission' and user_id = h) || ':' ||
+    (select amount_cents from public.platform_revenue where tournament_id = v_t),
+    'finished:5950:350:800', 'uphold pays 85/5/10 and keeps the deposit');
+  perform pg_temp.expect((v_before - pg_temp.balance(v_app))::text || ':' || (select status from public.tournament_disputes where tournament_id = v_t and user_id = v_app), '100:rejected', 'a rejected appeal loses the deposit');
+  perform pg_temp.expect(pg_temp.conserved(v_t), '0', 'uphold conserves money');
+  perform pg_temp.expect((select hosted_completed::text from public.player_reputation where user_id = h), '1', 'the host completes a tournament');
+  perform pg_temp.expect(pg_temp.as_user(h, $q$select public.rib_hosted_create('Big fee', 4, 3000, 'public')$q$), 'host_fee_limit', 'the fee cap lifts only after 3 clean hosted payouts');
+  perform pg_temp.expect((select coalesce(sum(matches_completed), 0)::text from public.player_reputation where user_id = any (hp)), '0', 'hosted matches do not count as completed matches');
+  perform pg_temp.expect((select count(*)::text from public.player_stats where user_id = any (hp) and wins + losses > 0), '0', 'hosted matches do not feed the ranking');
+  perform pg_temp.expect(pg_temp.scalar_as(v_winner, format('select mode || '':'' || host_username || '':'' || prize_cents from public.rib_my_tournaments() where id = %L', v_t)), 'hosted:host_one:5950', 'my tournaments show the host and my prize');
+
+  -- No appeal: the payout job pays 85/5/10 after the window.
+  perform pg_temp.as_user(h, $q$select public.rib_hosted_create('Payout Cup', 4, 500, 'public')$q$);
+  select id into v_x from public.tournaments where name = 'Payout Cup';
+  for i in 1..4 loop perform pg_temp.as_user(hp[i], format('select public.rib_tournament_join(%L)', v_x)); end loop;
+  perform pg_temp.expect((select status from public.tournaments where id = v_x), 'active', 'a full hosted tournament starts');
+  perform pg_temp.host_plays(h, v_x);
+  select winner_id into v_winner from public.tournaments where id = v_x;
+  update public.tournaments set payout_at = now() - interval '1 second' where id = v_x;
+  perform public.rib_tournament_payouts();
+  perform pg_temp.expect((select status from public.tournaments where id = v_x) || ':' ||
+    (select sum(amount_cents) from public.wallet_ledger where ref_id = v_x and kind = 'tournament_prize' and user_id = v_winner) || ':' ||
+    (select sum(amount_cents) from public.wallet_ledger where ref_id = v_x and kind = 'host_commission') || ':' ||
+    (select amount_cents from public.platform_revenue where tournament_id = v_x),
+    'finished:1700:100:200', 'the payout job pays the hosted split');
+  perform pg_temp.expect(pg_temp.conserved(v_x), '0', 'the payout conserves money');
+
+  -- A hosted tournament never started: kept past 24 hours, cancelled after 7 days.
+  perform pg_temp.as_user(h, $q$select public.rib_hosted_create('Stale Cup', 4, 500, 'public')$q$);
+  select id into v_x from public.tournaments where name = 'Stale Cup';
+  perform pg_temp.as_user(hp[5], format('select public.rib_tournament_join(%L)', v_x));
+  update public.tournaments set created_at = now() - interval '25 hours' where id = v_x;
+  perform public.rib_room_sweep();
+  perform pg_temp.expect((select status from public.tournaments where id = v_x), 'open', 'the 24-hour sweep leaves hosted tournaments open');
+  update public.tournaments set created_at = now() - interval '8 days' where id = v_x;
+  perform public.rib_hosted_sweep();
+  perform pg_temp.expect((select status from public.tournaments where id = v_x) || ':' || pg_temp.conserved(v_x) || ':' ||
+    (select coalesce(host_strikes, 0) from public.player_reputation where user_id = h),
+    'cancelled:0:0', 'after 7 days a never-started hosted tournament is refunded, no strike');
+
+  -- Overturn: the appellant wins with the host commission; the host gets a strike.
+  perform pg_temp.as_user(h, $q$select public.rib_hosted_create('Overturn Cup', 4, 1000, 'public')$q$);
+  select id into v_x from public.tournaments where name = 'Overturn Cup';
+  for i in 1..4 loop perform pg_temp.as_user(hp[i], format('select public.rib_tournament_join(%L)', v_x)); end loop;
+  perform pg_temp.host_plays(h, v_x);
+  select winner_id, runner_up_id into v_winner, v_app from public.tournaments where id = v_x;
+  v_before := pg_temp.balance(v_app);
+  perform pg_temp.expect(pg_temp.as_user(v_app, format('select public.rib_tournament_appeal(%L, ''I won the final, see the end screen'')', v_x)), 'ok', 'the runner-up appeals');
+  update public.tournament_disputes set created_at = now() - interval '49 hours' where tournament_id = v_x;
+  perform pg_temp.expect(public.rib_ops_health() ->> 'stale_appeals', '1', 'appeals older than 48 hours are reported');
+  perform pg_temp.expect(pg_temp.as_user(op, format('select public.rib_appeal_resolve(%L, ''overturn'', %L, ''End screen shows the appellant won'')', v_x, v_app)), 'ok', 'the operator overturns');
+  perform pg_temp.expect((pg_temp.balance(v_app) - v_before)::text || ':' ||
+    coalesce((select sum(amount_cents) from public.wallet_ledger where ref_id = v_x and kind = 'tournament_prize' and user_id = v_winner), 0) || ':' ||
+    coalesce((select sum(amount_cents) from public.wallet_ledger where ref_id = v_x and kind = 'host_commission'), 0) || ':' ||
+    (select amount_cents from public.platform_revenue where tournament_id = v_x) || ':' ||
+    (select (winner_id = v_app)::text from public.tournaments where id = v_x),
+    '3600:0:0:400:true', 'overturn pays the new winner 90% and returns the deposit');
+  perform pg_temp.expect((select host_strikes::text from public.player_reputation where user_id = h), '1', 'an overturned result is a host strike');
+  perform pg_temp.expect(pg_temp.conserved(v_x), '0', 'overturn conserves money');
+
+  -- Refund all.
+  perform pg_temp.as_user(h, $q$select public.rib_hosted_create('Refund Cup', 4, 1000, 'public')$q$);
+  select id into v_x from public.tournaments where name = 'Refund Cup';
+  for i in 1..4 loop perform pg_temp.as_user(hp[i], format('select public.rib_tournament_join(%L)', v_x)); end loop;
+  perform pg_temp.host_plays(h, v_x);
+  select runner_up_id into v_app from public.tournaments where id = v_x;
+  perform pg_temp.as_user(v_app, format('select public.rib_tournament_appeal(%L, ''The host favoured his friend'')', v_x));
+  perform pg_temp.expect(pg_temp.as_user(op, format('select public.rib_appeal_resolve(%L, ''refund_all'')', v_x)), 'ok', 'the operator refunds everyone');
+  perform pg_temp.expect((select status from public.tournaments where id = v_x) || ':' || pg_temp.conserved(v_x) || ':' ||
+    (select count(*) from public.platform_revenue where tournament_id = v_x) || ':' ||
+    (select count(*) from public.wallet_ledger where ref_id = v_x and kind = 'tournament_refund') || ':' ||
+    (select host_strikes from public.player_reputation where user_id = h),
+    'cancelled:0:0:4:2', 'refund_all returns every entry fee and the deposit, host strike');
+
+  -- Abandoned: no progress for 24 hours voids it, refunds everyone, strike.
+  perform pg_temp.as_user(h, $q$select public.rib_hosted_create('Abandon Cup', 4, 500, 'public')$q$);
+  select id into v_x from public.tournaments where name = 'Abandon Cup';
+  for i in 1..4 loop perform pg_temp.as_user(hp[i], format('select public.rib_tournament_join(%L)', v_x)); end loop;
+  perform pg_temp.expect(pg_temp.as_user(h, format('select public.rib_host_cancel(%L)', v_x)), 'already_started', 'the host cannot cancel after the start');
+  update public.tournaments set last_progress_at = now() - interval '25 hours' where id = v_x;
+  perform public.rib_hosted_sweep();
+  perform pg_temp.expect((select status from public.tournaments where id = v_x) || ':' || pg_temp.conserved(v_x) || ':' ||
+    (select count(*) from public.match_rooms where tournament_id = v_x and status not in ('done','void')) || ':' ||
+    (select host_strikes from public.player_reputation where user_id = h),
+    'cancelled:0:0:3', 'the sweep voids an abandoned tournament and refunds it');
+  perform pg_temp.expect(pg_temp.as_user(h, $q$select public.rib_hosted_create('Paid again', 4, 100, 'public')$q$), 'host_restricted', 'hosts with 3 strikes host free only');
+  perform pg_temp.expect(pg_temp.as_user(h, $q$select public.rib_hosted_create('Free Cup H', 4, 0, 'public')$q$), 'ok', 'free hosting stays open');
+
+  -- Chat purge: only rooms of terminal tournaments.
+  select id into v_free from public.tournaments where name = 'Free Cup H';
+  for i in 1..4 loop perform pg_temp.as_user(hp[i], format('select public.rib_tournament_join(%L)', v_free)); end loop;
+  select id into v_room from public.match_rooms where tournament_id = v_free and round = 1 and slot = 0;
+  perform pg_temp.as_user(h, format('select public.rib_host_room_lobby(%L, ''WR-FREE'')', v_room));
+  perform pg_temp.expect(pg_temp.as_user(hp[1], 'select * from public.rib_room_purge_candidates(10)'), '42501', 'purge candidates are server-only');
+  perform pg_temp.expect(pg_temp.as_user(hp[1], 'select public.rib_room_messages_purge(''{}'')'), '42501', 'the purge is server-only');
+  perform pg_temp.expect((select count(*)::text from public.rib_room_purge_candidates(1000) c join public.match_rooms r on r.id = c.room_id where r.tournament_id = v_free), '0', 'rooms of a live tournament are not candidates');
+  perform pg_temp.expect((select (count(*) > 0)::text from public.rib_room_purge_candidates(1000) c join public.match_rooms r on r.id = c.room_id where r.tournament_id = v_t), 'true', 'rooms of a finished tournament are candidates');
+  select count(*) into v_msgs from public.room_messages m join public.match_rooms r on r.id = m.room_id where r.tournament_id = v_t;
+  perform pg_temp.expect(public.rib_room_messages_purge(array(select id from public.match_rooms where tournament_id in (v_t, v_free)))::text, v_msgs::text, 'the purge deletes the finished tournament''s messages');
+  perform pg_temp.expect((select count(*)::text from public.room_messages m join public.match_rooms r on r.id = m.room_id where r.tournament_id = v_t), '0', 'finished tournament chats are gone');
+  perform pg_temp.expect((select count(*)::text from public.room_messages where room_id = v_room), '1', 'live tournament chats stay');
+  perform pg_temp.expect((select count(*)::text from public.rib_room_purge_candidates(1000) c join public.match_rooms r on r.id = c.room_id where r.tournament_id = v_t), '0', 'purged rooms are not candidates again');
+
+  perform pg_temp.expect((public.rib_ops_health() ?& array['open_appeals','flagged_hosted_rooms','stale_appeals'])::text, 'true', 'ops health counts appeals and flagged rooms');
+  perform pg_temp.expect(public.rib_appeal_window_for(v_free)::text, '24:00:00', 'free tournaments keep the 24-hour appeal window');
+
+  -- Storage: lobby screenshots by the host of a live room, 10 per room;
+  -- evidence by the room's players; malformed names never raise.
+  select id, player_a, player_b into v_room, v_ya, v_yb from public.match_rooms where tournament_id = v_free and round = 1 and slot = 0;
+  perform pg_temp.expect(pg_temp.as_user(h, format('insert into storage.objects (bucket_id, name) values (''room-lobby'', %L)', v_room || '/' || gen_random_uuid() || '.png')), 'ok', 'the host uploads a lobby screenshot');
+  perform pg_temp.expect(pg_temp.as_user(v_ya, format('insert into storage.objects (bucket_id, name) values (''room-lobby'', %L)', v_room || '/' || gen_random_uuid() || '.png')), '42501', 'players cannot upload lobby screenshots');
+  perform pg_temp.expect(pg_temp.as_user(h, format('insert into storage.objects (bucket_id, name) values (''room-lobby'', %L)', v_final || '/' || gen_random_uuid() || '.png')), '42501', 'no lobby uploads to a finished room');
+  perform pg_temp.expect(pg_temp.as_user(h, format('insert into storage.objects (bucket_id, name) values (''room-lobby'', %L)', v_room || '/lobby.png')), '42501', 'lobby files are named <uuid>.<ext>');
+  for i in 1..9 loop
+    perform pg_temp.as_user(h, format('insert into storage.objects (bucket_id, name) values (''room-lobby'', %L)', v_room || '/' || gen_random_uuid() || '.webp'));
+  end loop;
+  perform pg_temp.expect(pg_temp.as_user(h, format('insert into storage.objects (bucket_id, name) values (''room-lobby'', %L)', v_room || '/' || gen_random_uuid() || '.png')), '42501', 'up to 10 lobby files per room');
+  perform pg_temp.expect(pg_temp.scalar_as(v_ya, format('select count(*)::text from storage.objects where bucket_id = ''room-lobby'' and name like %L', v_room || '/%')), '10', 'players read the lobby files');
+  perform pg_temp.expect(pg_temp.scalar_as(hp[7], format('select count(*)::text from storage.objects where bucket_id = ''room-lobby'' and name like %L', v_room || '/%')), '0', 'outsiders do not');
+  perform pg_temp.as_user(v_ya, format('delete from storage.objects where bucket_id = ''room-lobby'' and name like %L', v_room || '/%'));
+  perform pg_temp.expect((select count(*)::text from storage.objects where bucket_id = 'room-lobby' and name like v_room || '/%'), '10', 'players cannot delete lobby files');
+  perform pg_temp.as_user(h, format('delete from storage.objects where bucket_id = ''room-lobby'' and name = (select min(name) from storage.objects where bucket_id = ''room-lobby'' and name like %L)', v_room || '/%'));
+  perform pg_temp.expect((select count(*)::text from storage.objects where bucket_id = 'room-lobby' and name like v_room || '/%'), '9', 'the host deletes a lobby file of a live room');
+  perform pg_temp.expect(pg_temp.as_user(h, format('insert into storage.objects (bucket_id, name) values (''room-evidence'', %L)', v_room || '/' || h || '/end.png')), '42501', 'the host cannot upload evidence');
+  perform pg_temp.expect(pg_temp.as_user(v_ya, format('insert into storage.objects (bucket_id, name) values (''room-evidence'', %L)', v_room || '/' || v_ya || '/end.png')), 'ok', 'a player uploads evidence');
+  perform pg_temp.expect(pg_temp.as_user(hp[7], format('insert into storage.objects (bucket_id, name) values (''room-evidence'', %L)', v_room || '/' || hp[7] || '/end.png')), '42501', 'outsiders cannot upload evidence');
+  perform pg_temp.expect(pg_temp.as_user(hp[7], 'insert into storage.objects (bucket_id, name) values (''avatars'', ''not-a-uuid/x.png'')'), '42501', 'malformed names in other buckets are refused, not cast errors');
+
+  -- The 0019 operator resolution closes the disputes it settles.
+  insert into public.tournaments (creator_id, name, game, entry_fee_cents, max_players, status, format, network, entrants, winner_id, payout_at)
+  values (hp[6], 'Legacy Cup', 'Wild Rift', 0, 4, 'payout_pending', 'bracket', 'riot', 2, hp[1], now() + interval '1 hour') returning id into v_x;
+  insert into public.tournament_entries (tournament_id, user_id) values (v_x, hp[1]), (v_x, hp[2]);
+  perform pg_temp.expect(pg_temp.as_user(hp[2], format('select public.rib_tournament_dispute(%L, ''legacy dispute'')', v_x)), 'ok', 'a legacy dispute');
+  perform public.rib_tournament_resolve(v_x, 'refund');
+  perform pg_temp.expect((select status from public.tournament_disputes where tournament_id = v_x), 'upheld', 'a legacy refund closes its disputes');
+
+  -- Invite-code guessing: 20 failed lookups per 10 minutes.
+  for i in 1..20 loop
+    perform pg_temp.expect(coalesce(pg_temp.scalar_as(hp[7], 'select public.rib_tournament_preview(''ABCDEFGHJK'')::text'), 'none'), 'none', 'a failed lookup');
+  end loop;
+  perform pg_temp.expect(pg_temp.as_user(hp[7], 'select public.rib_tournament_preview(''ABCDEFGHJK'')'), 'rate_limited', 'too many failed lookups are refused');
+  perform pg_temp.expect(pg_temp.as_user(hp[7], format('select public.rib_tournament_join_by_code(%L)', (select invite_code from public.tournaments where id = v_free))), 'rate_limited', 'joining by code is refused too');
+  perform pg_temp.expect(pg_temp.scalar_as(h, 'select jsonb_array_length(public.rib_host_dashboard() -> ''tournaments'')::text'), '9', 'the host dashboard lists my tournaments');
+  perform pg_temp.expect(pg_temp.scalar_as(h, 'select (public.rib_host_dashboard() -> ''tournaments'' -> 0 ->> ''name'') || '':'' || jsonb_array_length(public.rib_host_dashboard() -> ''tournaments'' -> 0 -> ''rooms_needing_action'')'), 'Free Cup H:2', 'live tournaments first, with rooms needing action');
+
+  perform pg_temp.expect(
+    (select count(*)::text from public.wallets w
+      where w.test_balance_cents <> coalesce((select sum(amount_cents) from public.wallet_ledger l where l.user_id = w.user_id), 0)),
+    '0', 'ledger reconciles with balances after hosted tournaments');
 end;
 $$;
 

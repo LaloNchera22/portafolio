@@ -118,11 +118,14 @@ export function refreshWallet() {
     .catch(function () { return null; });
 }
 
+// Rows without a memo get a readable name for their kind.
+const LEDGER_LABELS = { host_commission: "Host commission", tournament_prize: "Tournament prize", tournament_entry: "Tournament entry fee" };
+
 // Ledger rows take the color of what moved: prizes pink, entry fees and
 // deposits orange, purchases and refunds green, withdrawals neutral.
 function ledgerKind(kind) {
   const k = String(kind || "").toLowerCase();
-  if (/prize|win|payout/.test(k)) return "prize";
+  if (/prize|win|payout|commission/.test(k)) return "prize";
   if (/entry|fee|deposit|hold|lock/.test(k)) return "entry";
   if (/refund|return|release/.test(k)) return "refund";
   if (/buy|purchase|top/.test(k)) return "buy";
@@ -149,7 +152,7 @@ export function loadLedger() {
       }
       box.innerHTML = '<div class="panel">' + rows.map(function (m) {
         const positive = m.amount_cents >= 0;
-        return '<div class="row row--led" data-kind="' + esc(ledgerKind(m.kind)) + '"><span class="led__dot" aria-hidden="true"></span><div><div class="row__name">' + esc(m.memo || m.kind) +
+        return '<div class="row row--led" data-kind="' + esc(ledgerKind(m.kind)) + '"><span class="led__dot" aria-hidden="true"></span><div><div class="row__name">' + esc(m.memo || LEDGER_LABELS[m.kind] || m.kind) +
           '</div><div class="row__meta">' + formatDate(m.created_at) + "</div></div>" +
           '<span class="amt ' + (positive ? "pos" : "neg") + '">' + (positive ? "+" : "") + formatRcoin(m.amount_cents) + "</span></div>";
       }).join("") + "</div>";
@@ -271,7 +274,13 @@ export function initWallet() {
         if (returnTo) {
           const target = returnTo;
           returnTo = null;
-          toast("rcoin added. You can join now.", "ok", { label: target.indexOf("q/") === 0 ? "Join now" : "Back to the tournament", onClick: function () { goToPage("page-compete", { arg: target }); } });
+          toast("rcoin added. You can join now.", "ok", {
+            label: target.indexOf("q/") === 0 ? "Join now" : "Back to the tournament",
+            onClick: function () {
+              if (target.indexOf("j/") === 0) goToPage("page-join", { arg: target.slice(2) });
+              else goToPage("page-compete", { arg: target });
+            },
+          });
         }
       })
       .catch(function () { showMessage($("wallet-msg"), "Network error.", false); })

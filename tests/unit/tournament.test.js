@@ -29,5 +29,8 @@ describe("bracket rounds", () => {
     expect(roundsFor(8)).toBe(3);
     expect([1, 2, 3].map((r) => roundName(r, 3))).toEqual(["Quarterfinals", "Semifinals", "Final"]);
     expect(roundName(1, 2)).toBe("Semifinals");
+    expect(roundsFor(16)).toBe(4);
+    expect(roundsFor(32)).toBe(5);
+    expect([1, 2].map((r) => roundName(r, 5))).toEqual(["Round of 32", "Round of 16"]);
   });
 });

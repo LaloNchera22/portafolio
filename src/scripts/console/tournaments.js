@@ -8,10 +8,12 @@
  * refund); when it fills, the live watcher sees the first room and the player
  * goes straight into it.
  *
- * Secondary: My tournaments (progress and brackets) and Custom (named events
- * to share, browse the open ones). Game and network are fixed: Wild Rift,
- * Riot ID. Seeding, advancement and payouts happen in the database; prizes
- * are 90% of the pool, split 70/30.
+ * Secondary: My tournaments (progress and brackets) and Hosted (public
+ * hosted tournaments to browse, an invite-code box, and "Host a tournament":
+ * rib_hosted_create, then the Hosting page with the share link). Game and
+ * network are fixed: Wild Rift, Riot ID. Seeding, advancement and payouts
+ * happen in the database; Quick Play prizes are 90% of the pool, split
+ * 70/30; hosted ones 85% winner, 5% host commission, 10% platform.
  *
  * What blocks a join is solved in place: no Riot ID links it and comes back
  * to the same tier, a short balance offers exactly the missing rcoin.
@@ -25,8 +27,12 @@ import { toast } from "../lib/errors.js";
 import { formatRcoin } from "../lib/format.js";
 import { announce } from "../lib/announce.js";
 import { prefersReducedMotion, tweenNumber } from "../lib/motion.js";
-import { prizeSplit, roundName, roundsFor } from "../lib/tournament.js";
+import { prizeSplit, roundName } from "../lib/tournament.js";
 import { QUICK_FEES, QUICK_TIERS, RIOT_NETWORK, WILD_RIFT, findTier, playReturn, tierKey } from "../lib/wild-rift.js";
+import {
+  HOST_FEE_PERCENT, RULES_MAX, hostedSplit, normalizeBracket, normalizeHostInfo, parseEntryFee, parseInviteInput, validateHostedForm,
+} from "../lib/hosted.js";
+import { renderBracket } from "./bracket-view.js";
 import { confirmAction } from "./confirm.js";
 import { errorText, session } from "./context.js";
 import { clearRouteArg, currentRouteArg, goToPage, selectedChipAmount } from "./navigation.js";
@@ -55,11 +61,14 @@ const openBrackets = {}; // tournament id -> bracket expanded
 
 function feeText(cents) { return cents ? formatRcoin(cents) : "Free"; }
 
-function prizeLine(feeCents, size) {
+function prizeLine(feeCents, size, hosted) {
   if (!feeCents) return '<span class="tcard__free">Free · no prize</span>';
+  if (hosted) return '<span class="tcard__prize">Winner ' + formatRcoin(hostedSplit(feeCents, size).winner) + " when full</span>";
   const s = prizeSplit(feeCents, size);
   return '<span class="tcard__prize">Champion ' + formatRcoin(s.first) + " · runner-up " + formatRcoin(s.second) + "</span>";
 }
+
+function isHosted(t) { return !!t && t.mode === "hosted"; }
 
 /** Invite link for a tournament (opens it straight on Play). */
 function inviteUrl(id) {
@@ -410,6 +419,11 @@ function loadInvite() {
 
 /* ---- custom tournaments ----------------------------------------------------- */
 function cardAction(t, linked) {
+  if (t.is_host) return '<span class="chip chip--settle">You host</span><button type="button" class="btn btn--sm" data-manage="' + esc(t.id) + '">Manage</button>';
+  if (t.joined && isHosted(t)) {
+    return '<span class="chip chip--match">Joined</span><button type="button" class="btn btn--sm" data-event="' + esc(t.id) + '">View</button>' +
+      '<button type="button" class="btn btn--sm" data-leave="' + esc(t.id) + '">Leave</button>';
+  }
   if (t.joined) {
     return '<span class="chip chip--match">Joined</span>' +
       '<button type="button" class="btn btn--sm" data-invite="' + esc(t.id) + '">Copy invite link</button>' +
@@ -423,18 +437,21 @@ function cardAction(t, linked) {
     return '<button type="button" class="btn btn--sm" data-topup="' + (t.entry_fee_cents - session.balanceCents) + '" data-for="' + esc(t.id) + '">Add rcoin to join</button>' +
       '<span class="tcard__note">You need ' + formatRcoin(t.entry_fee_cents) + ", you have " + formatRcoin(session.balanceCents) + ".</span>";
   }
-  return '<button type="button" class="btn btn--cta btn--sm" data-join="' + esc(t.id) + '" data-fee="' + esc(t.entry_fee_cents) + '" data-name="' + esc(t.name) + '">Join · ' + feeText(t.entry_fee_cents) + "</button>";
+  return '<button type="button" class="btn btn--cta btn--sm" data-join="' + esc(t.id) + '" data-fee="' + esc(t.entry_fee_cents) + '" data-name="' + esc(t.name) + '"' +
+    (isHosted(t) ? ' data-hosted="' + esc(t.size) + '"' : "") + ">Join · " + feeText(t.entry_fee_cents) + "</button>";
 }
 
 function card(t, linked, extraClass) {
   const need = t.size - t.entrants;
   const needText = need === 1 ? '<span class="tcard__last">1 seat left</span>' : need > 0 ? need + " seats left" : "Full";
   return '<article class="tcard' + (t.joined ? " is-joined" : "") + (need === 1 ? " is-last-seat" : "") + (extraClass || "") + '" data-tid="' + esc(t.id) + '">' +
-    '<div class="tcard__top"><div><h3 class="tcard__name">' + esc(t.name) + "</h3>" +
-      '<div class="row__meta">by @' + esc(t.creator_username || "player") + "</div></div>" +
+    '<div class="tcard__top"><div>' + (isHosted(t) ? '<p class="tcard__eyebrow"><span class="chip chip--settle">Hosted</span>' +
+        (t.visibility === "private" ? ' <span class="chip">Private</span>' : "") + "</p>" : "") +
+      '<h3 class="tcard__name">' + esc(t.name) + "</h3>" +
+      '<div class="row__meta">' + (isHosted(t) ? "hosted by @" : "by @") + esc(t.host_username || t.creator_username || "player") + "</div></div>" +
       '<div class="tcard__pool"><span class="k">entry</span><span class="v' + (t.entry_fee_cents ? "" : " is-free") + '">' + feeText(t.entry_fee_cents) + "</span></div></div>" +
     seats(t) +
-    '<div class="tcard__mid"><span>' + t.entrants + "/" + t.size + " players · " + needText + "</span>" + prizeLine(t.entry_fee_cents, t.size) + "</div>" +
+    '<div class="tcard__mid"><span>' + t.entrants + "/" + t.size + " players · " + needText + "</span>" + prizeLine(t.entry_fee_cents, t.size, isHosted(t)) + "</div>" +
     '<div class="tcard__act">' + cardAction(t, linked) + "</div></article>";
 }
 
@@ -456,9 +473,9 @@ function loadLobby() {
     if (r.error) { box.innerHTML = '<p class="muted">Couldn\'t load tournaments. Try again in a moment.</p>'; return; }
     const rows = Array.isArray(r.data) ? r.data : [];
     if (!rows.length) {
-      box.innerHTML = '<div class="empty">' + peakArt("match") + "<h3>" + (play.size ? "No tournaments match" : "No custom tournaments waiting") +
-        "</h3><p>Create one: name it, pick 4 or 8 players and the entry fee, and share the link. It starts the moment it fills.</p>" +
-        '<p><button type="button" class="btn btn--cta btn--sm" data-create>New tournament</button></p></div>';
+      box.innerHTML = '<div class="empty">' + peakArt("match") + "<h3>" + (play.size ? "No tournaments match" : "No public tournaments waiting") +
+        "</h3><p>Host one: name it, pick the size and the entry fee, and share the link. You post each match's lobby and pick the winners.</p>" +
+        '<p><button type="button" class="btn btn--cta btn--sm" data-create>Host a tournament</button></p></div>';
       return;
     }
     box.innerHTML = '<div class="tgrid">' + rows.map(function (t) { return card(t, res[1]); }).join("") + "</div>";
@@ -507,9 +524,11 @@ function onClick(e) {
     const id = b.getAttribute("data-join");
     const fee = parseInt(b.getAttribute("data-fee"), 10) || 0;
     const name = b.getAttribute("data-name") || "this tournament";
+    const hostedSize = parseInt(b.getAttribute("data-hosted"), 10) || 0;
     const join = function () {
       return call("rib_tournament_join", { p_tournament_id: id }, b, function (t) {
         play.started[id] = true;
+        if (hostedSize) { toast("You're in " + name + ". The host posts each match's lobby.", "ok"); goToPage("page-event", { arg: id }); return; }
         if (t && t.status === "active") toast(name + " just started. Your first match is ready.", "match");
         else toast("You're in. It starts as soon as it fills.", "ok");
       });
@@ -517,7 +536,9 @@ function onClick(e) {
     if (!fee) { join(); return; }
     confirmAction({
       title: "Join " + name + " for " + formatRcoin(fee) + "?",
-      body: "You can leave for a full refund until it fills, and you're refunded if it doesn't fill in 24 hours. When it fills, you'll have " + READY_MINUTES + " minutes to get ready for your first match.",
+      body: hostedSize
+        ? "The host runs this bracket and decides each match. The winner takes " + formatRcoin(hostedSplit(fee, hostedSize).winner) + " if it fills (85% of the prize pool). You can leave for a full refund until it starts."
+        : "You can leave for a full refund until it fills, and you're refunded if it doesn't fill in 24 hours. When it fills, you'll have " + READY_MINUTES + " minutes to get ready for your first match.",
       ok: "Pay " + formatRcoin(fee) + " and join",
     }).then(function (ok) { if (ok) join(); });
     return;
@@ -545,6 +566,8 @@ function onClick(e) {
     return;
   }
   if (b.hasAttribute("data-room")) { openRoom(b.getAttribute("data-room")); return; }
+  if (b.hasAttribute("data-event")) { goToPage("page-event", { arg: b.getAttribute("data-event") }); return; }
+  if (b.hasAttribute("data-manage")) { goToPage("page-hosting", { arg: b.getAttribute("data-manage") }); return; }
   if (b.hasAttribute("data-bracket")) toggleBracket(b.getAttribute("data-bracket"), b);
 }
 
@@ -555,6 +578,10 @@ function myLine(t) {
     return { tone: "match", chip: '<span class="chip chip--match">Waiting</span>', text: t.entrants + "/" + t.size + " joined · refunded in " + hoursLeft + " h if it doesn't fill" };
   }
   if (t.status === "cancelled") return { tone: "off", chip: '<span class="chip">Cancelled</span>', text: "Entry fee refunded" };
+  if (t.status === "payout_pending") {
+    return { tone: "settle", chip: '<span class="chip chip--settle">' + (t.placement === 1 ? "Champion" : "Final played") + "</span>", text: "Prizes are paid when the appeal window closes" };
+  }
+  if (t.status === "disputed") return { tone: "escrow", chip: '<span class="chip chip--escrow">Appeal in review</span>', text: "Prizes are on hold until the Runinback team decides" };
   if (t.status === "finished") {
     if (t.placement === 1) return { tone: "settle", chip: '<span class="chip chip--settle">Champion</span>', text: t.prize_cents ? "Won " + formatRcoin(t.prize_cents) : "Won" };
     if (t.placement === 2) return { tone: "settle", chip: '<span class="chip chip--settle">Runner-up</span>', text: t.prize_cents ? "Won " + formatRcoin(t.prize_cents) : "Final" };
@@ -562,6 +589,7 @@ function myLine(t) {
   }
   const round = t.my_round && t.rounds ? roundName(t.my_round, t.rounds) : "Match";
   if (t.eliminated) return { tone: "off", chip: '<span class="chip">Out</span>', text: "Out in the " + round.toLowerCase() };
+  if (t.my_room_status === "setup") return { tone: "live", chip: '<span class="chip chip--match is-live">Your ' + esc(round.toLowerCase()) + "</span>", text: "Waiting for the host to post the lobby", room: t.my_room_id };
   if (t.my_room_status === "ready_check" || t.my_room_status === "live") {
     return { tone: "live", chip: '<span class="chip chip--match is-live">Your ' + esc(round.toLowerCase()) + "</span>", text: t.my_room_status === "ready_check" ? "Ready check open" : "Match on", room: t.my_room_id };
   }
@@ -601,15 +629,17 @@ function renderMine() {
   }
   box.innerHTML = '<div class="panel">' + rows.map(function (t) {
     const line = myLine(t);
-    const canBracket = t.status === "active" || t.status === "finished";
+    const canBracket = t.status !== "open" && t.status !== "cancelled";
     return '<div class="row row--tmine" data-tone="' + line.tone + '"><div class="row--tmine__main"><div class="row__name">' + esc(t.name) + " " + line.chip + "</div>" +
       '<div class="row__meta">' + t.size + " players · " + feeText(t.entry_fee_cents) + " · " + esc(line.text) + "</div></div>" +
       '<div class="row__act">' +
         (line.room ? '<button type="button" class="btn btn--cta btn--sm" data-room="' + esc(line.room) + '">Open room</button>' : "") +
+        (isHosted(t) ? '<button type="button" class="btn btn--sm" data-event="' + esc(t.id) + '">View</button>' : "") +
         (canBracket ? '<button type="button" class="btn btn--sm" data-bracket="' + esc(t.id) + '" aria-expanded="false" aria-controls="bracket-' + esc(t.id) + '">Bracket</button>' : "") +
         (t.status === "open" ? '<button type="button" class="btn btn--sm" data-invite="' + esc(t.id) + '">Copy invite link</button><button type="button" class="btn btn--sm" data-leave="' + esc(t.id) + '">Leave</button>' : "") +
       "</div>" +
-      '<div class="bracket" id="bracket-' + esc(t.id) + '" data-size="' + t.size + '" data-fee="' + esc(t.entry_fee_cents) + '" hidden></div></div>';
+      '<div class="bracket" id="bracket-' + esc(t.id) + '" data-size="' + t.size + '" data-fee="' + esc(t.entry_fee_cents) + '" data-entrants="' + esc(t.entrants) + '"' +
+        (isHosted(t) ? ' data-hosted="1"' : "") + " hidden></div></div>";
   }).join("") + "</div>";
   Object.keys(openBrackets).forEach(function (id) {
     const b = box.querySelector('[data-bracket="' + id + '"]');
@@ -628,78 +658,94 @@ function toggleBracket(id, btn, forceOpen) {
   if (!open) return;
   const size = parseInt(box.getAttribute("data-size"), 10);
   const fee = parseInt(box.getAttribute("data-fee"), 10) || 0;
-  const first = !box.innerHTML;
-  if (first) box.innerHTML = skelRows(2);
+  const entrants = parseInt(box.getAttribute("data-entrants"), 10) || size;
+  const hosted = box.hasAttribute("data-hosted");
+  if (!box.innerHTML) box.innerHTML = skelRows(2);
   session.client.rpc("rib_tournament_bracket", { p_tournament_id: id }).then(function (r) {
-    const rows = Array.isArray(r && r.data) ? r.data : [];
-    box.innerHTML = bracketHtml(rows, size, fee);
-    // Rounds reveal left to right the first time it opens, not on refreshes.
-    box.classList.toggle("is-reveal", first);
+    const b = normalizeBracket(r && r.data);
+    renderBracket(box, b.rows, {
+      size: b.size || size, rounds: b.rounds, uid: session.uid,
+      champPrize: function (final) {
+        if (!fee) return null;
+        if (hosted) return hostedSplit(fee, entrants).winner;
+        const prize = prizeSplit(fee, size);
+        return final && final.walkover ? prize.prizes : prize.first;
+      },
+      action: function (m, mine) {
+        const live = mine && (m.status === "ready_check" || m.status === "setup" || m.status === "live" || m.status === "disputed");
+        return live ? '<button type="button" class="btn btn--cta btn--sm" data-room="' + esc(m.room_id) + '">Open room</button>' : "";
+      },
+    });
   }).catch(function () { box.innerHTML = '<p class="muted">Couldn\'t load the bracket. Try again in a moment.</p>'; });
 }
 
-function bracketHtml(rows, size, fee) {
-  const rounds = roundsFor(size);
-  const player = function (m, uid, name) {
-    if (!uid) return '<span class="bracket__p is-tbd">TBD</span>';
-    const won = m.winner_id && m.winner_id === uid;
-    const lost = m.winner_id && m.winner_id !== uid;
-    return '<span class="bracket__p' + (won ? " is-win" : "") + (lost ? " is-out" : "") + (uid === session.uid ? " is-me" : "") + '">@' + esc(name || "player") + "</span>";
-  };
-  const match = function (m) {
-    const mine = m.player_a === session.uid || m.player_b === session.uid;
-    const liveMine = mine && (m.status === "ready_check" || m.status === "live" || m.status === "disputed");
-    return '<div class="bracket__m' + (mine ? " is-mine" : "") + '">' + player(m, m.player_a, m.a_username) + player(m, m.player_b, m.b_username) +
-      (m.walkover ? '<span class="bracket__note">walkover</span>' : m.status === "void" ? '<span class="bracket__note">no result</span>' : "") +
-      (liveMine ? '<span class="bracket__act"><button type="button" class="btn btn--cta btn--sm" data-room="' + esc(m.room_id) + '">Open room</button></span>' : "") + "</div>";
-  };
-  let html = '<div class="bracket__cols" tabindex="0" role="group" aria-label="Bracket">';
-  for (let i = 1; i <= rounds; i++) {
-    const col = rows.filter(function (m) { return m.round === i; });
-    const pairs = [];
-    for (let k = 0; k < col.length; k += 2) pairs.push(col.slice(k, k + 2));
-    html += '<div class="bracket__col" style="--i:' + (i - 1) + '"><h4>' + roundName(i, rounds) + '</h4><div class="bracket__slots">' +
-      pairs.map(function (p) {
-        const mine = p.some(function (m) { return m.player_a === session.uid || m.player_b === session.uid; });
-        return '<div class="bracket__pair' + (p.length > 1 ? " is-pair" : "") + (mine ? " has-me" : "") + '">' + p.map(match).join("") + "</div>";
-      }).join("") + "</div></div>";
-  }
-  const final = rows.filter(function (m) { return m.round === rounds; })[0];
-  const champ = final && final.status === "done" && final.winner_id
-    ? (final.winner_id === final.player_a ? final.a_username : final.b_username) : null;
-  const prize = fee ? prizeSplit(fee, size) : null;
-  html += '<div class="bracket__col bracket__col--champ" style="--i:' + rounds + '"><h4>Champion</h4><div class="bracket__slots"><div class="bracket__champ' + (champ ? " is-set" : "") + '">' +
-    '<span class="' + (champ ? "v" : "muted") + '">' + (champ ? "@" + esc(champ) : "TBD") + "</span>" +
-    (prize ? '<span class="k">' + formatRcoin(final && final.walkover ? prize.prizes : prize.first) + "</span>" : "") + "</div></div></div>";
-  return html + "</div>";
+/* ---- host a tournament ------------------------------------------------------
+ * Name, size (4/8/16/32), entry fee (whole rcoin), public or private, rules.
+ * The breakdown is what gets paid if it fills: the winner 85%, the host 5%,
+ * the platform 10% (lib/hosted.js, the payout job's integer math).
+ * -------------------------------------------------------------------------- */
+const preview = { pool: 0, winner: 0, host: 0, platform: 0 };
+
+function formVisibility() {
+  const on = document.querySelector('#tournament-visibility button[aria-pressed="true"]');
+  return on ? on.getAttribute("data-vis") : "public";
 }
 
-/* ---- create a custom tournament ------------------------------------------- */
-const preview = { pool: 0, first: 0, second: 0, platform: 0 };
 function updatePrizePreview() {
-  const fee = selectedChipAmount("tournament-fee") || 0;
-  const size = selectedChipAmount("tournament-size") || 4;
   const box = $("tournament-prize");
   if (!box) return;
-  if (!fee) { box.innerHTML = "<div><dt>Prize</dt><dd>Free tournament, no prize</dd></div>"; box.dataset.built = ""; return; }
-  const s = prizeSplit(fee, size);
+  const fee = parseEntryFee($("tournament-fee") ? $("tournament-fee").value : "");
+  const size = selectedChipAmount("tournament-size") || 4;
+  if (fee.error || !fee.cents) {
+    box.innerHTML = "<div><dt>Prize</dt><dd>" + (fee.error ? "Enter a whole number of rcoin" : "Free tournament, no prize") + "</dd></div>";
+    box.dataset.built = "";
+    return;
+  }
+  const s = hostedSplit(fee.cents, size);
   if (!box.dataset.built) {
     box.innerHTML =
-      '<div><dt>Pool</dt><dd data-k="pool"></dd></div>' +
-      '<div><dt>Champion</dt><dd data-k="first"></dd></div>' +
-      '<div><dt>Runner-up</dt><dd data-k="second"></dd></div>' +
+      '<div><dt>Prize pool (full)</dt><dd data-k="pool"></dd></div>' +
+      '<div><dt>Winner (85%)</dt><dd data-k="winner"></dd></div>' +
+      '<div><dt>Host commission (' + HOST_FEE_PERCENT + '%)</dt><dd data-k="host"></dd></div>' +
       '<div><dt>Platform (10%)</dt><dd data-k="platform"></dd></div>';
     box.dataset.built = "1";
   }
-  ["pool", "first", "second", "platform"].forEach(function (k) {
+  ["pool", "winner", "host", "platform"].forEach(function (k) {
     const el = box.querySelector('[data-k="' + k + '"]');
     tweenNumber(el, preview[k], s[k], function (v) { el.textContent = formatRcoin(Math.round(v)); }, 300);
     preview[k] = s[k];
   });
 }
 
+function updateRulesCount() {
+  const input = $("tournament-rules");
+  const out = $("tournament-rules-count");
+  if (input && out) out.textContent = input.value.length + " / " + RULES_MAX;
+}
+
+// The fee a host may set (new hosts up to 25 rcoin, 3 strikes: free only),
+// from rib_host_dashboard; read once, when the form first opens.
+let hostLimits = null;
+function loadHostLimits() {
+  if (hostLimits) return;
+  hostLimits = Promise.resolve(session.client.rpc("rib_host_dashboard", { p_limit: 1 })).then(function (r) {
+    const info = r && !r.error ? normalizeHostInfo(r.data) : null;
+    const input = $("tournament-fee");
+    if (!info || !input) return;
+    const max = info.paidAllowed ? Math.floor(info.maxFeeCents / 100) : 0;
+    input.max = String(max);
+    $("tournament-fee-hint").textContent = max
+      ? "0 for a free tournament. Whole rcoin, up to " + max + "."
+      : "Your account can host free tournaments only.";
+    if (!max) input.value = "0";
+    else if (parseInt(input.value, 10) > max) input.value = String(max);
+    updatePrizePreview();
+  }).catch(function () { hostLimits = null; });
+}
+
 function openForm() {
   const form = $("tournament-form");
+  loadHostLimits();
   setVisible(form, true);
   $("tournament-msg").hidden = true;
   $("tournament-name").focus();
@@ -708,35 +754,57 @@ function openForm() {
 function createTournament(e) {
   e.preventDefault();
   const msg = $("tournament-msg");
-  const name = ($("tournament-name").value || "").trim();
-  const fee = selectedChipAmount("tournament-fee");
-  const size = selectedChipAmount("tournament-size");
-  if (!name) { showMessage(msg, "Give the tournament a name.", false); $("tournament-name").focus(); return; }
+  const check = validateHostedForm({
+    name: $("tournament-name").value,
+    size: selectedChipAmount("tournament-size"),
+    fee: $("tournament-fee").value,
+    visibility: formVisibility(),
+    rules: $("tournament-rules").value,
+  });
+  const fields = { name: "tournament-name", fee: "tournament-fee", rules: "tournament-rules" };
+  document.querySelectorAll("#tournament-form [aria-invalid]").forEach(function (f) { f.removeAttribute("aria-invalid"); });
+  if (check.error) {
+    showMessage(msg, check.error, false);
+    const field = fields[check.field] && $(fields[check.field]);
+    if (field) { field.setAttribute("aria-invalid", "true"); field.focus(); }
+    return;
+  }
   const btn = $("tournament-save");
   btn.disabled = true;
-  riotLinked().then(function (linked) {
-    if (linked === false) {
-      toast("Link your Riot ID first. You'll come right back to your tournament.", "ok");
-      goToPage("page-profile", { arg: "link/" + RIOT_NETWORK + "/new" });
+  Promise.resolve(session.client.rpc("rib_hosted_create", check.value)).then(function (r) {
+    if (r.error) {
+      showMessage(msg, errorText(r.error, "Couldn't create the tournament."), false);
+      if (r.error.hint === "host_fee_limit" || r.error.hint === "host_restricted") $("tournament-fee").focus();
       return;
     }
-    return session.client.rpc("rib_tournament_create", {
-      p_name: name, p_game: WILD_RIFT, p_entry_fee_cents: isFinite(fee) ? fee : 0, p_size: isFinite(size) ? size : 4, p_network: RIOT_NETWORK,
-    }).then(function (r) {
-      if (r.error) { showMessage(msg, errorText(r.error, "Couldn't create the tournament."), false); return; }
-      setVisible($("tournament-form"), false);
-      $("tournament-name").value = "";
-      const id = r.data && r.data.id;
-      if (id) play.started[id] = true;
-      toast(name + " is open and you're the first entrant. Share it so it fills.", "ok",
-        id && navigator.clipboard ? { label: "Copy invite link", onClick: function () { navigator.clipboard.writeText(inviteUrl(id)); } } : null);
-      showSeg("play");
-      loadMine(true);
-      refreshWallet();
-    });
+    const t = Array.isArray(r.data) ? r.data[0] : r.data;
+    setVisible($("tournament-form"), false);
+    $("tournament-name").value = "";
+    $("tournament-rules").value = "";
+    updateRulesCount();
+    toast(check.value.p_name + " is ready. Share the link so players can join.", "ok");
+    if (t && t.id) goToPage("page-hosting", { arg: t.id + "/new" });
   })
     .catch(function () { showMessage(msg, "Network error. Check your connection and try again.", false); })
     .finally(function () { btn.disabled = false; });
+}
+
+/* ---- "Have an invite code?" -------------------------------------------------- */
+function openInvite(e) {
+  e.preventDefault();
+  const input = $("invite-code-input");
+  const msg = $("invite-code-msg");
+  const code = parseInviteInput(input.value);
+  if (!code) {
+    input.setAttribute("aria-invalid", "true");
+    showMessage(msg, "Invite codes are 10 letters and numbers, like ABCDE-FGH23. You can paste the whole link too.", false);
+    input.focus();
+    return;
+  }
+  input.removeAttribute("aria-invalid");
+  msg.hidden = true;
+  input.value = "";
+  goToPage("page-join", { arg: code });
 }
 
 export function initTournaments() {
@@ -746,10 +814,22 @@ export function initTournaments() {
     if (seg) { refreshSeg(seg.getAttribute("data-seg")); return; }
     if (e.target.closest("#compete-play, #compete-mine, #compete-custom")) onClick(e);
   });
-  document.querySelectorAll('[data-chips="tournament-fee"] button, [data-chips="tournament-size"] button').forEach(function (b) {
+  document.querySelectorAll('[data-chips="tournament-size"] button').forEach(function (b) {
     b.addEventListener("click", function () { setTimeout(updatePrizePreview, 0); });
   });
+  $("tournament-fee").addEventListener("input", updatePrizePreview);
+  $("tournament-rules").addEventListener("input", updateRulesCount);
+  $("tournament-visibility").addEventListener("click", function (e) {
+    const b = e.target.closest("button[data-vis]");
+    if (!b) return;
+    this.querySelectorAll("button").forEach(function (x) {
+      x.classList.toggle("on", x === b);
+      x.setAttribute("aria-pressed", String(x === b));
+    });
+  });
   updatePrizePreview();
+  updateRulesCount();
+  $("invite-code-form").addEventListener("submit", openInvite);
 
   $("tournament-new").addEventListener("click", function () {
     if ($("tournament-form").hidden) openForm();

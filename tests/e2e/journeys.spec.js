@@ -120,7 +120,7 @@ test.describe("console", () => {
     }
   });
 
-  test("creates a custom Wild Rift tournament", async ({ page, api }) => {
+  test("hosts a Wild Rift tournament", async ({ page, api }) => {
     await page.goto("/console.html#page-compete");
     await page.click('#compete-seg [data-seg="custom"]');
     await expect(page.locator("#tournament-list .tcard")).toContainText("Friday Cup");
@@ -128,10 +128,12 @@ test.describe("console", () => {
     await page.click("#tournament-new");
     await expect(page.locator("#tournament-game")).toHaveCount(0);
     await page.fill("#tournament-name", "Night Cup");
+    await expect(page.locator("#tournament-prize")).toContainText("Host commission (5%)");
     await expect(page.locator("#tournament-prize")).toContainText("Platform (10%)");
     await page.click("#tournament-save");
-    await expect.poll(() => api.calls.find((c) => c.path === "/rest/v1/rpc/rib_tournament_create")?.body)
-      .toMatchObject({ p_name: "Night Cup", p_game: "Wild Rift", p_network: "riot", p_entry_fee_cents: 1000, p_size: 4 });
+    await expect.poll(() => api.calls.find((c) => c.path === "/rest/v1/rpc/rib_hosted_create")?.body)
+      .toMatchObject({ p_name: "Night Cup", p_entry_fee_cents: 1000, p_size: 4, p_visibility: "public" });
+    expect(api.calls.some((c) => c.path === "/rest/v1/rpc/rib_tournament_create")).toBe(false);
   });
 
   test("shows the ranking with my standing", async ({ page }) => {

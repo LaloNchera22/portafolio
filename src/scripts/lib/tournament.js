@@ -22,9 +22,9 @@ export function prizeSplit(feeCents, size) {
   return { pool, platform, prizes, first, second: prizes - first };
 }
 
-/** Rounds in a single-elimination bracket of this size (4 → 2, 8 → 3). */
+/** Rounds in a single-elimination bracket of this size (4 → 2, 8 → 3, 16 → 4, 32 → 5). */
 export function roundsFor(size) {
-  return size === 8 ? 3 : size === 4 ? 2 : 0;
+  return size === 32 ? 5 : size === 16 ? 4 : size === 8 ? 3 : size === 4 ? 2 : 0;
 }
 
 /** Human name of a bracket round, counted from the final. */
@@ -33,5 +33,6 @@ export function roundName(round, rounds) {
   if (fromEnd === 0) return "Final";
   if (fromEnd === 1) return "Semifinals";
   if (fromEnd === 2) return "Quarterfinals";
+  if (fromEnd > 2) return "Round of " + Math.pow(2, fromEnd + 1);
   return "Round " + round;
 }
