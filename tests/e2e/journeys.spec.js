@@ -1,5 +1,4 @@
 import { test, expect } from "@playwright/test";
-import { injectMockSession, expectMockCalls } from "./utils.js";
 
 async function signIn(page) {
   await page.goto("/login.html");

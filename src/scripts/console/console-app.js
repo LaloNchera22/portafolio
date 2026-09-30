@@ -9,7 +9,7 @@
 import { isBackendConfigured } from "../lib/config.js";
 import { byId as $, setVisible, escapeHtml as esc } from "../lib/dom.js";
 import { getClient, getSession } from "../lib/supabase-client.js";
-import { initContext, session } from "./context.js";
+import { initContext } from "./context.js";
 import { initRanking, loadProfileRecord, loadRanking } from "./leaderboard.js";
 import { currentRouteArg, goToPage, initAmountChips, initNavigation, initialPage } from "./navigation.js";
 import { initOps, loadOps } from "./ops.js";

@@ -679,7 +679,7 @@ function stampAndUpload(source, kind) {
     ctx.textBaseline = "middle";
     ctx.fillText(t.room_code + "  ·  token " + t.token + "  ·  " + new Date(t.issued_at).toISOString() + "  ·  " + nameOf(me()), 12, h + bar / 2);
     return new Promise(function (resolve) { canvas.toBlob(resolve, "image/jpeg", 0.9); }).then(function (blob) {
-      return blob.arrayBuffer().then(function (buf) { return Stripe.subtle.digest("SHA-256", buf); }).then(function (digest) {
+      return blob.arrayBuffer().then(function (buf) { return crypto.subtle.digest("SHA-256", buf); }).then(function (digest) {
         const sha = Array.prototype.map.call(new Uint8Array(digest), function (b) { return b.toString(16).padStart(2, "0"); }).join("");
         const path = r.id + "/" + me() + "/" + t.token + ".jpg";
         return session.client.storage.from(EVIDENCE_BUCKET).upload(path, blob, { contentType: "image/jpeg", upsert: false }).then(function (up) {
