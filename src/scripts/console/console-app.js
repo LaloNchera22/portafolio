@@ -59,13 +59,13 @@ function fillAccountSelects(rows) {
   if (!rows) return;
   fillNetworkSelect($("tournament-network"), rows);
 }
-function loadGameAccountSelects() {
-  return loadGameAccounts().then(fillAccountSelects);
+function loadGameAccountSelects(opts) {
+  return loadGameAccounts(opts).then(fillAccountSelects);
 }
 
 const PAGE_LOADERS = {
   "page-compete": function () {
-    loadTournaments(); loadGameAccountSelects();
+    loadTournaments(); loadGameAccountSelects({ cached: true });
   },
   "page-room": loadRoom,
   "page-ops": loadOps,
