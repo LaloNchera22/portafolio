@@ -99,7 +99,7 @@ describe("tournaments", () => {
     expect(list.querySelectorAll(".tcard")).toHaveLength(2);
     expect(list.textContent).toContain("3/4 players · 1 seat left");
     expect(list.textContent).toContain("Riot ID required");
-    expect(list.textContent).toContain("Champion 25.2 USD · runner-up 10.8 USD");
+    expect(list.textContent).toContain("Champion 25.2 rcoin · runner-up 10.8 rcoin");
     expect(list.querySelector(".seats").getAttribute("aria-label")).toBe("3 of 4 seats taken");
     expect(list.querySelectorAll('[data-tid="t1"] .seat.is-taken')).toHaveLength(3);
     expect(list.querySelector('[data-leave="t2"]')).not.toBeNull();
@@ -115,7 +115,7 @@ describe("tournaments", () => {
     expect($("tournament-prize").textContent).toContain("Platform (10%)");
     document.querySelector('[data-chips="tournament-size"] [data-amt="8"]').click();
     await new Promise((r) => setTimeout(r, 400)); // the numbers count to their new values
-    expect($("tournament-prize").textContent).toContain("Pool80 USD");
+    expect($("tournament-prize").textContent).toContain("Pool80 rcoin");
   });
 
   it("creates a sit & go with the chosen size and fee", async () => {

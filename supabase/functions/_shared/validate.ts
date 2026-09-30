@@ -9,6 +9,6 @@ export function validatePayCents(value: unknown, enforceMax = true): number | nu
   return payCents;
 }
 
-export function calculateUSD(payCents: number): number {
+export function calculateRcoin(payCents: number): number {
   return Math.floor((payCents * 95) / 100 / 100);
 }

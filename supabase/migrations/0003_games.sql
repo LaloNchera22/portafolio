@@ -1,14 +1,14 @@
 -- ============================================================================
--- Runinback — games + USD (Phase 2.2): casual multiplayer games on the
--- dashboard, and the USD currency layer on top of the test-mode wallet.
+-- Runinback — games + rcoin (Phase 2.2): casual multiplayer games on the
+-- dashboard, and the rcoin currency layer on top of the test-mode wallet.
 --
 -- TEST MODE. Real money on Runinback is NON-CUSTODIAL and lives on-chain on
 -- Base (escrow contracts + audit, Phase 3+). Until then this schema runs the
 -- WHOLE flow end-to-end on an off-chain test balance. No real funds move here.
 --
--- USD model (transparent, never hidden): the 5% commission is charged ONCE,
--- when money comes IN. It is shown as a clear rate ($100 = 95 USD). Inside
--- the platform 1 USD = 1 USD, so withdrawals pay out 1:1 with no exit fee.
+-- rcoin model (transparent, never hidden): the 5% commission is charged ONCE,
+-- when money comes IN. It is shown as a clear rate ($100 = 95 rcoin). Inside
+-- the platform 1 rcoin = 1 USD, so withdrawals pay out 1:1 with no exit fee.
 -- Game pots carry NO rake: both players stake, the winner takes the full pot.
 --
 -- Zero-trust, same as 0001/0002: RLS enabled and DENY by default on every
@@ -20,7 +20,7 @@
 -- ============================================================================
 
 -- ----------------------------------------------------------------------------
--- Extend the ledger's kind check to cover USD purchases and game escrow.
+-- Extend the ledger's kind check to cover rcoin purchases and game escrow.
 -- Dropped and re-added so the migration is re-runnable.
 -- ----------------------------------------------------------------------------
 alter table public.wallet_ledger drop constraint if exists wallet_ledger_kind_check;
@@ -29,7 +29,7 @@ alter table public.wallet_ledger add constraint wallet_ledger_kind_check
     'deposit','withdrawal',
     'challenge_lock','challenge_win','challenge_settled','challenge_refund',
     'tournament_entry','tournament_prize',
-    'USD_purchase',
+    'rcoin_purchase',
     'game_lock','game_win','game_settled','game_refund'
   ));
 
@@ -110,17 +110,17 @@ create trigger game_matches_touch_updated_at
   for each row execute function public.touch_updated_at();
 
 -- ============================================================================
--- USD: buy (test). Charges the 5% entry commission transparently and credits
--- the resulting USD (1 USD = 1 USD = 100 cents) to the test balance.
+-- rcoin: buy (test). Charges the 5% entry commission transparently and credits
+-- the resulting rcoin (1 rcoin = 1 USD = 100 cents) to the test balance.
 -- ============================================================================
-create or replace function public.rib_buy_USD_test(p_pay_cents bigint)
+create or replace function public.rib_buy_rcoin_test(p_pay_cents bigint)
 returns public.wallets
 language plpgsql security definer set search_path = ''
 as $$
 declare
   v_uid    uuid := auth.uid();
   v_credit bigint;
-  v_USD  bigint;
+  v_rcoin  bigint;
   v_row    public.wallets;
 begin
   if v_uid is null then raise exception 'not signed in'; end if;
@@ -129,10 +129,10 @@ begin
   end if;
   -- 5% entry commission, shown on screen. Credit = 95% of what came in.
   v_credit := round(p_pay_cents * 0.95);
-  v_USD  := v_credit / 100;
+  v_rcoin  := v_credit / 100;
   perform public.rib_apply(
-    v_uid, 'USD_purchase', v_credit, 0, null, null,
-    'Bought ' || v_USD::text || ' USD (5% entry fee)'
+    v_uid, 'rcoin_purchase', v_credit, 0, null, null,
+    'Bought ' || v_rcoin::text || ' rcoin (5% entry fee)'
   );
   select * into v_row from public.wallets where user_id = v_uid;
   return v_row;
@@ -300,7 +300,7 @@ $$;
 -- ----------------------------------------------------------------------------
 -- Privileges: only the authenticated role may call these RPCs.
 -- ----------------------------------------------------------------------------
-grant execute on function public.rib_buy_USD_test(bigint)              to authenticated;
+grant execute on function public.rib_buy_rcoin_test(bigint)              to authenticated;
 grant execute on function public.rib_game_create(text,bigint,jsonb)      to authenticated;
 grant execute on function public.rib_game_join(uuid,jsonb)               to authenticated;
 grant execute on function public.rib_game_move(uuid,jsonb,uuid)          to authenticated;

@@ -1,25 +1,25 @@
 /* ============================================================================
  * Runinback — money and date formatting.
  *
- * USD: 1 USD = 1 USD = 100 cents. Wallets store integer cents; the UI
- * shows USD. All arithmetic stays in integer cents.
+ * rcoin: 1 rcoin = 1 USD = 100 cents. Wallets store integer cents; the UI
+ * shows rcoin. All arithmetic stays in integer cents.
  * ========================================================================== */
 
-/** Purchase fee charged once when buying USD (5%). Mirrors the backend. */
+/** Purchase fee charged once when buying rcoin (5%). Mirrors the backend. */
 export const PURCHASE_FEE_PERCENT = 5;
 
 export function formatUsd(cents) {
   return "$" + ((Number(cents) || 0) / 100).toFixed(2);
 }
 
-/** Cents → USD as a number with at most two decimals. */
-export function centsToUSD(cents) {
+/** Cents → rcoin as a number with at most two decimals. */
+export function centsToRcoin(cents) {
   const n = (Number(cents) || 0) / 100;
   return parseFloat(n.toFixed(2));
 }
 
-export function formatUSD(cents) {
-  return centsToUSD(cents) + " USD";
+export function formatRcoin(cents) {
+  return centsToRcoin(cents) + " rcoin";
 }
 
 /** Parse a user-typed dollar amount ("12.5" or "12,5") into cents. NaN when invalid. */
@@ -28,8 +28,8 @@ export function parseDollarsToCents(value) {
   return isFinite(n) ? Math.round(n * 100) : NaN;
 }
 
-/** Parse a user-typed USD amount into cents, rounded to whole USD. NaN when invalid. */
-export function parseUSDToCents(value) {
+/** Parse a user-typed rcoin amount into cents, rounded to whole rcoin. NaN when invalid. */
+export function parseRcoinToCents(value) {
   const n = parseFloat(String(value).replace(",", "."));
   return isFinite(n) ? Math.round(n) * 100 : NaN;
 }

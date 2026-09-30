@@ -4,12 +4,12 @@ import { friendlyError } from "../../src/scripts/lib/errors.js";
 describe("friendlyError", () => {
   it("maps stable database hints first", () => {
     expect(friendlyError({ message: "anything", hint: "insufficient_balance" }))
-      .toBe("You don't have enough USD for that. Top up your wallet and try again.");
+      .toBe("You don't have enough rcoin for that. Top up your wallet and try again.");
   });
 
   it("still maps legacy Spanish messages from older RPC versions", () => {
     expect(friendlyError({ message: "Saldo insuficiente" }))
-      .toBe("You don't have enough USD for that. Top up your wallet and try again.");
+      .toBe("You don't have enough rcoin for that. Top up your wallet and try again.");
     expect(friendlyError({ message: "reto no encontrado" })).toBe("We couldn't find that challenge.");
   });
 

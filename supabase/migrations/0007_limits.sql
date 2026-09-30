@@ -55,8 +55,8 @@ begin
 end;
 $$;
 
--- ---- USD: buy (test) — same ceiling on the credited amount -----------------
-create or replace function public.rib_buy_USD_test(p_pay_cents bigint)
+-- ---- rcoin: buy (test) — same ceiling on the credited amount -----------------
+create or replace function public.rib_buy_rcoin_test(p_pay_cents bigint)
 returns public.wallets
 language plpgsql security definer set search_path = ''
 as $$
@@ -64,7 +64,7 @@ declare
   v_uid    uuid := auth.uid();
   v_bal    bigint;
   v_credit bigint;
-  v_USD  bigint;
+  v_rcoin  bigint;
   v_row    public.wallets;
 begin
   if v_uid is null then raise exception 'not signed in'; end if;
@@ -74,14 +74,14 @@ begin
   -- 5% entry commission, shown on screen. Credit = 95% of what came in.
   -- Integer math on cents (no float): 95/100 of the paid amount.
   v_credit := (p_pay_cents * 95) / 100;
-  v_USD  := v_credit / 100;
+  v_rcoin  := v_credit / 100;
   select test_balance_cents into v_bal from public.wallets where user_id = v_uid;
   if coalesce(v_bal, 0) + v_credit > 1000000 then
     raise exception 'test balance cap reached ($10,000)';
   end if;
   perform public.rib_apply(
-    v_uid, 'USD_purchase', v_credit, 0, null, null,
-    'Bought ' || v_USD::text || ' USD (5% entry fee)'
+    v_uid, 'rcoin_purchase', v_credit, 0, null, null,
+    'Bought ' || v_rcoin::text || ' rcoin (5% entry fee)'
   );
   select * into v_row from public.wallets where user_id = v_uid;
   return v_row;
@@ -191,6 +191,6 @@ grant execute on function public.rib_cleanup_matches(int) to service_role;
 
 -- Existing GRANTs on the redefined RPCs stay valid; re-assert for clarity.
 grant execute on function public.rib_deposit_test(bigint)                    to authenticated;
-grant execute on function public.rib_buy_USD_test(bigint)                  to authenticated;
+grant execute on function public.rib_buy_rcoin_test(bigint)                  to authenticated;
 grant execute on function public.rib_game_create(text,bigint,jsonb)          to authenticated;
 grant execute on function public.rib_challenge_create(text,text,bigint,text) to authenticated;

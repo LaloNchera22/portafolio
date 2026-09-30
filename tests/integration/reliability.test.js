@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 // Regression tests for failures found by the plugin-agent audit: no fake zero
 // balance on errors, no
-// silent 1-USD fallback for invalid table stakes, and returning to the games
+// silent 1-rcoin fallback for invalid table stakes, and returning to the games
 // page keeps a board in progress.
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
@@ -50,10 +50,10 @@ beforeAll(async () => {
 
 describe("wallet balance", () => {
   it("keeps the last known balance when a refresh fails", async () => {
-    expect($("wallet-chip").textContent).toBe("42 USD");
+    expect($("wallet-chip").textContent).toBe("42 rcoin");
     walletResponse = { data: null, error: { message: "network" } };
     await wallet.refreshWallet();
-    expect($("wallet-chip").textContent).toBe("42 USD");
+    expect($("wallet-chip").textContent).toBe("42 rcoin");
     expect(ctx.session.balanceCents).toBe(4200);
     walletResponse = { data: { test_balance_cents: 4200, test_locked_cents: 0 }, error: null };
   });
