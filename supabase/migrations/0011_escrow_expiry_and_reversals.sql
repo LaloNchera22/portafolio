@@ -7,8 +7,8 @@
 --      than 24h and voids (refunding both players) active or disputed rows
 --      idle for 48h. It works in batches with SKIP LOCKED so it never blocks
 --      live traffic, and it is scheduled with pg_cron when available.
---   2) Chargebacks: a refunded or disputed card payment left the USD in the
---      wallet. rib_reverse_USD_purchase() (called by the Stripe webhook)
+--   2) Chargebacks: a refunded or disputed card payment left the rcoin in the
+--      wallet. rib_reverse_rcoin_purchase() (called by the Stripe webhook)
 --      debits what was credited; if the buyer already spent it, it debits what
 --      is left and FREEZES the wallet. A frozen wallet can't stake, join or
 --      withdraw — enforced centrally in rib_apply.
@@ -23,9 +23,9 @@
 alter table public.wallets add column if not exists frozen_at     timestamptz;
 alter table public.wallets add column if not exists frozen_reason text;
 
-alter table public.USD_purchases add column if not exists reversed_at     timestamptz;
-alter table public.USD_purchases add column if not exists reversed_cents  bigint not null default 0;
-alter table public.USD_purchases add column if not exists reversal_reason text;
+alter table public.rcoin_purchases add column if not exists reversed_at     timestamptz;
+alter table public.rcoin_purchases add column if not exists reversed_cents  bigint not null default 0;
+alter table public.rcoin_purchases add column if not exists reversal_reason text;
 
 alter table public.wallet_ledger drop constraint if exists wallet_ledger_kind_check;
 alter table public.wallet_ledger add constraint wallet_ledger_kind_check
@@ -33,7 +33,7 @@ alter table public.wallet_ledger add constraint wallet_ledger_kind_check
     'deposit','withdrawal',
     'challenge_lock','challenge_win','challenge_settled','challenge_refund',
     'tournament_entry','tournament_prize','tournament_refund',
-    'USD_purchase','USD_reversal',
+    'rcoin_purchase','rcoin_reversal',
     'game_lock','game_win','game_settled','game_refund'
   )) not valid;
 alter table public.wallet_ledger validate constraint wallet_ledger_kind_check;
@@ -66,7 +66,7 @@ begin
   insert into public.wallets (user_id) values (p_uid)
     on conflict (user_id) do nothing;
 
-  if p_balance_delta < 0 and p_kind <> 'USD_reversal'
+  if p_balance_delta < 0 and p_kind <> 'rcoin_reversal'
      and exists (select 1 from public.wallets where user_id = p_uid and frozen_at is not null) then
     raise exception 'wallet is frozen' using hint = 'wallet_frozen';
   end if;
@@ -98,13 +98,13 @@ revoke execute on function public.rib_apply(uuid,text,bigint,bigint,text,uuid,te
 -- Reversal of a refunded / disputed top-up. Returns the cents debited
 -- (0 when the purchase is unknown or already reversed: idempotent).
 -- ----------------------------------------------------------------------------
-create or replace function public.rib_reverse_USD_purchase(
+create or replace function public.rib_reverse_rcoin_purchase(
   p_provider text, p_ref text, p_reason text
 ) returns bigint
 language plpgsql security definer set search_path = ''
 as $$
 declare
-  v_p       public.USD_purchases;
+  v_p       public.rcoin_purchases;
   v_balance bigint;
   v_debit   bigint;
 begin
@@ -112,7 +112,7 @@ begin
     raise exception 'invalid reversal reference' using hint = 'invalid_amount';
   end if;
 
-  select * into v_p from public.USD_purchases
+  select * into v_p from public.rcoin_purchases
    where (p_provider = 'stripe'   and stripe_session_id = p_ref)
       or (p_provider = 'coinbase' and provider = 'coinbase' and provider_ref = p_ref)
    for update;
@@ -125,13 +125,13 @@ begin
 
   if v_debit > 0 then
     perform public.rib_apply(
-      v_p.user_id, 'USD_reversal', -v_debit, 0,
-      case when p_provider = 'stripe' then 'stripe' else 'Stripe' end, v_p.id,
+      v_p.user_id, 'rcoin_reversal', -v_debit, 0,
+      case when p_provider = 'stripe' then 'stripe' else 'crypto' end, v_p.id,
       left('Top-up reversed (' || coalesce(p_reason, 'refund') || ')', 140)
     );
   end if;
 
-  update public.USD_purchases
+  update public.rcoin_purchases
      set reversed_at = now(), reversed_cents = v_debit, reversal_reason = p_reason
    where id = v_p.id;
 
@@ -147,8 +147,8 @@ begin
   return v_debit;
 end;
 $$;
-revoke execute on function public.rib_reverse_USD_purchase(text,text,text) from public, anon, authenticated;
-grant execute on function public.rib_reverse_USD_purchase(text,text,text) to service_role;
+revoke execute on function public.rib_reverse_rcoin_purchase(text,text,text) from public, anon, authenticated;
+grant execute on function public.rib_reverse_rcoin_purchase(text,text,text) to service_role;
 
 -- ----------------------------------------------------------------------------
 -- Escrow expiry sweep. Returns how many rows each rule resolved.

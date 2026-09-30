@@ -5,7 +5,7 @@
 --      incrementally by a trigger on wallet_ledger (O(1) per settlement; the
 --      leaderboard never aggregates the ledger at read time).
 --        net_cents  = sum of every play movement (stakes, pots, prizes, refunds)
---        won_cents  = gross USD won (pots and prizes)
+--        won_cents  = gross rcoin won (pots and prizes)
 --        wins/losses = settled results (tournament entrants who don't win
 --                      add no loss; their entry fee still counts in net)
 --      Stakes count in net when locked and are refunded on void/cancel, so a

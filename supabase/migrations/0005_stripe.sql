@@ -1,28 +1,28 @@
 -- ============================================================================
--- Runinback — real USD top-ups via Stripe (TEST MODE).
+-- Runinback — real rcoin top-ups via Stripe (TEST MODE).
 --
--- Until this migration, USD was bought with rib_buy_USD_test, a client RPC
+-- Until this migration, rcoin was bought with rib_buy_rcoin_test, a client RPC
 -- that credited the balance instantly with no payment. This adds the money leg:
 -- the browser can NEVER credit itself. A purchase is only ever credited by the
 -- stripe-webhook Edge Function, after Stripe has verified the payment and the
 -- function has verified Stripe's signature. The webhook runs with the service
--- role and calls rib_credit_USD_purchase below; that function is the single,
+-- role and calls rib_credit_rcoin_purchase below; that function is the single,
 -- idempotent credit path.
 --
 -- STILL TEST MODE. Use Stripe *test* keys only. No real money moves until legal
--- review clears USD. The 5% entry fee is unchanged and transparent
--- ($100 = 95 USD); withdrawals stay 1:1 with no exit fee.
+-- review clears rcoin. The 5% entry fee is unchanged and transparent
+-- ($100 = 95 rcoin); withdrawals stay 1:1 with no exit fee.
 --
 -- Additive and idempotent: adds one table and one function, re-runnable. Safe to
 -- paste after 0001..0004. Signatures new, so it defines its own GRANTs.
 -- ============================================================================
 
 -- ----------------------------------------------------------------------------
--- USD_purchases : one row per Stripe Checkout session that credited USD.
+-- rcoin_purchases : one row per Stripe Checkout session that credited rcoin.
 -- The UNIQUE stripe_session_id is the idempotency key: a webhook that Stripe
 -- retries (it retries until it gets a 2xx) credits the balance exactly once.
 -- ----------------------------------------------------------------------------
-create table if not exists public.USD_purchases (
+create table if not exists public.rcoin_purchases (
   id                 uuid primary key default gen_random_uuid(),
   user_id            uuid not null references auth.users (id) on delete cascade,
   stripe_session_id  text not null unique,
@@ -30,25 +30,25 @@ create table if not exists public.USD_purchases (
   credited_cents     bigint not null check (credited_cents >= 0),
   created_at         timestamptz not null default now()
 );
-create index if not exists USD_purchases_user_idx on public.USD_purchases (user_id, created_at desc);
-comment on table public.USD_purchases is 'One row per settled Stripe Checkout session (TEST MODE). stripe_session_id is UNIQUE = idempotency key; credited only by the stripe-webhook Edge Function.';
+create index if not exists rcoin_purchases_user_idx on public.rcoin_purchases (user_id, created_at desc);
+comment on table public.rcoin_purchases is 'One row per settled Stripe Checkout session (TEST MODE). stripe_session_id is UNIQUE = idempotency key; credited only by the stripe-webhook Edge Function.';
 
 -- ============================================================================
 -- Row Level Security — deny by default; owner may read their own receipts.
 -- No client writes at all: only the service role (webhook) inserts, via the
 -- SECURITY DEFINER function below.
 -- ============================================================================
-alter table public.USD_purchases enable row level security;
+alter table public.rcoin_purchases enable row level security;
 
-drop policy if exists "USD_purchases: select own" on public.USD_purchases;
-create policy "USD_purchases: select own"
-  on public.USD_purchases for select to authenticated
+drop policy if exists "rcoin_purchases: select own" on public.rcoin_purchases;
+create policy "rcoin_purchases: select own"
+  on public.rcoin_purchases for select to authenticated
   using ( user_id = (select auth.uid()) );
 
-grant select on public.USD_purchases to authenticated;
+grant select on public.rcoin_purchases to authenticated;
 
 -- ============================================================================
--- rib_credit_USD_purchase : credit USD from a Stripe payment the webhook
+-- rib_credit_rcoin_purchase : credit rcoin from a Stripe payment the webhook
 -- has already verified. The user_id is the TRUSTED id the checkout session was
 -- created for (carried in the session metadata / client_reference_id), not
 -- anything the browser sent. Idempotent by stripe_session_id: a replayed or
@@ -57,7 +57,7 @@ grant select on public.USD_purchases to authenticated;
 -- Not exposed to clients: execute is revoked from public and granted only to
 -- service_role, so the only caller is the webhook running with the service key.
 -- ============================================================================
-create or replace function public.rib_credit_USD_purchase(
+create or replace function public.rib_credit_rcoin_purchase(
   p_user_id uuid, p_stripe_session_id text, p_pay_cents bigint
 ) returns bigint
 language plpgsql security definer set search_path = ''
@@ -79,7 +79,7 @@ begin
 
   -- Claim the session id first. If a concurrent / retried webhook already
   -- claimed it, the insert no-ops and we credit nothing (idempotency).
-  insert into public.USD_purchases (user_id, stripe_session_id, pay_cents, credited_cents)
+  insert into public.rcoin_purchases (user_id, stripe_session_id, pay_cents, credited_cents)
   values (p_user_id, p_stripe_session_id, p_pay_cents, v_credit)
   on conflict (stripe_session_id) do nothing
   returning id into v_row_id;
@@ -89,12 +89,12 @@ begin
   end if;
 
   perform public.rib_apply(
-    p_user_id, 'USD_purchase', v_credit, 0, 'stripe', v_row_id,
-    'Bought ' || (v_credit / 100)::text || ' USD via Stripe (5% entry fee)'
+    p_user_id, 'rcoin_purchase', v_credit, 0, 'stripe', v_row_id,
+    'Bought ' || (v_credit / 100)::text || ' rcoin via Stripe (5% entry fee)'
   );
   return v_credit;
 end;
 $$;
 
-revoke all on function public.rib_credit_USD_purchase(uuid,text,bigint) from public;
-grant execute on function public.rib_credit_USD_purchase(uuid,text,bigint) to service_role;
+revoke all on function public.rib_credit_rcoin_purchase(uuid,text,bigint) from public;
+grant execute on function public.rib_credit_rcoin_purchase(uuid,text,bigint) to service_role;

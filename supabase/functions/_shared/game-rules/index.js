@@ -1,4 +1,4 @@
-// Rules of every game that can be played for USD. The server validates and
+// Rules of every game that can be played for rcoin. The server validates and
 // applies every staked move with these exact modules (game-move Edge Function),
 // so only deterministic, perfect-information games belong here: no dice, no
 // shuffled decks, no hidden hands.

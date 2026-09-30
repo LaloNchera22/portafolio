@@ -266,7 +266,9 @@ export function initWallet() {
     });
   });
 
-
+  $("dev-withdraw-submit").addEventListener("click", function () {
+    withdraw($("dev-withdraw-amount"), $("dev-withdraw-msg"), $("dev-withdraw-submit"), refreshWallet);
+  });
 }
 
 /**

@@ -96,7 +96,7 @@ describe("withdrawals", () => {
     $("withdraw-amount").value = "0.6";
     $("withdraw-submit").click();
     expect(withdrawCalls()).toHaveLength(0);
-    expect($("withdraw-msg").textContent).toBe("Enter whole USD, no decimals.");
+    expect($("withdraw-msg").textContent).toBe("Enter whole rcoin, no decimals.");
     expect($("withdraw-msg").getAttribute("role")).toBe("alert");
   });
 

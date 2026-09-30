@@ -1,11 +1,11 @@
 // ============================================================================
-// stripe-webhook — the ONLY path that credits USD (TEST MODE).
+// stripe-webhook — the ONLY path that credits rcoin (TEST MODE).
 //
 // Zero-trust: this endpoint is public (Stripe calls it), so it trusts nothing
 // until it has verified Stripe's signature against STRIPE_WEBHOOK_SECRET. Only
 // then does it read the buyer id + amount that stripe-checkout stamped into the
 // session, and credit the balance with the service role via the idempotent
-// rib_credit_USD_purchase RPC. Stripe retries until it gets a 2xx, and the
+// rib_credit_rcoin_purchase RPC. Stripe retries until it gets a 2xx, and the
 // RPC is keyed on the Checkout session id, so a retry credits nothing twice.
 //
 // verify_jwt is false for this function (see config.toml): the signature check
@@ -46,7 +46,7 @@ Deno.serve(async (req) => {
     return new Response("bad_signature", { status: 400 });
   }
 
-  // 2) Only a completed, PAID Checkout session credits USD (delayed payment
+  // 2) Only a completed, PAID Checkout session credits rcoin (delayed payment
   //    methods report "paid" later via async_payment_succeeded).
   if (event.type === "checkout.session.completed" || event.type === "checkout.session.async_payment_succeeded") {
     const session = event.data.object as Stripe.Checkout.Session;
@@ -71,7 +71,7 @@ Deno.serve(async (req) => {
         return new Response("unattributable_payment", { status: 500 });
       }
       {
-        const { error } = await admin.rpc("rib_credit_USD_purchase", {
+        const { error } = await admin.rpc("rib_credit_rcoin_purchase", {
           p_user_id: userId,
           p_stripe_session_id: session.id,
           p_pay_cents: payCents,
@@ -85,7 +85,7 @@ Deno.serve(async (req) => {
     }
   }
 
-  // 3) Refunds and chargebacks claw the USD back (the RPC freezes the wallet
+  // 3) Refunds and chargebacks claw the rcoin back (the RPC freezes the wallet
   //    if it was already spent). Partial refunds are logged for manual review.
   if (event.type === "charge.refunded" || event.type === "charge.dispute.created") {
     const isDispute = event.type === "charge.dispute.created";
@@ -105,10 +105,10 @@ Deno.serve(async (req) => {
         return new Response("lookup_failed", { status: 500 });
       }
       if (!sessionId) {
-        // Not an USD checkout (or already gone): nothing to reverse, but say so.
+        // Not an rcoin checkout (or already gone): nothing to reverse, but say so.
         console.warn("stripe-webhook: no checkout session for refunded payment", paymentIntent);
       } else {
-        const { error } = await admin.rpc("rib_reverse_USD_purchase", {
+        const { error } = await admin.rpc("rib_reverse_rcoin_purchase", {
           p_provider: "stripe",
           p_ref: sessionId,
           p_reason: isDispute ? "chargeback" : "refund",

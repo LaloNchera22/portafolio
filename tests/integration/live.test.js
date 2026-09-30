@@ -100,9 +100,9 @@ describe("joining without what it takes", () => {
     expect(card.querySelector('[data-link="riot"]').textContent).toBe("Link Riot ID to join");
   });
 
-  it("offers exactly the missing USD when the balance is short", () => {
+  it("offers exactly the missing rcoin when the balance is short", () => {
     const card = document.querySelector('[data-tid="t2"]');
     expect(card.querySelector("[data-topup]").getAttribute("data-topup")).toBe("3000");
-    expect(card.textContent).toContain("You need 50 USD, you have 20 USD.");
+    expect(card.textContent).toContain("You need 50 rcoin, you have 20 rcoin.");
   });
 });

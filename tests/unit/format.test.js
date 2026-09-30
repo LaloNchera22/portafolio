@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
-  centsToUSD, formatUSD, formatUsd, parseDollarsToCents, parseUSDToCents, quotePurchase,
+  centsToRcoin, formatRcoin, formatUsd, parseDollarsToCents, parseRcoinToCents, quotePurchase,
 } from "../../src/scripts/lib/format.js";
 
 describe("formatUsd", () => {
@@ -15,11 +15,11 @@ describe("formatUsd", () => {
   });
 });
 
-describe("USD conversion", () => {
-  it("converts cents to USD with at most two decimals", () => {
-    expect(centsToUSD(9500)).toBe(95);
-    expect(centsToUSD(1)).toBe(0.01);
-    expect(formatUSD(250)).toBe("2.5 USD");
+describe("rcoin conversion", () => {
+  it("converts cents to rcoin with at most two decimals", () => {
+    expect(centsToRcoin(9500)).toBe(95);
+    expect(centsToRcoin(1)).toBe(0.01);
+    expect(formatRcoin(250)).toBe("2.5 rcoin");
   });
 });
 
@@ -32,11 +32,11 @@ describe("parsing user input", () => {
 
   it("returns NaN for non-numeric input", () => {
     expect(parseDollarsToCents("")).toBeNaN();
-    expect(parseUSDToCents("abc")).toBeNaN();
+    expect(parseRcoinToCents("abc")).toBeNaN();
   });
 
-  it("rounds USD to whole units", () => {
-    expect(parseUSDToCents("3.6")).toBe(400);
+  it("rounds rcoin to whole units", () => {
+    expect(parseRcoinToCents("3.6")).toBe(400);
   });
 });
 

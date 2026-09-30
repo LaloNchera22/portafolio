@@ -17,12 +17,12 @@
 --      once: 10% platform fee, then 70% to the champion and 30% to the
 --      runner-up (Riot requires >= 70% of entry fees to go to prizes: 90% do).
 --   4) Disputes in paid matches hold a deposit (10% of the entry fee, min
---      1 USD) and wait for an operator; a false claim loses it to the other
+--      1 rcoin) and wait for an operator; a false claim loses it to the other
 --      player. Friendly disputes simply end the room with no result.
 --   5) Reputation and limits: completed matches, disputes lost and no-shows;
---      new accounts can enter up to 25 USD until they finish 3 matches.
+--      new accounts can enter up to 25 rcoin until they finish 3 matches.
 --   6) Test-mode clean-up: live paid challenges and old-format tournaments are
---      refunded and closed (USD is simulated; nobody loses anything).
+--      refunded and closed (rcoin is simulated; nobody loses anything).
 -- Idempotent.
 -- ============================================================================
 
@@ -138,7 +138,7 @@ begin
     raise exception 'paid tournaments are paused on this account; contact support' using hint = 'account_restricted';
   end if;
   if coalesce(v_rep.matches_completed, 0) < 3 and p_fee_cents > 2500 then
-    raise exception 'new accounts can enter up to 25 USD until they finish 3 matches' using hint = 'new_account_limit';
+    raise exception 'new accounts can enter up to 25 rcoin until they finish 3 matches' using hint = 'new_account_limit';
   end if;
 end;
 $$;
@@ -358,7 +358,7 @@ alter table public.wallet_ledger add constraint wallet_ledger_kind_check
     'deposit','withdrawal',
     'challenge_lock','challenge_win','challenge_settled','challenge_refund',
     'tournament_entry','tournament_prize','tournament_refund',
-    'USD_purchase','USD_reversal',
+    'rcoin_purchase','rcoin_reversal',
     'game_lock','game_win','game_settled','game_refund',
     'dispute_deposit','dispute_refund','dispute_forfeit','dispute_award'
   )) not valid;
@@ -853,7 +853,7 @@ begin
   if p_game is null or char_length(trim(p_game)) < 1 then raise exception 'game is required' using hint = 'game_required'; end if;
   if p_size is null or p_size not in (4, 8) then raise exception 'tournaments have 4 or 8 players' using hint = 'invalid_tournament_size'; end if;
   if p_entry_fee_cents is null or not (p_entry_fee_cents = 0 or p_entry_fee_cents between 100 and 50000) then
-    raise exception 'the entry fee must be 0 or between 1 and 500 USD' using hint = 'invalid_entry_fee';
+    raise exception 'the entry fee must be 0 or between 1 and 500 rcoin' using hint = 'invalid_entry_fee';
   end if;
   if v_network is not null and not public.rib_network_valid(v_network) then raise exception 'unknown network' using hint = 'invalid_network'; end if;
 
@@ -1449,7 +1449,7 @@ end;
 $$;
 
 -- ----------------------------------------------------------------------------
--- 11c) Ranking = tournaments: net USD (prizes minus entry fees) from the
+-- 11c) Ranking = tournaments: net rcoin (prizes minus entry fees) from the
 -- ledger, and the record (wins/losses) of confirmed tournament matches.
 -- ----------------------------------------------------------------------------
 create or replace function public.rib_play_delta(p_kind text, p_amount bigint,
