@@ -7,20 +7,22 @@
  *
  * Realtime on match_rooms (both seats) triggers a refresh; bursts of events
  * collapse into one read. A slow poll runs only while Realtime is down.
- * Countdowns tick locally, and only while one is on screen.
+ * Countdowns tick locally, only while one is on screen and the tab is
+ * visible. The strip isn't a live region (its clocks would talk every
+ * second); a match that newly needs the player is announced by the toast.
  * ========================================================================== */
 import { byId as $, escapeHtml as esc, setVisible } from "../lib/dom.js";
 import { toast } from "../lib/errors.js";
 import { roundName } from "../lib/tournament.js";
 import { session } from "./context.js";
 import { openRoom } from "./room.js";
-import { prefs } from "./settings.js";
+import { prefs } from "./prefs.js";
 
 const POLL_MS = 30000;
 const COALESCE_MS = 250;
 const live = {
   rows: [], seen: {}, channels: [], timer: 0, poll: 0, title: "", first: true,
-  subscribed: 0, inflight: null, again: null, pending: 0,
+  subscribed: 0, channelsWanted: 0, inflight: null, again: null, pending: 0,
 };
 
 function countdown(deadline) {
@@ -32,9 +34,7 @@ function countdown(deadline) {
 
 function describe(m) {
   const opp = "@" + (m.opponent_username || "opponent");
-  const where = m.kind === "tournament"
-    ? esc(m.tournament_name || "Tournament") + (m.rounds ? " · " + roundName(m.round, m.rounds) : "")
-    : "Friendly";
+  const where = esc(m.tournament_name || "Tournament") + (m.rounds ? " · " + roundName(m.round, m.rounds) : "");
   let state;
   let deadline = null;
   if (m.status === "ready_check") {
@@ -57,9 +57,9 @@ function render() {
   setVisible(box, rows.length > 0);
   box.innerHTML = rows.map(function (m) {
     const d = describe(m);
-    return '<div class="live-room' + (m.needs_me ? " is-urgent" : "") + '">' +
+    return '<div class="live-room' + (m.needs_me ? " is-urgent" : "") + (m.status === "disputed" ? " is-review" : "") + '">' +
       '<span class="live-room__dot" aria-hidden="true"></span>' +
-      '<div class="live-room__text"><strong>' + d.where + "</strong> · " + esc(m.game) + " vs " + esc(d.opp) +
+      '<div class="live-room__text"><strong>' + d.where + "</strong> · vs " + esc(d.opp) +
         '<div class="row__meta">' + d.state + (d.deadline ? ' · <span class="live-room__time" data-deadline="' + esc(d.deadline) + '">' + countdown(d.deadline) + "</span> left" : "") + "</div></div>" +
       '<button type="button" class="btn ' + (m.needs_me ? "btn--cta " : "") + 'btn--sm" data-room="' + esc(m.id) + '">Open room</button></div>';
   }).join("");
@@ -95,6 +95,7 @@ function announce() {
 }
 
 function tickCountdowns() {
+  if (document.visibilityState === "hidden") return;
   document.querySelectorAll("#live-rooms [data-deadline]").forEach(function (el) { el.textContent = countdown(el.getAttribute("data-deadline")); });
 }
 
@@ -130,6 +131,18 @@ export function refreshLive() {
   return live.inflight;
 }
 
+// Safety net only: a slow poll runs while Realtime isn't connected, and stops
+// once both channels are up (no timer at all in the normal case).
+function syncPoll() {
+  const needed = live.subscribed < live.channelsWanted || !live.channelsWanted;
+  if (needed && !live.poll) {
+    live.poll = setInterval(function () { if (document.visibilityState === "visible") refreshLive(); }, POLL_MS);
+  } else if (!needed && live.poll) {
+    clearInterval(live.poll);
+    live.poll = 0;
+  }
+}
+
 // Realtime events arrive in bursts (ready, ready, live): read once after them.
 function scheduleRefresh() {
   clearTimeout(live.pending);
@@ -158,6 +171,7 @@ export function initLiveWatch() {
           if (!now) dropped = true;
           // Back from a drop: events may have been missed while it was down.
           else if (dropped) scheduleRefresh();
+          syncPoll();
         }));
     });
   }
@@ -166,11 +180,8 @@ export function initLiveWatch() {
     const b = e.target.closest("[data-room]");
     if (b) openRoom(b.getAttribute("data-room"));
   });
-  clearInterval(live.poll);
-  live.poll = setInterval(function () {
-    // Safety net only: while both channels are up, Realtime already covers it.
-    if (document.visibilityState === "visible" && live.subscribed < seats.length) refreshLive();
-  }, POLL_MS);
+  live.channelsWanted = session.client.channel ? seats.length : 0;
+  syncPoll();
   document.addEventListener("visibilitychange", function () { if (document.visibilityState === "visible") refreshLive(); });
   return refreshLive();
 }

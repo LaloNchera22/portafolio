@@ -8,20 +8,14 @@ import { byId as $, showMessage } from "../lib/dom.js";
 import { centsToRcoin, formatDate, formatRcoin } from "../lib/format.js";
 import { confirmAction } from "./confirm.js";
 import { errorText, session } from "./context.js";
+import { prefs, rememberPrefs } from "./prefs.js";
+
+export { prefs };
 
 const COOLOFF_LABELS = { 1: "1 day", 7: "1 week", 30: "1 month", 90: "3 months", 180: "6 months", 365: "1 year" };
 let current = null;
 let loading = null;
 let seq = 0; // the newest request wins; an older reply never repaints over it
-
-// Preferences other modules read (e.g. whether match pop-ups show). Mirrored
-// in this browser so boot needs no extra request; Settings refreshes it.
-const PREFS_KEY = "rib:prefs";
-export const prefs = { match_toasts: true };
-try {
-  const saved = JSON.parse(window.localStorage.getItem(PREFS_KEY) || "null");
-  if (saved && typeof saved.match_toasts === "boolean") prefs.match_toasts = saved.match_toasts;
-} catch (e) { /* storage blocked or corrupt: keep defaults */ }
 
 function when(iso) {
   const d = new Date(iso);
@@ -30,8 +24,7 @@ function when(iso) {
 
 function render(s) {
   current = s;
-  prefs.match_toasts = s.match_toasts !== false;
-  try { window.localStorage.setItem(PREFS_KEY, JSON.stringify({ match_toasts: prefs.match_toasts })); } catch (e) { /* ignore */ }
+  rememberPrefs(s);
   document.querySelectorAll("[data-setting]").forEach(function (input) {
     input.checked = !!s[input.getAttribute("data-setting")];
   });

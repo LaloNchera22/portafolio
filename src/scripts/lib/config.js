@@ -14,7 +14,6 @@ export const config = Object.freeze({
   supabaseUrl: injected.supabaseUrl || "",
   supabaseAnonKey: injected.supabaseAnonKey || "",
   stripeEnabled: !!injected.stripeEnabled,
-  cryptoEnabled: !!injected.cryptoEnabled,
   consoleUrl: "console.html",
 });
 

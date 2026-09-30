@@ -1,39 +1,51 @@
 /* ==========================================================================
-   Runinback — shared interactions
-   Nav behavior, scroll reveal, hero video, FAQ, forms, footer year.
-   Vanilla JS, no dependencies.
+   Runinback — shared interactions (marketing, auth and static pages)
+   Nav, mobile menu, scroll reveal (one IntersectionObserver), count-ups,
+   background video, FAQ, mailto forms, magnetic CTAs, cookie notice.
+   Vanilla JS, no dependencies. Every page is complete without it.
    ========================================================================== */
+import { countUpWithin } from "./count-up.js";
+
+const MOBILE_MENU = "(max-width: 640px)";
 
 export function initSiteInteractions() {
   // Tell public/js-flag.js the bundle booted, so reveal states stay enabled.
   document.documentElement.classList.add("js-ready");
   const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-
   const finePointer = window.matchMedia("(pointer: fine)").matches;
 
-  /* --- Scroll progress bar --------------------------------------------- */
+  initScrollChrome();
+  initMobileMenu();
+  initReveal(reduceMotion);
+  initBackgroundVideos(reduceMotion);
+  initFaq();
+  initMailtoForms();
+  initMagnetic(finePointer && !reduceMotion);
+  initAnchors(reduceMotion);
+  initCookieNotice();
+
+  const yearEl = document.querySelector("[data-year]");
+  if (yearEl) yearEl.textContent = new Date().getFullYear();
+}
+
+/* --- Progress bar + hide-on-scroll nav --------------------------------- */
+function initScrollChrome() {
   const progress = document.createElement("div");
   progress.className = "progress";
   progress.setAttribute("aria-hidden", "true");
   document.body.appendChild(progress);
 
-  /* --- Sticky / hide-on-scroll nav ------------------------------------- */
   const nav = document.querySelector("[data-nav]");
-  let ticking = false;
-
-  // One rAF-throttled handler for the nav state and the progress bar; the
-  // scrollable height is cached and refreshed on resize, not read per event.
+  // One rAF-throttled handler; the scrollable height is cached and only
+  // re-measured on resize/load, never read per scroll event.
   let maxScroll = 0;
+  let ticking = false;
+  let lastY = window.scrollY;
   const measure = () => {
     const h = document.documentElement;
     maxScroll = h.scrollHeight - h.clientHeight;
   };
-  const updateProgress = (y) => {
-    const p = maxScroll > 0 ? Math.min(1, y / maxScroll) : 0;
-    progress.style.setProperty("--p", p.toFixed(4));
-  };
-  let lastY = window.scrollY;
-  const onScroll = () => {
+  const update = () => {
     ticking = false;
     const y = window.scrollY;
     if (nav) {
@@ -41,99 +53,105 @@ export function initSiteInteractions() {
       nav.classList.toggle("is-hidden", y > lastY && y > 400 && !nav.classList.contains("is-open"));
     }
     lastY = y;
-    updateProgress(y);
+    const p = maxScroll > 0 ? Math.min(1, y / maxScroll) : 0;
+    progress.style.setProperty("--p", p.toFixed(4));
   };
   window.addEventListener("scroll", () => {
-    if (!ticking) { ticking = true; requestAnimationFrame(onScroll); }
+    if (!ticking) { ticking = true; requestAnimationFrame(update); }
   }, { passive: true });
-  window.addEventListener("resize", () => { measure(); onScroll(); }, { passive: true });
-  // Late content (fonts, FAQ panels) changes the page height after load.
+  window.addEventListener("resize", () => { measure(); update(); }, { passive: true });
   window.addEventListener("load", measure);
   measure();
-  onScroll();
+  update();
+}
 
-  if (nav) {
+/* --- Mobile menu --------------------------------------------------------
+   A full-screen sheet below 640px. While open, the page behind is inert, so
+   Tab stays inside the header; Escape or a link closes it and focus returns
+   to the toggle. */
+function initMobileMenu() {
+  const nav = document.querySelector("[data-nav]");
+  const toggle = nav && nav.querySelector("[data-nav-toggle]");
+  const links = nav && nav.querySelector(".nav__links");
+  if (!toggle || !links) return;
+  if (!links.id) links.id = "nav-links";
+  toggle.setAttribute("aria-controls", links.id);
+  if (toggle.tagName === "BUTTON") toggle.type = "button";
 
-    /* Mobile menu toggle */
-    const toggle = nav.querySelector("[data-nav-toggle]");
-    if (toggle) {
-      const setMenu = (open) => {
-        nav.classList.toggle("is-open", open);
-        toggle.setAttribute("aria-expanded", String(open));
-        document.body.style.overflow = open ? "hidden" : "";
-      };
-      toggle.addEventListener("click", () => setMenu(!nav.classList.contains("is-open")));
-      // Escape closes the menu and returns focus to the toggle.
-      document.addEventListener("keydown", (e) => {
-        if (e.key === "Escape" && nav.classList.contains("is-open")) { setMenu(false); toggle.focus(); }
-      });
-      nav.querySelectorAll(".nav__link, .nav__links .btn").forEach((link) => {
-        link.addEventListener("click", () => {
-          nav.classList.remove("is-open");
-          toggle.setAttribute("aria-expanded", "false");
-          document.body.style.overflow = "";
-        });
-      });
+  const behind = [document.getElementById("main"), document.querySelector(".footer")].filter(Boolean);
+  const mq = window.matchMedia(MOBILE_MENU);
+  const isOpen = () => nav.classList.contains("is-open");
+  const setMenu = (open, restoreFocus) => {
+    nav.classList.toggle("is-open", open);
+    toggle.setAttribute("aria-expanded", String(open));
+    toggle.setAttribute("aria-label", open ? "Close menu" : "Open menu");
+    document.body.classList.toggle("menu-open", open);
+    behind.forEach((el) => { el.inert = open; });
+    if (open) {
+      const first = links.querySelector("a, button");
+      if (first) first.focus({ preventScroll: true });
+    } else if (restoreFocus) {
+      toggle.focus({ preventScroll: true });
     }
-  }
+  };
+  toggle.setAttribute("aria-label", "Open menu");
+  toggle.addEventListener("click", () => setMenu(!isOpen(), true));
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && isOpen()) setMenu(false, true);
+  });
+  links.addEventListener("click", (e) => {
+    if (isOpen() && e.target.closest("a")) setMenu(false, false);
+  });
+  // Rotating a phone to landscape can cross the breakpoint with the menu open.
+  const onBreakpoint = () => { if (!mq.matches && isOpen()) setMenu(false, false); };
+  if (mq.addEventListener) mq.addEventListener("change", onBreakpoint);
+}
 
-  /* --- Scroll reveal ---------------------------------------------------- */
-  const revealEls = document.querySelectorAll("[data-reveal]");
-  if (revealEls.length) {
-    if (reduceMotion || !("IntersectionObserver" in window)) {
-      revealEls.forEach((el) => el.classList.add("is-visible"));
-    } else {
-      const io = new IntersectionObserver(
-        (entries, obs) => {
-          entries.forEach((entry, i) => {
-            if (entry.isIntersecting) {
-              entry.target.style.setProperty("--reveal-delay", (entry.target.dataset.revealDelay || (i % 4) * 0.08) + "s");
-              entry.target.classList.add("is-visible");
-              obs.unobserve(entry.target);
-            }
-          });
-        },
-        { threshold: 0.12, rootMargin: "0px 0px -40px 0px" }
-      );
-      revealEls.forEach((el) => io.observe(el));
-    }
-  }
+/* --- Scroll reveal ------------------------------------------------------
+   One observer for every [data-reveal]. Children of a [data-stagger] list
+   get increasing delays; count-ups inside a revealed block start with it. */
+function initReveal(reduceMotion) {
+  document.querySelectorAll("[data-stagger]").forEach((list) => {
+    Array.from(list.children).forEach((child, i) => {
+      if (child.hasAttribute("data-reveal")) child.style.setProperty("--reveal-delay", (i * 0.07).toFixed(2) + "s");
+    });
+  });
 
-  /* --- Section band reveal (landing) ------------------------------------ */
-  const bands = document.querySelectorAll("[data-band]");
-  if (bands.length) {
-    if (reduceMotion || !("IntersectionObserver" in window)) {
-      bands.forEach((b) => b.classList.add("is-in"));
-    } else {
-      const bio = new IntersectionObserver(
-        (entries, obs) => {
-          entries.forEach((entry) => {
-            if (entry.isIntersecting) {
-              entry.target.classList.add("is-in");
-              obs.unobserve(entry.target);
-            }
-          });
-        },
-        { threshold: 0.16, rootMargin: "0px 0px -8% 0px" }
-      );
-      bands.forEach((b) => bio.observe(b));
-    }
+  const els = document.querySelectorAll("[data-reveal]");
+  const show = (el) => {
+    el.classList.add("is-visible");
+    countUpWithin(el);
+  };
+  if (!els.length) return;
+  if (reduceMotion || !("IntersectionObserver" in window)) {
+    els.forEach((el) => el.classList.add("is-visible"));
+    return;
   }
+  const io = new IntersectionObserver((entries) => {
+    entries.forEach((entry) => {
+      if (!entry.isIntersecting) return;
+      io.unobserve(entry.target);
+      show(entry.target);
+    });
+  }, { threshold: 0.12, rootMargin: "0px 0px -6% 0px" });
+  els.forEach((el) => io.observe(el));
+}
 
-  /* --- Background videos (hero + auth split panel) --------------------- */
-  // The clip is cut to the 7s loop, so native `loop` does the work. Play only
-  // while the video is actually on screen (the auth panel is hidden on phones,
-  // and the hero scrolls away), and never under reduced motion.
-  const initBackgroundVideo = (video) => {
-    // iOS/Android autoplay only honors *inline muted* playback set at the JS
-    // level too, so set every flag before trying to play.
+/* --- Background videos (hero + auth split panel) ------------------------
+   Play only while on screen (a display:none panel never intersects, so it
+   never downloads), and never under reduced motion. */
+function initBackgroundVideos(reduceMotion) {
+  const videos = [document.getElementById("hero-video")]
+    .concat(Array.from(document.querySelectorAll(".auth-aside__video")))
+    .filter(Boolean);
+  videos.forEach((video) => {
+    // iOS/Android autoplay only honors inline muted playback set in JS too.
     video.muted = true;
     video.defaultMuted = true;
     video.playsInline = true;
     video.loop = true;
-    if (reduceMotion) { video.pause(); return; }
+    if (reduceMotion) { video.removeAttribute("autoplay"); video.pause(); return; }
 
-    // If the browser blocks autoplay, the first gesture starts it.
     const unlockEvents = ["touchstart", "pointerdown", "keydown"];
     const unlock = () => {
       video.play().then(() => unlockEvents.forEach((ev) => window.removeEventListener(ev, unlock))).catch(() => {});
@@ -144,11 +162,9 @@ export function initSiteInteractions() {
         p.catch(() => unlockEvents.forEach((ev) => window.addEventListener(ev, unlock, { passive: true })));
       }
     };
-
     if (!("IntersectionObserver" in window)) { play(); return; }
     new IntersectionObserver((entries) => {
       entries.forEach((entry) => {
-        // A display:none panel never intersects, so it never downloads or plays.
         if (entry.isIntersecting) {
           if (video.preload === "none") video.preload = "auto";
           play();
@@ -157,17 +173,17 @@ export function initSiteInteractions() {
         }
       });
     }).observe(video);
-  };
-  [document.getElementById("hero-video")]
-    .concat(Array.from(document.querySelectorAll(".auth-aside__video")))
-    .filter(Boolean)
-    .forEach(initBackgroundVideo);
+  });
+}
 
-  /* --- FAQ accordion ---------------------------------------------------- */
-  document.querySelectorAll("[data-faq]").forEach((item) => {
+/* --- FAQ accordion ------------------------------------------------------ */
+function initFaq() {
+  document.querySelectorAll("[data-faq]").forEach((item, i) => {
     const btn = item.querySelector(".faq__q");
     const panel = item.querySelector(".faq__a");
     if (!btn || !panel) return;
+    if (!panel.id) panel.id = "faq-panel-" + i;
+    btn.setAttribute("aria-controls", panel.id);
     btn.setAttribute("aria-expanded", "false");
     if (btn.tagName === "BUTTON") btn.type = "button";
     // A closed answer must not stay in the tab order or be read out.
@@ -179,10 +195,12 @@ export function initSiteInteractions() {
       panel.style.maxHeight = open ? panel.scrollHeight + "px" : "0px";
     });
   });
+}
 
-  /* --- Forms: hand off to the visitor's email app ---------------------- */
-  // There is no form backend yet, so never claim a message was sent: build
-  // a mailto with the answers and say plainly where it went.
+/* --- Forms: hand off to the visitor's email app ------------------------
+   There is no form backend, so never claim a message was sent: build a
+   mailto with the answers and say plainly where it went. */
+function initMailtoForms() {
   document.querySelectorAll("[data-form]").forEach((form) => {
     form.addEventListener("submit", (e) => {
       e.preventDefault();
@@ -207,127 +225,95 @@ export function initSiteInteractions() {
       }
     });
   });
+}
 
-  /* --- Copy buttons on code blocks ------------------------------------- */
-  // The label cross-fades to "Copied" and back, so the click is confirmed
-  // right where it happened.
-  if (navigator.clipboard) {
-    document.querySelectorAll(".terminal").forEach((term) => {
-      const bar = term.querySelector(".terminal__bar");
-      const code = term.querySelector("code");
-      if (!bar || !code) return;
-      const btn = document.createElement("button");
-      btn.type = "button";
-      btn.className = "terminal__copy";
-      btn.setAttribute("aria-label", "Copy code");
-      btn.innerHTML = '<span class="terminal__copy-idle">Copy</span><span class="terminal__copy-done" aria-hidden="true">Copied</span>';
-      bar.appendChild(btn);
-      let reset = 0;
-      btn.addEventListener("click", () => {
-        navigator.clipboard.writeText(code.textContent).then(() => {
-          btn.classList.add("is-done");
-          btn.setAttribute("aria-label", "Copied");
-          clearTimeout(reset);
-          reset = setTimeout(() => { btn.classList.remove("is-done"); btn.setAttribute("aria-label", "Copy code"); }, 1600);
-        }).catch(() => {});
+/* --- Magnetic primary CTAs + brand mark (fine pointers only) ------------ */
+function initMagnetic(enabled) {
+  if (!enabled) return;
+  document.querySelectorAll(".btn--cta:not(.btn--sm), .brand").forEach((el) => {
+    el.setAttribute("data-magnetic", "");
+    const strength = el.classList.contains("brand") ? 10 : 14;
+    let rect = null;
+    let frame = 0;
+    el.addEventListener("pointerenter", () => { rect = el.getBoundingClientRect(); });
+    el.addEventListener("pointermove", (e) => {
+      if (!rect) rect = el.getBoundingClientRect();
+      const mx = e.clientX - (rect.left + rect.width / 2);
+      const my = e.clientY - (rect.top + rect.height / 2);
+      cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(() => {
+        el.style.transform = `translate(${(mx / rect.width) * strength}px, ${(my / rect.height) * strength}px)`;
       });
+    }, { passive: true });
+    el.addEventListener("pointerleave", () => {
+      cancelAnimationFrame(frame);
+      rect = null;
+      el.style.transform = "";
     });
-  }
+  });
+}
 
-  /* --- Footer year ------------------------------------------------------ */
-  const yearEl = document.querySelector("[data-year]");
-  if (yearEl) yearEl.textContent = new Date().getFullYear();
-
-  /* --- Magnetic buttons / brand mark ----------------------------------- */
-  // The element's box is measured once on enter, not on every pointermove,
-  // and writes are coalesced into one frame.
-  if (finePointer && !reduceMotion) {
-    document.querySelectorAll(".btn--cta, .brand").forEach((el) => {
-      el.setAttribute("data-magnetic", "");
-      const strength = el.classList.contains("brand") ? 10 : 16;
-      let rect = null;
-      let frame = 0;
-      el.addEventListener("pointerenter", () => { rect = el.getBoundingClientRect(); });
-      el.addEventListener("pointermove", (e) => {
-        if (!rect) rect = el.getBoundingClientRect();
-        const mx = e.clientX - (rect.left + rect.width / 2);
-        const my = e.clientY - (rect.top + rect.height / 2);
-        cancelAnimationFrame(frame);
-        frame = requestAnimationFrame(() => {
-          el.style.transform = `translate(${(mx / rect.width) * strength}px, ${(my / rect.height) * strength}px)`;
-        });
-      }, { passive: true });
-      el.addEventListener("pointerleave", () => {
-        cancelAnimationFrame(frame);
-        rect = null;
-        el.style.transform = "";
-      });
-    });
-  }
-
-  /* --- Smooth in-page anchor scrolling (with nav offset) --------------- */
-  document.querySelectorAll('a[href^="#"]').forEach((link) => {
-    const id = link.getAttribute("href");
-    if (!id || id === "#") return;
+/* --- Smooth in-page anchors (with nav offset) --------------------------- */
+function initAnchors(reduceMotion) {
+  document.querySelectorAll('a[href^="#"], a[href*=".html#"]').forEach((link) => {
+    const url = new URL(link.href, window.location.href);
+    if (url.pathname !== window.location.pathname || !url.hash || url.hash === "#") return;
     link.addEventListener("click", (e) => {
-      const target = document.querySelector(id);
+      let target;
+      try { target = document.querySelector(url.hash); } catch (err) { return; }
       if (!target) return;
       e.preventDefault();
       const top = target.getBoundingClientRect().top + window.scrollY - 88;
       window.scrollTo({ top, behavior: reduceMotion ? "auto" : "smooth" });
-      if (history.replaceState) history.replaceState(null, "", id);
+      if (history.replaceState) history.replaceState(null, "", url.hash);
     });
   });
+}
 
-  /* --- Page transitions ------------------------------------------------ */
-  // Cross-page fades come from CSS (@view-transition in site.css): no
-  // overlay on load and no delay before the next page starts loading.
+/* --- Cookie notice ------------------------------------------------------ */
+function initCookieNotice() {
+  const KEY = "rib-cookie-consent";
+  let stored = null;
+  try { stored = localStorage.getItem(KEY); } catch (e) {}
+  if (stored === "accepted" || stored === "declined") return;
 
-  /* --- Cookie consent banner ------------------------------------------- */
-  (function cookieConsent() {
-    const KEY = "rib-cookie-consent";
-    let stored = null;
-    try { stored = localStorage.getItem(KEY); } catch (e) {}
-    if (stored === "accepted" || stored === "declined") return;
+  const save = (value) => {
+    try { localStorage.setItem(KEY, value); } catch (e) {}
+  };
 
-    const save = (value) => {
-      try { localStorage.setItem(KEY, value); } catch (e) {}
-    };
+  const banner = document.createElement("aside");
+  banner.className = "cookie-consent";
+  banner.setAttribute("role", "region");
+  banner.setAttribute("aria-label", "Cookie notice");
+  banner.innerHTML =
+    '<p class="cookie-consent__text">We use essential cookies to keep you signed in and run the site. ' +
+    "With your consent we may also use optional cookies to understand how it's used. Read our " +
+    '<a href="cookies.html">Cookie Policy</a>.</p>' +
+    '<div class="cookie-consent__actions">' +
+    '<button type="button" class="btn btn--ghost btn--sm" data-cookie="declined">Decline</button>' +
+    '<button type="button" class="btn btn--cta btn--sm" data-cookie="accepted">Accept</button>' +
+    "</div>";
+  // Early in the document (right after the skip link) so keyboard and
+  // screen-reader users meet it before the page content it overlays.
+  const skip = document.querySelector(".skip-link");
+  if (skip) skip.after(banner);
+  else document.body.prepend(banner);
 
-    const banner = document.createElement("aside");
-    banner.className = "cookie-consent";
-    banner.setAttribute("role", "region");
-    banner.setAttribute("aria-label", "Cookie notice");
-    banner.innerHTML =
-      '<p class="cookie-consent__text">We use essential cookies to keep you signed in and run the site. ' +
-      "With your consent we may also use optional cookies to understand how it's used. Read our " +
-      '<a href="cookies.html">Cookie Policy</a>.</p>' +
-      '<div class="cookie-consent__actions">' +
-      '<button type="button" class="btn btn--ghost btn--sm" data-cookie="declined">Decline</button>' +
-      '<button type="button" class="btn btn--cta btn--sm" data-cookie="accepted">Accept</button>' +
-      "</div>";
-    // Early in the document (right after the skip link) so keyboard and
-    // screen-reader users meet it before the page content it overlays.
-    const skip = document.querySelector(".skip-link");
-    if (skip) skip.after(banner);
-    else document.body.prepend(banner);
+  requestAnimationFrame(() => {
+    setTimeout(() => banner.classList.add("is-in"), 60);
+  });
 
-    requestAnimationFrame(() => {
-      setTimeout(() => banner.classList.add("is-in"), 60);
-    });
-
-    banner.addEventListener("click", (e) => {
-      const btn = e.target.closest("[data-cookie]");
-      if (!btn) return;
-      save(btn.getAttribute("data-cookie"));
-      banner.classList.remove("is-in");
-      // Don't strand keyboard focus on a button that's about to disappear.
-      const main = document.getElementById("main");
-      if (main && banner.contains(document.activeElement)) {
-        if (!main.hasAttribute("tabindex")) main.setAttribute("tabindex", "-1");
-        main.focus({ preventScroll: true });
-      }
-      setTimeout(() => banner.remove(), 650);
-    });
-  })();
+  banner.addEventListener("click", (e) => {
+    const btn = e.target.closest("[data-cookie]");
+    if (!btn) return;
+    save(btn.getAttribute("data-cookie"));
+    banner.classList.remove("is-in");
+    // Don't strand keyboard focus on a button that's about to disappear.
+    const main = document.getElementById("main");
+    if (main && banner.contains(document.activeElement)) {
+      if (!main.hasAttribute("tabindex")) main.setAttribute("tabindex", "-1");
+      main.focus({ preventScroll: true });
+    }
+    setTimeout(() => banner.remove(), 650);
+  });
 }

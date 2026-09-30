@@ -37,25 +37,24 @@
   <a class="skip-link" href="#main">Skip to content</a>
 
   <header class="nav" data-nav>
-    <!-- Announcement (inside the fixed header so it never overlaps the menu) -->
     <div class="announce">
-      Test mode: play with simulated rcoin, no real money yet — <a href="signup.html">create a free account →</a>
+      Test mode: play with simulated rcoin, no real money yet. <a href="signup.html">Create a free account</a>
     </div>
     <div class="shell nav__inner">
       <a href="index.html" class="brand" aria-label="Runinback home">
         <img class="brand__icon" src="/logo-icon.png" width="34" height="24" alt="" />
         <img class="brand__word" src="/logo-word.png" width="64" height="14" alt="" />
       </a>
-      <nav class="nav__links" aria-label="Primary">
+      <nav class="nav__links" id="nav-links" aria-label="Primary">
         <a href="how-it-works.html" class="nav__link">How it works</a>
-        
+        <a href="index.html#prizes" class="nav__link">Prizes</a>
         <a href="contact.html" class="nav__link">Contact</a>
         <span class="nav__account" id="nav-account">
           <a class="nav__link nav__auth" href="login.html">Log in</a>
           <a class="btn btn--cta btn--sm" href="signup.html">Sign up</a>
         </span>
       </nav>
-      <button class="nav__toggle" data-nav-toggle aria-label="Toggle menu" aria-expanded="false">
+      <button type="button" class="nav__toggle" data-nav-toggle aria-controls="nav-links" aria-label="Open menu" aria-expanded="false">
         <span></span>
       </button>
     </div>
@@ -68,7 +67,7 @@
         <p class="eyebrow" data-reveal>Legal</p>
         <h1 class="h-lg page-head__title" data-reveal>Cookie Policy</h1>
         <p class="lead" data-reveal>The cookies and local storage we use, why we use them, and how to manage your choices.</p>
-        <p class="legal__meta" data-reveal>Last updated: <span class="legal__ph">[effective date]</span> · Version 0.1 (draft)</p>
+        <p class="legal__meta" data-reveal>Last updated: 2026-09-30 · Version 0.2 (draft, pending legal review)</p>
       </div>
     </section>
 
@@ -115,7 +114,7 @@
           <p>In addition to cookies, we use your browser's local storage for small preferences that keep the experience smooth — for example your cookie-consent choice and, when you choose "keep me signed in", your session preference. Local storage stays on your device and is not sent to us automatically.</p>
 
           <h2 id="third-party">5. Third-party cookies</h2>
-          <p>When you sign in with Google, GitHub, Apple or Steam, or when scripts load from our content-delivery provider, those third parties may set their own cookies under their own policies. We do not control those cookies. See each provider's privacy policy for detail.</p>
+          <p>When you sign in with Google, GitHub or Apple, when you buy rcoin through Stripe's checkout, or when scripts load from our content-delivery provider, those third parties may set their own cookies under their own policies. We do not control those cookies. See each provider's privacy policy for detail.</p>
 
           <h2 id="manage">6. Managing your choices</h2>
           <p>When you first visit, a banner lets you <strong>accept</strong> or <strong>decline</strong> optional cookies. You can change your mind at any time by clearing this site's data in your browser, which resets the banner on your next visit. You can also block or delete cookies through your browser settings — note that blocking essential cookies may stop you from staying signed in.</p>
@@ -136,29 +135,36 @@
       <div class="footer__top">
         <div class="footer__brand">
           <a href="index.html" class="brand" aria-label="Runinback home"><img class="brand__lockup" src="/logo-lockup.png" width="180" height="30" alt="Runinback" /></a>
-          <p class="footer__tagline">Skill-based competition for Wild Rift. Reset. Replay. Redeem.</p>
+          <p class="footer__tagline">1v1 Wild Rift tournaments with fixed entry fees and prizes paid when the final is confirmed.</p>
         </div>
-        <div class="footer__col">
-          <h4>Play</h4>
+        <nav class="footer__col" aria-label="Play">
+          <h2 class="footer__h">Play</h2>
           <ul>
             <li><a href="how-it-works.html">How it works</a></li>
+            <li><a href="index.html#prizes">Quick Play prizes</a></li>
             <li><a href="signup.html">Create an account</a></li>
             <li><a href="login.html">Log in</a></li>
           </ul>
-        </div>
-        <div class="footer__col">
-          
-        </div>
-        <div class="footer__col">
-          <h4>Company</h4>
+        </nav>
+        <nav class="footer__col" aria-label="Help">
+          <h2 class="footer__h">Help</h2>
+          <ul>
+            <li><a href="how-it-works.html#faq">FAQ</a></li>
+            <li><a href="how-it-works.html#disputes">Disputes</a></li>
+            <li><a href="mailto:support@runinback.com">support@runinback.com</a></li>
+          </ul>
+        </nav>
+        <nav class="footer__col" aria-label="Company">
+          <h2 class="footer__h">Company</h2>
           <ul>
             <li><a href="contact.html">Contact</a></li>
             <li><a href="terms.html">Terms</a></li>
             <li><a href="privacy.html">Privacy</a></li>
             <li><a href="cookies.html">Cookies</a></li>
           </ul>
-        </div>
+        </nav>
       </div>
+      <p class="footer__legal">Runinback isn't endorsed by Riot Games and doesn't reflect the views or opinions of Riot Games or anyone officially involved in producing or managing Riot Games properties. Riot Games, League of Legends and Wild Rift are trademarks or registered trademarks of Riot Games, Inc.</p>
       <div class="footer__bottom">
         <span>© <span data-year>2026</span> Runinback. All rights reserved.</span>
         <span>Test mode: simulated rcoin, no real money.</span>

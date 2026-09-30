@@ -6,6 +6,17 @@
  * ========================================================================== */
 import { byId as $ } from "../lib/dom.js";
 
+// Where focus goes when the dialog closes: the control that opened it, or,
+// if a refresh redrew it meanwhile, its replacement (same id or data-* key).
+function returnTarget(trigger) {
+  if (!trigger || !trigger.focus) return null;
+  if (trigger.isConnected) return trigger;
+  if (trigger.id) return document.getElementById(trigger.id);
+  const attr = Array.prototype.find.call(trigger.attributes || [], function (a) { return a.name.indexOf("data-") === 0 && a.value; });
+  if (!attr || !window.CSS || !CSS.escape) return null;
+  return document.querySelector("[" + attr.name + '="' + CSS.escape(attr.value) + '"]');
+}
+
 /**
  * @param {{title: string, body: string, ok: string, danger?: boolean, typeToConfirm?: string}} opts
  * @returns {Promise<boolean>} true only when confirmed (and, if asked, the
@@ -50,7 +61,8 @@ export function confirmAction(opts) {
       input.oninput = null;
       input.onkeydown = null;
       const confirmed = dialog.returnValue === "ok" && (!expected || input.value.trim() === expected);
-      if (trigger && trigger.isConnected && trigger.focus) trigger.focus();
+      const back = returnTarget(trigger);
+      if (back) back.focus();
       resolve(confirmed);
     };
     dialog.returnValue = "";

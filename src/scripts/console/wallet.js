@@ -1,13 +1,13 @@
 /* ============================================================================
  * Runinback — console wallet: balance, rcoin purchase, withdrawals, activity.
  *
- * The 5% commission is charged once, on the way in (buying rcoin), and shown
- * as a clear rate. Withdrawals are 1:1 with no exit fee. The balance is only
- * ever credited server-side: by the verified Stripe / Coinbase webhooks, or by
- * the test RPC while the platform is in test mode.
+ * The 5% commission is charged once, on the way in (buying rcoin by card),
+ * and shown as a clear rate. Withdrawals are 1:1 with no exit fee. The
+ * balance is only ever credited server-side: by the verified Stripe webhook,
+ * or by the test RPC while the platform is in test mode.
  * ========================================================================== */
 import { config } from "../lib/config.js";
-import { replayClass, tweenNumber } from "../lib/motion.js";
+import { prefersReducedMotion, replayClass, tweenNumber } from "../lib/motion.js";
 import { byId as $, escapeHtml as esc, showMessage } from "../lib/dom.js";
 import {
   centsToRcoin, formatDate, formatRcoin, formatUsd, parseDollarsToCents, parseRcoinToCents, quotePurchase,
@@ -16,19 +16,14 @@ import { functionError, toast } from "../lib/errors.js";
 import { playReturn } from "../lib/wild-rift.js";
 import { errorText, session } from "./context.js";
 import { goToPage } from "./navigation.js";
+import { peakArt } from "./art.js";
 
 const MIN_PURCHASE_CENTS = 100;
 const MAX_PURCHASE_CENTS = 200000;
 const MIN_WITHDRAW_CENTS = 100;
 
-const PAY_NOTES = {
-  card: "Secure card checkout via Stripe.",
-  crypto: "Pay in USDC/USDT on Base and other chains via Coinbase.",
-};
-
-// Which real payment rails are live. When more than one is on, the buyer picks
-// between them; when just one, it's used silently; when none, the test RPC.
-let payMethod = config.stripeEnabled ? "card" : (config.cryptoEnabled ? "crypto" : null);
+// Card checkout (Stripe) when it's live; otherwise the test RPC credits at once.
+const CARD_CHECKOUT = config.stripeEnabled;
 
 function setText(id, text) {
   const node = $(id);
@@ -59,6 +54,37 @@ function loadCommitted() {
   }).catch(function () { /* the line just stays as it was */ });
 }
 
+// A balance that went up (a prize, a refund, a purchase) says by how much:
+// a small "+25.2" rises from the chip and fades. Decorative; the chip's
+// label carries the new balance.
+function floatDelta(deltaCents) {
+  const chip = $("wallet-chip");
+  if (!chip || deltaCents <= 0 || prefersReducedMotion() || typeof chip.getBoundingClientRect !== "function") return;
+  const tag = document.createElement("span");
+  tag.className = "wallet-delta";
+  tag.setAttribute("aria-hidden", "true");
+  tag.textContent = "+" + centsToRcoin(deltaCents);
+  chip.parentNode.insertBefore(tag, chip);
+  tag.addEventListener("animationend", function () { tag.remove(); }, { once: true });
+  setTimeout(function () { if (tag.isConnected) tag.remove(); }, 2000);
+}
+
+// The wallet's big number counts up from zero the first time the page shows
+// in a session; later visits show it as is.
+let heroCounted = false;
+let heroCounting = false;
+export function countUpBalance() {
+  const hero = $("wallet-balance");
+  if (!hero || heroCounted || session.balanceCents == null) return;
+  heroCounted = true;
+  const to = session.balanceCents;
+  heroCounting = true;
+  tweenNumber(hero, 0, to, function (v) {
+    hero.textContent = formatRcoin(Math.round(v));
+    if (Math.round(v) === to) heroCounting = false;
+  }, 700);
+}
+
 export function refreshWallet() {
   return session.client.from("wallets").select("test_balance_cents, test_locked_cents").eq("user_id", session.uid).single()
     .then(function (r) {
@@ -78,17 +104,30 @@ export function refreshWallet() {
       tweenNumber($("wallet-chip"), from, w.test_balance_cents, function (v) {
         const cents = Math.round(v);
         setText("wallet-chip", formatRcoin(cents));
-        if ($("games-balance")) $("games-balance").innerHTML = centsToRcoin(cents) + " <small>rcoin</small>";
-        setText("wallet-balance", formatRcoin(cents));
+        if (!heroCounting) setText("wallet-balance", formatRcoin(cents));
         setText("wallet-usd", formatUsd(cents));
-        setText("dev-balance", formatRcoin(cents));
       });
-      if (previous != null && previous !== w.test_balance_cents) replayClass($("wallet-chip"), "is-bumped");
+      if (previous != null && previous !== w.test_balance_cents) {
+        replayClass($("wallet-chip"), "is-bumped");
+        floatDelta(w.test_balance_cents - previous);
+      }
       session.lockedCents = w.test_locked_cents || 0;
       renderCommitted();
       return w;
     })
     .catch(function () { return null; });
+}
+
+// Ledger rows take the color of what moved: prizes pink, entry fees and
+// deposits orange, purchases and refunds green, withdrawals neutral.
+function ledgerKind(kind) {
+  const k = String(kind || "").toLowerCase();
+  if (/prize|win|payout/.test(k)) return "prize";
+  if (/entry|fee|deposit|hold|lock/.test(k)) return "entry";
+  if (/refund|return|release/.test(k)) return "refund";
+  if (/buy|purchase|top/.test(k)) return "buy";
+  if (/withdraw/.test(k)) return "out";
+  return "other";
 }
 
 export function loadLedger() {
@@ -100,16 +139,17 @@ export function loadLedger() {
     .then(function (r) {
       const box = $("wallet-ledger");
       const rows = r.data || [];
+      box.setAttribute("aria-busy", "false");
       if (r.error) { box.innerHTML = '<p class="muted">Couldn\'t load your activity.</p>'; return; }
       if (!rows.length) {
         box.innerHTML = session.balanceCents > 0
-          ? '<div class="empty"><h3>No activity yet</h3><p>You have ' + esc(formatRcoin(session.balanceCents)) + '. Enter a tournament to put it to work.</p><p><button type="button" class="btn btn--cta btn--sm" data-go-compete>Find a tournament</button></p></div>'
-          : '<div class="empty"><h3>No activity yet</h3><p>Buy rcoin above to enter your first tournament.</p></div>';
+          ? '<div class="empty">' + peakArt("escrow") + '<h3>No activity yet</h3><p>You have ' + esc(formatRcoin(session.balanceCents)) + '. Pick a tier on Play to put it to work.</p><p><button type="button" class="btn btn--cta btn--sm" data-go-compete>Go to Play</button></p></div>'
+          : '<div class="empty">' + peakArt("escrow") + '<h3>No activity yet</h3><p>Buy rcoin above, then pick an entry fee on Play. Free tiers need no rcoin at all.</p><p><button type="button" class="btn btn--sm" data-focus-buy>Buy rcoin</button></p></div>';
         return;
       }
       box.innerHTML = '<div class="panel">' + rows.map(function (m) {
         const positive = m.amount_cents >= 0;
-        return '<div class="row row--led"><div><div class="row__name">' + esc(m.memo || m.kind) +
+        return '<div class="row row--led" data-kind="' + esc(ledgerKind(m.kind)) + '"><span class="led__dot" aria-hidden="true"></span><div><div class="row__name">' + esc(m.memo || m.kind) +
           '</div><div class="row__meta">' + formatDate(m.created_at) + "</div></div>" +
           '<span class="amt ' + (positive ? "pos" : "neg") + '">' + (positive ? "+" : "") + formatRcoin(m.amount_cents) + "</span></div>";
       }).join("") + "</div>";
@@ -136,31 +176,8 @@ function updateWithdrawQuote() {
   setText("withdraw-receive", "$" + Math.round(amount).toFixed(2));
 }
 
-function setPayMethod(method) {
-  payMethod = method;
-  document.querySelectorAll('[data-chips="pay-method"] button').forEach(function (x) {
-    x.classList.toggle("on", x.getAttribute("data-method") === method);
-  });
-  setText("pay-note", PAY_NOTES[method] || "");
-}
-
-function initPayMethod() {
-  const wrap = $("pay-method");
-  if (!wrap) return;
-  // Show the chooser only when both rails are live (a real choice to make).
-  if (config.stripeEnabled && config.cryptoEnabled) {
-    wrap.hidden = false;
-    document.querySelectorAll('[data-chips="pay-method"] button').forEach(function (btn) {
-      btn.addEventListener("click", function () { setPayMethod(btn.getAttribute("data-method")); });
-    });
-    setPayMethod("card");
-  } else {
-    wrap.hidden = true; // single rail (or test mode) — no selector needed
-  }
-}
-
-// Start a hosted checkout (Stripe or Coinbase Commerce). The balance is
-// credited only by the verified webhook after payment, never in the browser.
+// Start the hosted Stripe checkout. The balance is credited only by the
+// verified webhook after payment, never in the browser.
 function startCheckout(functionName, payCents, btn) {
   showMessage($("wallet-msg"), "Redirecting to secure checkout…", true);
   session.client.functions.invoke(functionName, { body: { pay_cents: payCents } })
@@ -227,8 +244,11 @@ export function initWallet() {
     updatePurchaseQuote();
   });
   $("withdraw-amount").addEventListener("input", updateWithdrawQuote);
-  $("withdraw-destination").addEventListener("change", updateWithdrawQuote);
-  initPayMethod();
+  setText("pay-note", CARD_CHECKOUT ? "Secure card checkout by Stripe." : "Test mode: the purchase is simulated, no card needed.");
+  const ledger = $("wallet-ledger");
+  if (ledger) ledger.addEventListener("click", function (e) {
+    if (e.target.closest("[data-focus-buy]")) $("buy-amount").focus();
+  });
   updatePurchaseQuote();
   updateWithdrawQuote();
 
@@ -239,8 +259,7 @@ export function initWallet() {
     const btn = $("buy-submit");
     btn.disabled = true;
 
-    if (payMethod === "card") { startCheckout("stripe-checkout", pay, btn); return; }
-    if (payMethod === "crypto") { startCheckout("crypto-checkout", pay, btn); return; }
+    if (CARD_CHECKOUT) { startCheckout("stripe-checkout", pay, btn); return; }
 
     // Test path (no payment rails yet): instant credit via the test RPC.
     session.client.rpc("rib_buy_rcoin_test", { p_pay_cents: pay })
@@ -270,7 +289,7 @@ export function initWallet() {
 }
 
 /**
- * Stripe / Coinbase send the buyer back to console.html?checkout=success|cancel.
+ * Stripe sends the buyer back to console.html?checkout=success|cancel.
  * The balance is credited asynchronously by the webhook, so on success we open
  * the wallet and refresh a few times to catch the credit as it lands.
  */
@@ -291,7 +310,7 @@ export function handleCheckoutReturn(goToPage) {
       loadLedger();
       if (tries >= 5) {
         clearInterval(poll);
-        showMessage($("wallet-msg"), "Still processing. Card payments usually land within a minute and crypto can take a few more; your activity updates as soon as it does.", true);
+        showMessage($("wallet-msg"), "Still processing. Card payments usually land within a minute; your activity updates as soon as it does.", true);
       }
     }, 2000);
   } else if (result === "cancel") {

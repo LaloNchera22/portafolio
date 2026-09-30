@@ -9,11 +9,9 @@ describe("wallet", () => {
   beforeEach(() => {
     document.body.innerHTML = `
       <div id="wallet-chip"></div>
-      <div id="games-balance"></div>
       <div id="wallet-balance"></div>
       <div id="wallet-locked"></div>
       <div id="wallet-usd"></div>
-      <div id="dev-balance"></div>
       <div id="wallet-ledger"></div>
       <input id="buy-amount" value="10" />
       <div id="buy-pay"></div>
@@ -22,19 +20,9 @@ describe("wallet", () => {
       <button id="buy-submit"></button>
       <input id="withdraw-amount" value="50" />
       <div id="withdraw-receive"></div>
-      <input id="withdraw-destination" />
       <button id="withdraw-submit"></button>
-      <input id="dev-withdraw-amount" value="50" />
-      <button id="dev-withdraw-submit"></button>
-      <div id="dev-withdraw-msg"></div>
       <div id="wallet-msg"></div>
-      <div id="pay-method" hidden>
-        <div data-chips="pay-method">
-          <button data-method="card">Card</button>
-          <button data-method="crypto">Crypto</button>
-        </div>
-      </div>
-      <div id="pay-note"></div>
+      <span id="pay-note"></span>
     `;
 
     calls = [];
@@ -78,7 +66,8 @@ describe("wallet", () => {
   it("refreshWallet updates DOM elements", async () => {
     await refreshWallet();
     expect(document.getElementById("wallet-chip").textContent).toBe("20 rcoin");
-    expect(document.getElementById("games-balance").textContent).toBe("20 rcoin");
+    expect(document.getElementById("wallet-balance").textContent).toBe("20 rcoin");
+    expect(document.getElementById("wallet-usd").textContent).toBe("$20.00");
     expect(session.balanceCents).toBe(2000);
   });
 
@@ -104,6 +93,8 @@ describe("wallet", () => {
     expect(calls.length).toBe(1);
     expect(calls[0][0]).toBe("rib_buy_rcoin_test");
     expect(calls[0][1]).toEqual({ p_pay_cents: 1000 });
+    // No card rail in tests: it says the purchase is simulated.
+    expect(document.getElementById("pay-note").textContent).toContain("Test mode");
   });
 
   it("handles checkout return success", () => {

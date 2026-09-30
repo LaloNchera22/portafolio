@@ -2,7 +2,7 @@
   "name": "runinback",
   "private": true,
   "version": "1.0.0",
-  "description": "Runinback — skill-based wagering layer for competitive gaming.",
+  "description": "Runinback — skill-based Wild Rift tournaments with instant prizes.",
   "type": "module",
   "engines": {
     "node": ">=20.19"

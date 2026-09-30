@@ -1,7 +1,7 @@
 /* ============================================================================
  * Runinback — authentication forms for the static site.
- * Powers login.html and signup.html and the social providers (Google, GitHub,
- * Apple natively; Steam through the steam-auth Edge Function bridge). No
+ * Powers login.html and signup.html: email + password, magic link, password
+ * reset and the Supabase social providers (Google, GitHub, Apple). No
  * secrets here: every data access is gated server-side by RLS.
  * Degrades gracefully when the backend is not configured.
  * ========================================================================== */
@@ -86,7 +86,7 @@ export function initAuthForms() {
     t.textContent = reveal ? "Hide" : "Show";
   });
 
-  /* ---- social sign-in (Google/GitHub/Apple native, Steam via bridge) ------- */
+  /* ---- social sign-in (Supabase OAuth providers) --------------------------- */
   document.addEventListener("click", function (e) {
     var b = e.target.closest("[data-oauth]"); if (!b) return;
     e.preventDefault();
@@ -94,11 +94,6 @@ export function initAuthForms() {
     clearMsg(SCOPE);
     if (!client) { notConfigured(SCOPE); return; }
     var redirectTo = absUrl(CONSOLE_URL);
-    if (provider === "steam") {
-      var base = String(config.supabaseUrl).replace(/\/+$/, "");
-      window.location.href = base + "/functions/v1/steam-auth/login?redirect_to=" + encodeURIComponent(redirectTo);
-      return;
-    }
     client.auth.signInWithOAuth({ provider: provider, options: { redirectTo: redirectTo } })
       .then(function (res) { if (res.error) err(SCOPE, friendly(res.error, "Couldn't start sign-in.")); })
       .catch(function () { err(SCOPE, "Couldn't start sign-in. Try again."); });

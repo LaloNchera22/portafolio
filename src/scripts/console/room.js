@@ -19,11 +19,15 @@
  * change, so a message being typed, an open dispute form or an error message
  * survive the opponent's actions. Events are delegated on the root.
  * ========================================================================== */
+import { announce } from "../lib/announce.js";
 import { byId as $, escapeHtml as esc, showMessage } from "../lib/dom.js";
 import { functionError } from "../lib/errors.js";
 import { formatRcoin } from "../lib/format.js";
 import { replayClass, tweenNumber } from "../lib/motion.js";
 import { prizeSplit, roundName } from "../lib/tournament.js";
+import { WILD_RIFT } from "../lib/wild-rift.js";
+import { peakArt } from "./art.js";
+import { confirmAction } from "./confirm.js";
 import { errorText, session } from "./context.js";
 import { refreshLive } from "./live.js";
 import { currentRouteArg, goToPage } from "./navigation.js";
@@ -79,8 +83,17 @@ export function loadRoom() {
   if (room.id !== id) closeRoom();
   room.id = id;
   rememberRoom(id);
+  if (room.shellFor !== id) {
+    $("room-title").textContent = "Match room.";
+    $("room-root").innerHTML = skeleton();
+  }
   subscribe(id);
   return fetchRoom();
+}
+
+function skeleton() {
+  return '<div class="room-skel" aria-hidden="true"><div class="skel"><span class="skel__l" style="width:40%"></span><span class="skel__l" style="width:70%"></span>' +
+    '<span class="skel__l skel__l--pill"></span></div><div class="skel skel--rows"><span class="skel__l"></span><span class="skel__l"></span></div></div>';
 }
 
 function emptyState(title, text, cta) {
@@ -88,12 +101,6 @@ function emptyState(title, text, cta) {
     (cta ? '<p><button type="button" class="btn btn--cta btn--sm" data-go="page-compete">' + esc(cta) + "</button></p>" : "") + "</div>";
 }
 
-/** The brand's peak mark, drawn in (empty states). */
-export function peakArt(tone) {
-  return '<svg class="empty__art empty__art--' + tone + '" viewBox="0 0 72 40" aria-hidden="true">' +
-    '<path class="empty__peak" pathLength="1" d="M2 38 L22 12 L32 24 L46 4 L70 38"/>' +
-    '<path class="empty__spark" pathLength="1" d="M54 2 L50 10 L56 10 L52 18"/></svg>';
-}
 
 function fetchRoom() {
   const id = room.id;
@@ -183,11 +190,15 @@ function countdown(deadline) {
   return Math.floor(s / 60) + ":" + String(s % 60).padStart(2, "0");
 }
 
+// The countdown is the room's pulse: a ring that empties with the time
+// inside it. role="timer" keeps screen readers from reading every second;
+// tick() announces the moments that matter (a minute left, time's up).
 function clock(deadline, note, kind) {
   return '<div class="room-clock room-clock--' + kind + '" data-deadline="' + esc(deadline) + '" data-total="' + (kind === "ready" ? READY_SECONDS : room.r && room.r.fast_tracked ? FAST_SECONDS : CONFIRM_SECONDS) + '">' +
-    '<svg viewBox="0 0 40 40" aria-hidden="true"><circle class="room-clock__track" cx="20" cy="20" r="18"/>' +
+    '<div class="room-clock__ring"><svg viewBox="0 0 40 40" aria-hidden="true"><circle class="room-clock__track" cx="20" cy="20" r="18"/>' +
     '<circle class="room-clock__arc" cx="20" cy="20" r="18" pathLength="100"/></svg>' +
-    '<strong class="room-clock__t">' + countdown(deadline) + '</strong><span class="room-clock__k">' + note + "</span></div>";
+    '<strong class="room-clock__t" role="timer">' + countdown(deadline) + "</strong></div>" +
+    '<span class="room-clock__k">' + note + "</span></div>";
 }
 
 /* ---- rendering ------------------------------------------------------------ */
@@ -200,7 +211,7 @@ function renderShell() {
       STEPS.map(function (s) { return "<li><span>" + s + "</span></li>"; }).join("") + "</ol>" +
     '<div class="room">' +
       '<div class="room__main">' +
-        '<div class="room-state" id="room-state" aria-live="polite"></div>' +
+        '<div class="room-state" id="room-state"></div>' +
         '<p class="msg" id="room-msg" hidden></p>' +
         '<div id="room-lobby"></div>' +
         '<div class="room-players" id="room-players"></div>' +
@@ -225,7 +236,7 @@ function update() {
   const r = room.r;
   const i = room.info || {};
   const live = r.status === "ready_check" || r.status === "live" || r.status === "disputed";
-  $("room-title").textContent = r.game + ".";
+  $("room-title").textContent = WILD_RIFT + " 1v1.";
   $("room-context").innerHTML = contextLine(r, i);
   renderSteps(r);
   renderPlayers(r, i);
@@ -242,7 +253,6 @@ function update() {
 }
 
 function contextLine(r, i) {
-  if (r.kind === "friendly") return "Friendly · free";
   const round = i.rounds ? roundName(r.round, i.rounds) : "Round " + r.round;
   return esc(i.tournament_name || "Tournament") + " · " + round + " · " + (i.entry_fee_cents ? formatRcoin(i.entry_fee_cents) + " entry" : "free");
 }
@@ -333,25 +343,59 @@ function renderState(r) {
   const form = $("room-dispute");
   const keep = form && !form.hidden && r.status === "live" ? $("room-dispute-reason").value : null;
   const wasStatus = room.lastStatus;
+  const wasTone = box.getAttribute("data-tone");
   box.innerHTML = stateHtml(r);
+  box.setAttribute("data-tone", stateTone(r));
   if (keep !== null && $("room-dispute")) {
     $("room-dispute").hidden = false;
     $("room-dispute-reason").value = keep;
   }
-  if (wasStatus && wasStatus !== r.status) replayClass(box, "is-changed");
+  // A new step of the match: the card settles in and the headline is read out
+  // (the whole card isn't a live region, or the clock would talk every second).
+  if (wasTone !== box.getAttribute("data-tone")) {
+    if (wasTone) replayClass(box, "is-changed");
+    const h = box.querySelector("h2");
+    if (h) announce(h.textContent);
+  }
   celebrate(r, wasStatus);
 }
 
-// Win moments: the headline reveals; a champion's prize counts up.
+// The state card's color: blue while you act, cream while you wait, orange
+// in review, pink for a win, dim for a loss or no result.
+function stateTone(r) {
+  if (r.status === "ready_check") return myReady() ? "wait" : "act";
+  if (r.status === "live") {
+    const mine = myReport(); const theirs = theirReport();
+    if (mine && !theirs) return "wait";
+    return theirs && !mine ? "respond" : "act";
+  }
+  if (r.status === "disputed") return "review";
+  if (r.status === "done") return r.winner_id === me() ? "won" : "lost";
+  if (r.status === "void") return "void";
+  return "wait";
+}
+
+// Win moments: the headline reveals with a burst of sparks; a champion's
+// prize counts up. Only when the win happens on screen, once per room.
 function celebrate(r, wasStatus) {
   if (r.status !== "done" || r.winner_id !== me() || room.celebrated[r.id]) return;
   room.celebrated[r.id] = true;
+  const live = wasStatus && wasStatus !== "done";
   const h = $("room-state").querySelector("h2");
-  if (h && wasStatus && wasStatus !== "done") replayClass(h, "is-reveal");
+  if (h && live) {
+    replayClass(h, "is-reveal");
+    const burst = document.createElement("span");
+    burst.className = "room-burst";
+    burst.setAttribute("aria-hidden", "true");
+    for (let i = 0; i < 10; i++) burst.appendChild(document.createElement("i")).style.setProperty("--a", i * 36 + "deg");
+    h.appendChild(burst);
+    burst.addEventListener("animationend", function () { burst.remove(); }, { once: true });
+  }
   const prize = $("room-prize");
   if (prize) {
     const cents = parseInt(prize.getAttribute("data-cents"), 10) || 0;
     tweenNumber(prize, 0, cents, function (v) { prize.textContent = formatRcoin(Math.round(v)); }, 900);
+    if (live) replayClass(prize.parentNode, "is-paid");
   }
 }
 
@@ -381,10 +425,6 @@ function stateHtml(r) {
     const won = r.winner_id === me();
     const how = r.walkover ? (won ? "Your opponent didn't show up. " : "You didn't get ready in time. ") : "";
     const review = r.resolution_note ? "Review: " + esc(r.resolution_note) + ". " : "";
-    if (r.kind === "friendly") {
-      return '<h2 class="' + (won ? "is-win" : "is-loss") + '">' + (won ? "You won." : opp + " won.") + "</h2><p>" + how + review + "Good game.</p>" +
-        nextActions(['<button type="button" class="btn btn--cta btn--sm" data-go="page-compete">Find a tournament</button>']);
-    }
     if (isFinal()) {
       return '<h2 class="' + (won ? "is-win" : "is-loss") + '">' + (won ? "You're the champion." : "Runner-up.") + "</h2>" +
         "<p>" + how + review + (won ? "You won " + esc(i.tournament_name || "the tournament") + "." : opp + " won " + esc(i.tournament_name || "the tournament") + ". Well played.") + "</p>" +
@@ -410,9 +450,7 @@ function stateHtml(r) {
   }
   if (r.status === "ready_check") {
     const mine = myReady(); const theirs = theirReady();
-    const rule = r.kind === "tournament"
-      ? "If only one of you is ready, that player advances. If neither is, you're both out."
-      : "If it runs out, the friendly closes.";
+    const rule = "If only one of you is ready, that player advances. If neither is, you're both out.";
     return "<h2>Get into the lobby</h2>" +
       "<p>Set up the Wild Rift custom game with the details below, then press Ready. The match starts when both of you are ready.</p>" +
       clock(r.ready_deadline, (mine ? "You're ready. " + (theirs ? "" : "Waiting for " + opp + ". ") : "") + rule, "ready") +
@@ -436,7 +474,7 @@ function stateHtml(r) {
   const theySayIWon = theirsR === me();
   const disputeNote = isPaid()
     ? "Disputing holds a deposit of " + formatRcoin(depositCents()) + ". You get it back if the team agrees with you; otherwise it goes to " + opp + "."
-    : r.kind === "friendly" ? "A disputed friendly ends with no result." : "The Runinback team reviews disputed matches.";
+    : "The Runinback team reviews disputed matches.";
   return "<h2>" + opp + " reported " + (theySayIWon ? "that you won" : "that they won") + "</h2>" +
     (r.fast_tracked ? "<p>Their end screen was verified automatically. If it's wrong, dispute it before the clock runs out.</p>" : "") +
     clock(r.confirm_deadline, "to respond. After that, their result stands.", "confirm") +
@@ -590,15 +628,20 @@ function loadEvidenceThumbs() {
 // Clocks: the ring empties as time runs out; under a minute it turns red,
 // and at zero it says the result is being settled (the sweep runs each minute).
 function tick() {
+  // A hidden tab skips the work; the next visible second catches up.
+  if (document.visibilityState === "hidden") return;
   document.querySelectorAll("#room-state .room-clock").forEach(function (el) {
     const ms = new Date(el.getAttribute("data-deadline")).getTime() - Date.now();
     const total = (parseInt(el.getAttribute("data-total"), 10) || CONFIRM_SECONDS) * 1000;
     el.style.setProperty("--p", String(Math.max(0, Math.min(1, ms / total))));
-    el.classList.toggle("is-low", ms > 0 && ms < 60000);
+    const low = ms > 0 && ms < 60000;
+    if (low && !el.classList.contains("is-low")) announce("Less than a minute left.");
+    el.classList.toggle("is-low", low);
     el.querySelector(".room-clock__t").textContent = countdown(el.getAttribute("data-deadline"));
     if (!(ms > 0) && !el.classList.contains("is-over")) {
       el.classList.add("is-over");
       el.querySelector(".room-clock__k").textContent = "Time's up. Settling…";
+      announce("Time's up. Settling the result.");
     }
   });
 }
@@ -639,18 +682,24 @@ function act(fn, args, okText) {
 function onAction(name) {
   const r = room.r;
   if (name === "ready") return act("rib_room_ready", { p_room_id: r.id }, "You're ready.");
+  const report = function (winner, okText) {
+    return function (ok) { if (ok) return act("rib_room_report", { p_room_id: r.id, p_winner_id: winner }, okText); };
+  };
   if (name === "won") {
-    if (!window.confirm("Report that you won? If your opponent confirms, the end screen shows it, or they don't respond in 10 minutes, the win is yours.")) return;
-    return act("rib_room_report", { p_room_id: r.id, p_winner_id: me() }, "Result sent.");
+    return confirmAction({
+      title: "Report that you won?",
+      body: "If your opponent confirms, or doesn't respond in 10 minutes, the win is yours. Upload the end screen next: when it clearly shows your win, it confirms in 3 minutes.",
+      ok: "I won",
+    }).then(report(me(), "Result sent. Upload the end screen next."));
   }
   if (name === "lost") {
-    if (!window.confirm("Report that you lost? Your opponent takes the match.")) return;
-    return act("rib_room_report", { p_room_id: r.id, p_winner_id: opponentId() }, "Result sent. Good game.");
+    return confirmAction({ title: "Report that you lost?", body: nameOf(opponentId()) + " takes the match.", ok: "I lost" })
+      .then(report(opponentId(), "Result sent. Good game."));
   }
   if (name === "confirm-me") return act("rib_room_report", { p_room_id: r.id, p_winner_id: me() }, "Confirmed.");
   if (name === "confirm-them") {
-    if (!window.confirm("Confirm that your opponent won?")) return;
-    return act("rib_room_report", { p_room_id: r.id, p_winner_id: opponentId() }, "Confirmed. Good game.");
+    return confirmAction({ title: "Confirm that " + nameOf(opponentId()) + " won?", body: "The match is settled and can't be disputed afterwards.", ok: "Confirm they won" })
+      .then(report(opponentId(), "Confirmed. Good game."));
   }
   if (name === "dispute-open") { $("room-dispute").hidden = false; $("room-dispute-reason").focus(); return; }
   if (name === "dispute-cancel") { $("room-dispute").hidden = true; return; }
@@ -700,7 +749,7 @@ function wireShell() {
       e.preventDefault();
       const reason = ($("room-dispute-reason").value || "").trim();
       if (reason.length < 10) { flash("Explain what happened (10 to 500 characters).", false); $("room-dispute-reason").focus(); return; }
-      act("rib_room_dispute", { p_room_id: room.r.id, p_reason: reason }, room.r.kind === "friendly" ? "The friendly closed with no result." : "Dispute opened. Add your captures below.");
+      act("rib_room_dispute", { p_room_id: room.r.id, p_reason: reason }, "Dispute opened. Add your end screen below.");
     } else if (e.target.id === "room-chat-form") {
       e.preventDefault();
       const input = $("room-chat-input");
