@@ -159,7 +159,7 @@ export function initSiteInteractions() {
     }).observe(video);
   };
   [document.getElementById("hero-video")]
-    .concat(Array.from(document.querySelectorAll(".auth-aside__video, .demo-video")))
+    .concat(Array.from(document.querySelectorAll(".auth-aside__video")))
     .filter(Boolean)
     .forEach(initBackgroundVideo);
 
