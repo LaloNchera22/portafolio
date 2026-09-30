@@ -24,13 +24,12 @@
           <img class="brand__word" src="/logo-word.png" width="56" height="13" alt="" />
         </a>
         <nav class="capp__tabs only-desktop" aria-label="Main">
-          <a href="#page-games" data-page="page-games" aria-current="page">Play</a>
-          <a href="#page-compete" data-page="page-compete">Compete<span class="nav-badge" data-live-badge hidden></span></a>
+          <a href="#page-compete" data-page="page-compete" aria-current="page">Compete<span class="nav-badge" data-live-badge hidden></span></a>
           <a href="#page-ranking" data-page="page-ranking">Ranking</a>
           <a href="#page-wallet" data-page="page-wallet">Wallet</a>
         </nav>
         <div class="capp__end">
-          <button type="button" class="wallet-chip" id="wallet-chip" data-page="page-wallet" title="Available balance (test mode)" aria-label="Balance loading. Open wallet">0 rcoin</button>
+          <button type="button" class="wallet-chip" id="wallet-chip" data-page="page-wallet" title="Available balance (test mode)" aria-label="Balance loading. Open wallet">0 USD</button>
           <button type="button" class="acct-avatar" id="acct-avatar" aria-haspopup="true" aria-controls="acct-menu" aria-expanded="false" title="Account" aria-label="Account menu">P</button>
         </div>
       </div>
@@ -43,7 +42,7 @@
         <div class="n" id="acct-email">—</div>
       </div>
       <a href="#page-profile" role="menuitem" data-page="page-profile">Profile <span class="chev">›</span></a>
-      <a href="#page-developer" role="menuitem" id="switch-to-developer">Switch to developer <span class="chev">Dev ›</span></a>
+      
       <a href="#page-ops" role="menuitem" data-page="page-ops" id="acct-ops" hidden>Dispute queue <span class="chev">Ops ›</span></a>
       <button type="button" role="menuitem" class="acct-menu__out" data-auth-signout>Log out</button>
     </div>
@@ -51,34 +50,13 @@
     <main class="capp__wrap">
       <!-- your matches, on every page: filled by live.js -->
       <div class="live-rooms" id="live-rooms" hidden aria-live="polite"></div>
-      <!-- ============================ PLAY ============================ -->
-      <section class="page" id="page-games">
-        <div class="head">
-          <div><p class="eyebrow">Practice · Friendlies · Free</p><h1>Games.</h1></div>
-          <div class="head__r">
-            <button type="button" class="btn btn--cta btn--sm" data-page="page-compete">Find a tournament</button>
-          </div>
-        </div>
-        <p class="games-lead">Every game, two ways: <strong>practice free</strong> against the house bot, or
-          <strong>play online</strong> against another player, also free. Playing for a prize happens in
-          <a href="#page-compete" data-page="page-compete">tournaments</a>.</p>
-        <aside class="onboard" id="onboard" hidden aria-label="How tournaments work">
-          <ol>
-            <li><strong>Link your game account</strong><span>Riot ID, Epic, Steam or console, in Profile.</span></li>
-            <li><strong>Join a 4 or 8 player tournament</strong><span>It starts the moment the last seat fills.</span></li>
-            <li><strong>Win your matches</strong><span>The champion takes 70% of the prize pool, the runner-up 30%.</span></li>
-          </ol>
-          <button type="button" class="onboard__x" id="onboard-dismiss" aria-label="Hide these steps">×</button>
-        </aside>
-        <div id="games-root"><p class="muted is-loading">Loading games…</p></div>
-      </section>
+
 
       <!-- ========================== COMPETE ========================== -->
       <section class="page" id="page-compete" hidden>
         <div class="head">
-          <div><p class="eyebrow">Sit &amp; go · 4 or 8 players</p><h1>Compete.</h1></div>
+          <div><p class="eyebrow">Sit &amp; go · 4 or more players</p><h1>Compete.</h1></div>
           <div class="head__r">
-            <button type="button" class="btn btn--sm" id="challenge-new">New friendly</button>
             <button type="button" class="btn btn--cta btn--sm" id="tournament-new">New tournament</button>
           </div>
         </div>
@@ -87,7 +65,6 @@
         <div class="seg" id="compete-seg" role="group" aria-label="Compete">
           <button type="button" data-seg="tournaments" aria-pressed="true">Tournaments</button>
           <button type="button" data-seg="mine" aria-pressed="false">My tournaments</button>
-          <button type="button" data-seg="friendlies" aria-pressed="false">Friendlies</button>
         </div>
 
         <!-- new tournament -->
@@ -95,7 +72,7 @@
           <h2 class="form-title">New tournament</h2>
           <div class="field--row">
             <div class="field"><label for="tournament-name">Name</label><input id="tournament-name" type="text" maxlength="80" placeholder="Friday Cup" autocomplete="off" /></div>
-            <div class="field"><label for="tournament-game">Game</label><input id="tournament-game" type="text" maxlength="40" placeholder="Valorant, CS2, Rocket League…" autocomplete="off" /></div>
+            <div class="field"><label for="tournament-game">Game</label><input id="tournament-game" type="text" value="Wild Rift" readonly /></div>
           </div>
           <div class="field--row">
             <div class="field">
@@ -106,7 +83,7 @@
               </div>
             </div>
             <div class="field">
-              <span class="field__label" id="tournament-fee-label">Entry fee (rcoin)</span>
+              <span class="field__label" id="tournament-fee-label">Entry fee (USD)</span>
               <div class="chips" data-chips="tournament-fee" role="group" aria-labelledby="tournament-fee-label">
                 <button type="button" data-amt="0" aria-pressed="false">Free</button>
                 <button type="button" data-amt="100" aria-pressed="false">1</button>
@@ -128,25 +105,7 @@
             <button type="button" class="btn" id="tournament-cancel">Cancel</button>
           </div>
         </form>
-
-        <!-- new friendly -->
-        <form id="challenge-form" class="card-box challenge-form" hidden novalidate>
-          <h2 class="form-title">New friendly</h2>
-          <p class="field__hint">Friendlies are free: no entry fee and no prize, just a room to play and a result on your record.</p>
-          <div class="field--row">
-            <div class="field"><label for="challenge-game">Game</label><input id="challenge-game" type="text" maxlength="40" placeholder="Valorant, CS2, FIFA…" autocomplete="off" /></div>
-            <div class="field"><label for="challenge-mode">Format</label><input id="challenge-mode" type="text" maxlength="40" placeholder="1v1" value="1v1" /></div>
-          </div>
-          <div class="field--row">
-            <div class="field"><label for="challenge-target">Opponent (optional)</label><input id="challenge-target" type="text" maxlength="24" placeholder="Leave empty to post it in the lobby" autocomplete="off" /></div>
-            <div class="field"><label for="challenge-network">Game account</label><select id="challenge-network"><option value="">Not required</option></select></div>
-          </div>
-          <div class="head__r">
-            <button type="submit" class="btn btn--cta" id="challenge-save">Post friendly</button>
-            <button type="button" class="btn" id="challenge-cancel">Cancel</button>
-          </div>
-        </form>
-        <p class="msg" id="challenge-msg" role="status" hidden></p>
+        <p class="msg" id="tournament-msg" role="status" hidden></p>
 
         <!-- tournaments waiting for players -->
         <div id="compete-tournaments">
@@ -166,22 +125,6 @@
         <div id="compete-mine" hidden>
           <div class="sec"><div id="tournament-mine"><p class="muted is-loading">Loading…</p></div></div>
         </div>
-
-        <!-- friendlies -->
-        <div id="compete-friendlies" hidden>
-          <form class="lobby-filters" id="lobby-filters">
-            <input type="search" id="lobby-game" placeholder="Search a game" aria-label="Search a game" maxlength="40" autocomplete="off" />
-          </form>
-          <div class="sec">
-            <p class="visually-hidden" role="status" id="lobby-status"></p>
-            <div id="challenge-open" aria-busy="true"><p class="muted is-loading">Loading…</p></div>
-            <button type="button" class="btn btn--sm lobby-more" id="lobby-more" hidden>Show more</button>
-          </div>
-          <div class="sec">
-            <div class="sec__head"><h2>My friendlies</h2></div>
-            <div id="challenge-mine"><p class="muted is-loading">Loading…</p></div>
-          </div>
-        </div>
       </section>
 
       <!-- ========================== RANKING ========================== -->
@@ -197,17 +140,17 @@
         <p class="visually-hidden" role="status" id="ranking-status"></p>
         <div id="ranking-list" aria-busy="true"><p class="muted is-loading">Loading…</p></div>
         <button type="button" class="btn btn--sm lobby-more" id="ranking-more" hidden>Show more</button>
-        <p class="testnote">The ranking counts tournaments: net rcoin is prizes won minus entry fees paid, and the record counts confirmed tournament matches (walkovers don't). Friendlies and practice don't count. Positions refresh every few minutes, and the weekly board resets every Monday (UTC).</p>
+        <p class="testnote">The ranking counts tournaments: net USD is prizes won minus entry fees paid, and the record counts confirmed tournament matches (walkovers don't). Friendlies and practice don't count. Positions refresh every few minutes, and the weekly board resets every Monday (UTC).</p>
       </section>
 
       <!-- =========================== WALLET =========================== -->
       <section class="page" id="page-wallet" hidden>
-        <div class="head"><div><p class="eyebrow">Wallet</p><h1>rcoin.</h1></div></div>
+        <div class="head"><div><p class="eyebrow">Wallet</p><h1>USD.</h1></div></div>
 
         <div class="hero-bal">
           <div class="hero-bal__main">
             <span class="lbl">Available balance</span>
-            <span class="num" id="wallet-balance">0 rcoin</span>
+            <span class="num" id="wallet-balance">0 USD</span>
             <span class="sub" id="wallet-locked" hidden></span>
           </div>
           <div class="hero-bal__stats">
@@ -217,7 +160,7 @@
 
         <div class="wallet-top" style="margin-top:26px">
           <div class="card-box wallet-deposit">
-            <label class="field-lbl">Buy rcoin <span class="pill">test</span></label>
+            <label class="field-lbl">Buy USD <span class="pill">test</span></label>
             <div class="field"><label for="buy-amount">You pay (USD)</label><input id="buy-amount" type="number" min="1" step="1" value="100" inputmode="decimal" /></div>
             <div class="chips" data-chips="buy-amount">
               <button type="button" data-amt="10000" class="on">$100</button>
@@ -228,23 +171,22 @@
             <div class="buy-brk">
               <div class="row"><span>You pay</span><span id="buy-pay">$100.00</span></div>
               <div class="row"><span>Purchase fee (5%)</span><span id="buy-fee">$5.00</span></div>
-              <div class="row tot"><span>You receive</span><span id="buy-receive">95 rcoin</span></div>
+              <div class="row tot"><span>You receive</span><span id="buy-receive">95 USD</span></div>
             </div>
             <div class="paymethod" id="pay-method" hidden>
               <span class="paymethod__lbl">Pay with</span>
               <div class="chips" data-chips="pay-method">
                 <button type="button" data-method="card" class="on">Card</button>
-                <button type="button" data-method="crypto">Crypto</button>
               </div>
               <p class="hint" id="pay-note" style="margin-top:8px"></p>
             </div>
-            <button type="button" class="btn btn--cta btn--wide" id="buy-submit">Buy 95 rcoin</button>
-            <p class="hint">Clear rate on screen: <strong>$100 = 95 rcoin</strong>. The 5% is charged once, on the way in. Inside the platform 1 rcoin = $1.</p>
+            <button type="button" class="btn btn--cta btn--wide" id="buy-submit">Buy 95 USD</button>
+            <p class="hint">Clear rate on screen: <strong>$100 = 95 USD</strong>. The 5% is charged once, on the way in. Inside the platform 1 USD = $1.</p>
             <p class="msg" id="wallet-msg" hidden></p>
           </div>
           <div class="card-box wallet-deposit">
             <label class="field-lbl">Withdraw</label>
-            <div class="field"><label for="withdraw-amount">Amount (rcoin)</label><input id="withdraw-amount" type="number" min="1" step="1" placeholder="0" inputmode="decimal" /></div>
+            <div class="field"><label for="withdraw-amount">Amount (USD)</label><input id="withdraw-amount" type="number" min="1" step="1" placeholder="0" inputmode="decimal" /></div>
             <div class="field"><label for="withdraw-destination">To</label>
               <select id="withdraw-destination"><option>USDT (Base network)</option><option>USD (bank transfer)</option></select>
             </div>
@@ -254,7 +196,7 @@
             </div>
             <button type="button" class="btn btn--wide" id="withdraw-submit">Withdraw</button>
             <p class="msg" id="withdraw-msg" hidden></p>
-            <p class="hint">No fee on the way out. 1 rcoin = $1.</p>
+            <p class="hint">No fee on the way out. 1 USD = $1.</p>
           </div>
         </div>
 
@@ -262,20 +204,26 @@
           <div class="sec__head"><h2>Activity</h2></div>
           <div id="wallet-ledger"><p class="muted is-loading">Loading…</p></div>
         </div>
-        <p class="testnote">You're in test mode: buying and withdrawing move a simulated balance so you can try the full flow. In production this will be non-custodial, on-chain on Base. rcoin stays in test mode, with no real money, until legal review.</p>
+        <p class="testnote">You're in test mode: buying and withdrawing move a simulated balance so you can try the full flow. In production this will be non-custodial, on-chain on Base. USD stays in test mode, with no real money, until legal review.</p>
       </section>
 
       <!-- =========================== PROFILE ========================== -->
       <section class="page" id="page-profile" hidden>
-        <div class="head">
-          <div class="phead">
-            <span class="avatar avatar--lg" id="profile-avatar" aria-hidden="true"></span>
-            <div><p class="eyebrow">Account</p><h1 id="profile-title" tabindex="-1">Profile.</h1></div>
+        <p class="eyebrow">Account</p>
+        <header class="hero" id="profile-hero" aria-labelledby="profile-title">
+          <div class="hero__banner" aria-hidden="true"></div>
+          <div class="hero__body">
+            <span class="avatar avatar--hero" id="profile-avatar" aria-hidden="true"></span>
+            <div class="hero__id">
+              <h1 id="profile-title" tabindex="-1">Profile</h1>
+              <p class="hero__meta" id="profile-hero-meta"></p>
+            </div>
+            <div class="hero__actions"><a class="btn btn--sm" id="profile-public" href="#page-player">View as others see it</a></div>
           </div>
-          <div class="head__r"><a class="btn btn--sm" id="profile-public" href="#page-player">View public profile</a></div>
-        </div>
-        <nav class="seg" id="profile-nav" aria-label="Account sections">
+        </header>
+        <nav class="tabs" id="profile-nav" aria-label="Account sections">
           <a href="#page-profile" data-profile-tab="profile" aria-current="page">Profile</a>
+          <a href="#page-profile/friends" data-profile-tab="friends">Friends <span class="nav-badge" id="friends-badge" hidden></span></a>
           <a href="#page-profile/settings" data-profile-tab="settings">Settings</a>
           <a href="#page-profile/security" data-profile-tab="security">Security</a>
         </nav>
@@ -321,6 +269,33 @@
               <p class="msg" id="profile-msg" role="status" aria-live="polite"></p>
             </form>
           </div>
+          <form class="card-box setgroup" id="about-form" novalidate>
+            <h2 class="setgroup__title">About</h2>
+            <div class="field">
+              <label for="about-game-input">Favorite games</label>
+              <div class="tags" id="about-games" aria-live="polite"></div>
+              <input id="about-game-input" type="text" maxlength="30" autocomplete="off" placeholder="Type a game and press Enter" aria-describedby="about-games-hint" />
+              <p class="field__hint" id="about-games-hint">Up to 5. They show on your card and help friends find a match.</p>
+            </div>
+            <fieldset class="links">
+              <legend class="field-lbl">Links</legend>
+              <div class="field field--prefix"><label for="link-twitch">Twitch</label><span class="prefix" aria-hidden="true">twitch.tv/</span><input id="link-twitch" data-link="twitch" type="text" maxlength="25" autocomplete="off" spellcheck="false" /></div>
+              <div class="field field--prefix"><label for="link-youtube">YouTube</label><span class="prefix" aria-hidden="true">youtube.com/</span><input id="link-youtube" data-link="youtube" type="text" maxlength="31" autocomplete="off" spellcheck="false" placeholder="@channel" /></div>
+              <div class="field field--prefix"><label for="link-x">X</label><span class="prefix" aria-hidden="true">x.com/</span><input id="link-x" data-link="x" type="text" maxlength="15" autocomplete="off" spellcheck="false" /></div>
+              <div class="field field--prefix"><label for="link-discord">Discord</label><span class="prefix" aria-hidden="true">@</span><input id="link-discord" data-link="discord" type="text" maxlength="32" autocomplete="off" spellcheck="false" /></div>
+            </fieldset>
+            <fieldset class="swatches">
+              <legend class="field-lbl">Banner</legend>
+              <label class="swatch swatch--ink"><input type="radio" name="banner" value="ink" /><span>Ink</span></label>
+              <label class="swatch swatch--match"><input type="radio" name="banner" value="match" /><span>Blue</span></label>
+              <label class="swatch swatch--escrow"><input type="radio" name="banner" value="escrow" /><span>Orange</span></label>
+              <label class="swatch swatch--settle"><input type="radio" name="banner" value="settle" /><span>Pink</span></label>
+              <label class="swatch swatch--sdk"><input type="radio" name="banner" value="sdk" /><span>Lilac</span></label>
+              <label class="swatch swatch--good"><input type="radio" name="banner" value="good" /><span>Green</span></label>
+            </fieldset>
+            <button type="submit" class="btn btn--cta" id="about-save">Save about</button>
+            <p class="msg" id="about-msg" role="status" aria-live="polite"></p>
+          </form>
           <div class="sec" id="game-accounts-sec">
             <div class="sec__head"><h2 id="game-accounts-title" tabindex="-1">Game accounts</h2></div>
             <p class="muted sec__lead">Link the names you use in each game. Opponents see them in the match room, and a tournament or friendly can require one.</p>
@@ -340,9 +315,55 @@
           </div>
         </div>
 
+        <!-- ---- Friends ---- -->
+        <div id="profile-panel-friends" data-profile-panel="friends" hidden>
+          <form class="inline-form" id="friend-add-form" novalidate>
+            <div class="field">
+              <label for="friend-add-name">Add a friend</label>
+              <input id="friend-add-name" type="text" maxlength="25" autocomplete="off" spellcheck="false" placeholder="Their username" />
+            </div>
+            <button type="submit" class="btn btn--cta btn--sm" id="friend-add-save">Send request</button>
+          </form>
+          <p class="msg" id="friends-msg" role="status" aria-live="polite"></p>
+          <section class="sec" id="friend-requests-sec" aria-labelledby="friend-requests-title" hidden>
+            <div class="sec__head"><h2 id="friend-requests-title">Requests</h2></div>
+            <div id="friend-incoming"></div>
+          </section>
+          <section class="sec" aria-labelledby="friends-title">
+            <div class="sec__head">
+              <h2 id="friends-title" tabindex="-1">Friends <span class="count" id="friends-count"></span></h2>
+              <input class="search search--sm" id="friends-search" type="search" placeholder="Search friends" aria-label="Search friends" autocomplete="off" />
+            </div>
+            <div id="friends-list" aria-live="polite"><p class="muted is-loading">Loading…</p></div>
+            <button type="button" class="btn btn--sm" id="friends-more" hidden>Show more</button>
+          </section>
+          <section class="sec" id="friend-sent-sec" aria-labelledby="friend-sent-title" hidden>
+            <div class="sec__head"><h2 id="friend-sent-title">Sent requests</h2></div>
+            <div id="friend-outgoing"></div>
+          </section>
+        </div>
+
         <!-- ---- Settings ---- -->
         <div id="profile-panel-settings" data-profile-panel="settings" hidden>
           <p class="msg" id="settings-msg" role="status" aria-live="polite"></p>
+          <section class="card-box setgroup" aria-labelledby="general-title">
+            <h2 class="setgroup__title" id="general-title">General</h2>
+            <div class="setting setting--select">
+              <label for="gen-start">Open the console on</label>
+              <select id="gen-start">
+                <option value="page-games">Play</option>
+                <option value="page-compete">Compete</option>
+                <option value="page-ranking">Ranking</option>
+                <option value="page-wallet">Wallet</option>
+                <option value="page-profile">Profile</option>
+              </select>
+            </div>
+            <div class="setting">
+              <input type="checkbox" role="switch" id="gen-reduce-motion" aria-describedby="gen-reduce-motion-h" />
+              <label for="gen-reduce-motion">Reduce motion</label>
+              <p class="field__hint" id="gen-reduce-motion-h">Turns off animations in the console. When off, your device's setting decides. Saved on this device.</p>
+            </div>
+          </section>
           <fieldset class="card-box setgroup" id="settings-notify" disabled>
             <legend>Notifications</legend>
             <div class="setting">
@@ -368,6 +389,34 @@
               <label for="set-show_game_accounts">Show my game accounts on my public profile</label>
               <p class="field__hint" id="set-show_game_accounts-h">Your opponent in a match room always sees the account that match needs.</p>
             </div>
+            <div class="setting setting--select">
+              <label for="set-profile_visibility">Who can see my full profile</label>
+              <select id="set-profile_visibility" data-privacy="profile_visibility">
+                <option value="everyone">Everyone</option>
+                <option value="friends">Friends only</option>
+              </select>
+              <p class="field__hint">Others still see your name, photo and banner.</p>
+            </div>
+            <div class="setting setting--select">
+              <label for="set-friend_requests_from">Who can send me friend requests</label>
+              <select id="set-friend_requests_from" data-privacy="friend_requests_from">
+                <option value="everyone">Everyone</option>
+                <option value="nobody">Nobody</option>
+              </select>
+            </div>
+            <div class="setting setting--select">
+              <label for="set-challenges_from">Who can challenge me directly</label>
+              <select id="set-challenges_from" data-privacy="challenges_from">
+                <option value="everyone">Everyone</option>
+                <option value="friends">Friends only</option>
+                <option value="nobody">Nobody</option>
+              </select>
+              <p class="field__hint">Open friendlies in the lobby are unaffected.</p>
+            </div>
+            <div class="setting setting--list">
+              <span class="setting__label" id="blocked-title">Blocked players</span>
+              <div id="blocked-list" aria-labelledby="blocked-title"><p class="muted">Nobody.</p></div>
+            </div>
           </fieldset>
 
           <section class="card-box setgroup rplay" id="settings-limits" aria-labelledby="rplay-title">
@@ -381,7 +430,7 @@
               </div>
               <form class="rplay__row" id="cap-form" novalidate>
                 <div class="field">
-                  <label for="cap-amount">Limit per calendar month (rcoin)</label>
+                  <label for="cap-amount">Limit per calendar month (USD)</label>
                   <input id="cap-amount" type="number" min="0" max="100000" step="1" inputmode="numeric" placeholder="No limit" aria-describedby="cap-hint" />
                 </div>
                 <button type="submit" class="btn btn--sm btn--cta" id="cap-save">Save limit</button>
@@ -480,101 +529,7 @@
       </section>
 
       <!-- ============================= DEV ============================= -->
-      <section class="page" id="page-developer" hidden>
-        <div class="head">
-          <div><p class="eyebrow">Developer API</p><h1>Developer portal.</h1></div>
-          <div class="head__r"><button type="button" class="btn btn--sm" id="switch-to-player">‹ Back to playing</button></div>
-        </div>
-
-        <div class="devwelcome">
-          <h2>Welcome to the dev portal</h2>
-          <p>Build on Runinback from your server with the public API: read the games available for paid matches and the verified ranking today; match creation and settlement endpoints come next. Create a project, issue a test key, and follow the <a href="developers.html#quickstart">quickstart</a>. Payouts are planned to settle non-custodially on Base.</p>
-        </div>
-
-        <div class="statline" id="dev-metrics">
-          <div><span class="n" id="metric-projects">0</span><span class="k">projects</span></div>
-          <div><span class="n" id="metric-keys-active">0</span><span class="k">active keys</span></div>
-          <div><span class="n" id="metric-keys-total">0</span><span class="k">keys issued</span></div>
-        </div>
-
-        <nav class="devnav" id="dev-nav" aria-label="Developer">
-          <a href="#" data-dev="projects" aria-current="page">Projects</a>
-          <a href="#" data-dev="keys">API keys</a>
-          <a href="#" data-dev="payouts">Payouts</a>
-        </nav>
-
-        <!-- projects -->
-        <div id="dev-projects">
-          <div class="head head--tight">
-            <p class="muted lead-inline">Group your API keys by game or environment.</p>
-            <button type="button" class="btn btn--cta btn--sm" id="project-new">New project</button>
-          </div>
-          <form id="project-form" class="card-box" hidden>
-            <div class="field"><label for="project-name">Project name</label><input id="project-name" type="text" maxlength="80" placeholder="My game" /></div>
-            <div class="field"><label for="project-env">Environment</label>
-              <select id="project-env"><option value="test">Test</option><option value="live" disabled>Live (after launch)</option></select>
-            </div>
-            <div class="head__r">
-              <button type="submit" class="btn btn--cta" id="project-save">Create</button>
-              <button type="button" class="btn" id="project-cancel">Cancel</button>
-            </div>
-            <p class="msg" id="project-msg" hidden></p>
-          </form>
-          <div class="sec"><div id="project-list"><p class="muted is-loading">Loading…</p></div></div>
-        </div>
-
-        <!-- api keys -->
-        <div id="dev-keys" hidden>
-          <div class="head head--tight">
-            <p class="muted lead-inline">Authenticate your server's API calls. You'll see each key in full once; keep it out of browsers and apps.</p>
-            <button type="button" class="btn btn--cta btn--sm" id="key-new">Issue key</button>
-          </div>
-          <form id="key-form" class="card-box" hidden>
-            <div class="field"><label for="key-name">Name</label><input id="key-name" type="text" maxlength="60" placeholder="default" /></div>
-            <div class="field--row">
-              <div class="field"><label for="key-env">Environment</label>
-                <select id="key-env"><option value="test">Test</option><option value="live" disabled>Live (after launch)</option></select>
-              </div>
-              <div class="field"><label for="key-project">Project</label>
-                <select id="key-project"><option value="">No project</option></select>
-              </div>
-            </div>
-            <div class="head__r">
-              <button type="submit" class="btn btn--cta" id="key-save">Issue</button>
-              <button type="button" class="btn" id="key-cancel">Cancel</button>
-            </div>
-            <div class="keybox" id="key-reveal" hidden>
-              <div class="lbl">Copy your key now — it won't be shown again.</div>
-              <div class="val"><code id="key-plaintext"></code><button type="button" class="btn btn--sm" id="key-copy">Copy</button></div>
-              <div class="lbl" style="margin-top:14px">Try it from your server:</div>
-              <pre class="keybox__curl"><code id="key-curl"></code></pre>
-            </div>
-            <p class="msg" id="key-msg" hidden></p>
-          </form>
-          <div class="sec"><div id="key-list"><p class="muted is-loading">Loading…</p></div></div>
-        </div>
-
-        <!-- payouts -->
-        <div id="dev-payouts" hidden>
-          <div class="wallet-top">
-            <div class="wallet-card">
-              <span class="lbl">Available to withdraw</span>
-              <span class="num" id="dev-balance">0 rcoin</span>
-              <span class="sub">test mode</span>
-            </div>
-            <div class="card-box">
-              <label class="field-lbl">Withdraw to your wallet</label>
-              <div class="withdraw-row">
-                <input id="dev-withdraw-amount" type="number" min="1" step="1" placeholder="rcoin" inputmode="decimal" />
-                <button type="button" class="btn btn--cta" id="dev-withdraw-submit">Withdraw</button>
-              </div>
-              <p class="msg" id="dev-withdraw-msg" hidden></p>
-            </div>
-          </div>
-          <p class="testnote">Per-endpoint traffic and developer payouts will be non-custodial, on-chain on Base.
-            For now payouts share your test balance so you can see the flow. Metrics above are real for your account.</p>
-        </div>
-      </section>
+      
     </main>
 
     <!-- bottom nav (mobile) -->
@@ -594,8 +549,7 @@
     </dialog>
 
     <nav class="capp__bnav only-mobile" aria-label="Main">
-      <a href="#page-games" data-page="page-games" aria-current="page">
-        <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="M8 12h4M10 10v4"/><circle cx="16" cy="11" r="1"/><circle cx="17.5" cy="13.5" r="1"/></svg><span>Play</span></a>
+
       <a href="#page-compete" data-page="page-compete">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 21h8M12 17v4M6 4h12v5a6 6 0 0 1-12 0zM6 6H3v2a3 3 0 0 0 3 3M18 6h3v2a3 3 0 0 1-3 3"/></svg><span>Compete</span><span class="nav-badge" data-live-badge hidden></span></a>
       <a href="#page-ranking" data-page="page-ranking">

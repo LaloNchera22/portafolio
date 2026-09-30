@@ -1,5 +1,5 @@
 // ============================================================================
-// stripe-checkout — start a Stripe Checkout session to buy rcoin (TEST MODE).
+// stripe-checkout — start a Stripe Checkout session to buy USD (TEST MODE).
 //
 // Zero-trust: the buyer's identity comes from a VERIFIED JWT, never the body.
 // The browser only sends how much it wants to pay; this function creates the
@@ -14,7 +14,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.117.2";
 import Stripe from "https://esm.sh/stripe@16?target=deno";
 import { corsHeaders, json } from "../_shared/cors.ts";
 import { withinRateLimit } from "../_shared/rate-limit.ts";
-import { validatePayCents, calculateRcoin } from "../_shared/validate.ts";
+import { validatePayCents, calculateUSD } from "../_shared/validate.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
@@ -55,7 +55,7 @@ Deno.serve(async (req) => {
     return json({ error: "invalid_amount" }, 400);
   }
 
-  const rcoin = calculateRcoin(payCents);
+  const USD = calculateUSD(payCents);
   const base = (SITE_ORIGIN && SITE_ORIGIN !== "*") ? SITE_ORIGIN : new URL(req.url).origin;
 
   // 3) Create the Checkout session. The user id and paid amount are stamped
@@ -72,8 +72,8 @@ Deno.serve(async (req) => {
           currency: "usd",
           unit_amount: payCents,
           product_data: {
-            name: `${rcoin} rcoin (test)`,
-            description: "rcoin top-up — 5% entry fee included. Test mode, no real money.",
+            name: `${USD} USD (test)`,
+            description: "USD top-up — 5% entry fee included. Test mode, no real money.",
           },
         },
       }],

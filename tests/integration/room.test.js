@@ -96,7 +96,7 @@ describe("match room", () => {
 
   it("hands out the lobby details and runs the ready check", async () => {
     await show(baseRoom());
-    expect($("room-root").textContent).toContain("Friday Cup · Semifinals · 10 rcoin entry");
+    expect($("room-root").textContent).toContain("Friday Cup · Semifinals · 10 USD entry");
     expect($("room-root").textContent).toContain("RB-7K2QX");
     expect($("room-root").textContent).toContain("a1b2c3d4");
     expect($("room-root").textContent).toContain("Rival#NA1");
@@ -119,7 +119,7 @@ describe("match room", () => {
     await show(baseRoom({ status: "live", started_at: soon(), b_report: "u2", confirm_deadline: soon() }));
     expect($("room-state").textContent).toContain("@rival reported that they won");
     $("room-root").querySelector('[data-act="dispute-open"]').click();
-    expect($("room-dispute").textContent).toContain("holds a deposit of 1 rcoin");
+    expect($("room-dispute").textContent).toContain("holds a deposit of 1 USD");
     const before = calls.length;
     $("room-dispute-reason").value = "too short";
     $("room-dispute").dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));

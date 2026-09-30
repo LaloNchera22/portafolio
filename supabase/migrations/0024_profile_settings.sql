@@ -244,7 +244,7 @@ $$;
 -- One patch, whitelisted keys only. Unknown keys are an error, not ignored,
 -- so a typo in the client can't silently not save.
 --   match_toasts, product_emails, show_on_leaderboard, show_game_accounts: boolean
---   monthly_cap_cents: whole rcoin in cents (0..10,000,000), or null to remove the cap
+--   monthly_cap_cents: whole USD in cents (0..10,000,000), or null to remove the cap
 --   cancel_pending_cap: true
 --   cooloff_days: 1 | 7 | 30 | 90 | 180 | 365 (starts or extends a cool-off)
 --   end_cooloff: true (ends it 7 days from now) | cancel_end_cooloff: true
@@ -300,7 +300,7 @@ begin
     elsif jsonb_typeof(p_patch -> 'monthly_cap_cents') = 'number' then
       v_cap := (p_patch ->> 'monthly_cap_cents')::numeric::bigint;
       if v_cap < 0 or v_cap > 10000000 or v_cap % 100 <> 0 then
-        raise exception 'the monthly limit is whole rcoin between 0 and 100,000' using hint = 'invalid_entry_cap';
+        raise exception 'the monthly limit is whole USD between 0 and 100,000' using hint = 'invalid_entry_cap';
       end if;
     else
       raise exception 'the monthly limit must be a number' using hint = 'invalid_entry_cap';
@@ -359,7 +359,7 @@ begin
     raise exception 'paid tournaments are paused on this account; contact support' using hint = 'account_restricted';
   end if;
   if coalesce(v_rep.matches_completed, 0) < 3 and p_fee_cents > 2500 then
-    raise exception 'new accounts can enter up to 25 rcoin until they finish 3 matches' using hint = 'new_account_limit';
+    raise exception 'new accounts can enter up to 25 USD until they finish 3 matches' using hint = 'new_account_limit';
   end if;
 
   -- Serialize this player's paid entries so concurrent joins see each other's spend.

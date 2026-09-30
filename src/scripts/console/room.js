@@ -14,7 +14,7 @@
  * survive the opponent's actions. Events are delegated on the root.
  * ========================================================================== */
 import { byId as $, escapeHtml as esc, showMessage } from "../lib/dom.js";
-import { formatRcoin } from "../lib/format.js";
+import { formatUSD } from "../lib/format.js";
 import { replayClass, tweenNumber } from "../lib/motion.js";
 import { prizeSplit, roundName } from "../lib/tournament.js";
 import { errorText, session } from "./context.js";
@@ -229,7 +229,7 @@ function update() {
 function contextLine(r, i) {
   if (r.kind === "friendly") return "Friendly · free";
   const round = i.rounds ? roundName(r.round, i.rounds) : "Round " + r.round;
-  return esc(i.tournament_name || "Tournament") + " · " + round + " · " + (i.entry_fee_cents ? formatRcoin(i.entry_fee_cents) + " entry" : "free");
+  return esc(i.tournament_name || "Tournament") + " · " + round + " · " + (i.entry_fee_cents ? formatUSD(i.entry_fee_cents) + " entry" : "free");
 }
 
 function renderSteps(r) {
@@ -328,7 +328,7 @@ function celebrate(r, wasStatus) {
   const prize = $("room-prize");
   if (prize) {
     const cents = parseInt(prize.getAttribute("data-cents"), 10) || 0;
-    tweenNumber(prize, 0, cents, function (v) { prize.textContent = formatRcoin(Math.round(v)); }, 900);
+    tweenNumber(prize, 0, cents, function (v) { prize.textContent = formatUSD(Math.round(v)); }, 900);
   }
 }
 
@@ -338,7 +338,7 @@ function prizeLine(won) {
   const split = prizeSplit(i.entry_fee_cents, i.tournament_size);
   const cents = won ? (room.r.walkover ? split.prizes : split.first) : room.r.walkover ? 0 : split.second;
   if (!cents) return "";
-  return '<p class="room-prize"><span class="room-prize__v" id="room-prize" data-cents="' + cents + '">' + formatRcoin(cents) +
+  return '<p class="room-prize"><span class="room-prize__v" id="room-prize" data-cents="' + cents + '">' + formatUSD(cents) +
     "</span> was added to your wallet.</p>";
 }
 
@@ -381,7 +381,7 @@ function stateHtml(r) {
     const byMe = r.disputed_by === me();
     return "<h2>In review</h2><p>" + (byMe ? "You disputed " + opp + "'s report." : opp + " disputed your report.") +
       " The Runinback team will check the chat and the captures and decide." +
-      (r.dispute_deposit_cents ? " The " + formatRcoin(r.dispute_deposit_cents) + " deposit comes back if the dispute holds and goes to the other player if it doesn't." : "") +
+      (r.dispute_deposit_cents ? " The " + formatUSD(r.dispute_deposit_cents) + " deposit comes back if the dispute holds and goes to the other player if it doesn't." : "") +
       "</p><p>Add captures of the final score below.</p>";
   }
   if (r.status === "ready_check") {
@@ -407,7 +407,7 @@ function stateHtml(r) {
   }
   const theySayIWon = theirsR === me();
   const disputeNote = isPaid()
-    ? "Disputing holds a deposit of " + formatRcoin(depositCents()) + ". You get it back if the team agrees with you; otherwise it goes to " + opp + "."
+    ? "Disputing holds a deposit of " + formatUSD(depositCents()) + ". You get it back if the team agrees with you; otherwise it goes to " + opp + "."
     : r.kind === "friendly" ? "A disputed friendly ends with no result." : "The Runinback team reviews disputed matches.";
   return "<h2>" + opp + " reported " + (theySayIWon ? "that you won" : "that they won") + "</h2>" +
     clock(r.confirm_deadline, "to respond. After that, their result stands.", "confirm") +
@@ -679,7 +679,7 @@ function stampAndUpload(source, kind) {
     ctx.textBaseline = "middle";
     ctx.fillText(t.room_code + "  ·  token " + t.token + "  ·  " + new Date(t.issued_at).toISOString() + "  ·  " + nameOf(me()), 12, h + bar / 2);
     return new Promise(function (resolve) { canvas.toBlob(resolve, "image/jpeg", 0.9); }).then(function (blob) {
-      return blob.arrayBuffer().then(function (buf) { return crypto.subtle.digest("SHA-256", buf); }).then(function (digest) {
+      return blob.arrayBuffer().then(function (buf) { return Stripe.subtle.digest("SHA-256", buf); }).then(function (digest) {
         const sha = Array.prototype.map.call(new Uint8Array(digest), function (b) { return b.toString(16).padStart(2, "0"); }).join("");
         const path = r.id + "/" + me() + "/" + t.token + ".jpg";
         return session.client.storage.from(EVIDENCE_BUCKET).upload(path, blob, { contentType: "image/jpeg", upsert: false }).then(function (up) {

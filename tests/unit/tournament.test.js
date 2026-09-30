@@ -3,7 +3,7 @@ import { prizeSplit, roundName, roundsFor } from "../../src/scripts/lib/tourname
 
 describe("prizeSplit", () => {
   it("matches the server: 10% platform, then 70/30", () => {
-    // 4 players x 10 rcoin: the SQL suite asserts 2520 / 1080 / 400.
+    // 4 players x 10 USD: the SQL suite asserts 2520 / 1080 / 400.
     expect(prizeSplit(1000, 4)).toEqual({ pool: 4000, platform: 400, prizes: 3600, first: 2520, second: 1080 });
   });
 

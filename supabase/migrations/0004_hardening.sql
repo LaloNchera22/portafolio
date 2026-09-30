@@ -13,7 +13,7 @@
 --      Fix: cap the serialized state at 16 KB inside the RPCs (the only write
 --      path — the client has no direct INSERT/UPDATE on game_matches).
 --
---   2) rcoin bought with float math — the 5% entry fee used p_pay_cents * 0.95.
+--   2) USD bought with float math — the 5% entry fee used p_pay_cents * 0.95.
 --      Fix: exact integer arithmetic on cents so the credited amount can never
 --      drift by a fractional cent.
 --
@@ -22,15 +22,15 @@
 -- unchanged, so existing GRANTs stay valid.
 -- ============================================================================
 
--- ---- rcoin: buy (test) — exact integer 5% entry fee ------------------------
-create or replace function public.rib_buy_rcoin_test(p_pay_cents bigint)
+-- ---- USD: buy (test) — exact integer 5% entry fee ------------------------
+create or replace function public.rib_buy_USD_test(p_pay_cents bigint)
 returns public.wallets
 language plpgsql security definer set search_path = ''
 as $$
 declare
   v_uid    uuid := auth.uid();
   v_credit bigint;
-  v_rcoin  bigint;
+  v_USD  bigint;
   v_row    public.wallets;
 begin
   if v_uid is null then raise exception 'not signed in'; end if;
@@ -40,10 +40,10 @@ begin
   -- 5% entry commission, shown on screen. Credit = 95% of what came in.
   -- Integer math on cents (no float): 95/100 of the paid amount.
   v_credit := (p_pay_cents * 95) / 100;
-  v_rcoin  := v_credit / 100;
+  v_USD  := v_credit / 100;
   perform public.rib_apply(
-    v_uid, 'rcoin_purchase', v_credit, 0, null, null,
-    'Bought ' || v_rcoin::text || ' rcoin (5% entry fee)'
+    v_uid, 'USD_purchase', v_credit, 0, null, null,
+    'Bought ' || v_USD::text || ' USD (5% entry fee)'
   );
   select * into v_row from public.wallets where user_id = v_uid;
   return v_row;
@@ -141,7 +141,7 @@ end;
 $$;
 
 -- Signatures unchanged; GRANTs from 0003 still apply. Re-assert for clarity.
-grant execute on function public.rib_buy_rcoin_test(bigint)         to authenticated;
+grant execute on function public.rib_buy_USD_test(bigint)         to authenticated;
 grant execute on function public.rib_game_create(text,bigint,jsonb) to authenticated;
 grant execute on function public.rib_game_join(uuid,jsonb)          to authenticated;
 grant execute on function public.rib_game_move(uuid,jsonb,uuid)     to authenticated;

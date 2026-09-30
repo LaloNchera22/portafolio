@@ -1,0 +1,329 @@
+npm notice run runinback@1.0.0 npx
+npm notice run 'vitest' run --reporter=verbose
+
+ RUN  v5.0.2 /home/otorozi/portafolio
+
+ × tests/unit/game-move-core.test.js > planMove: rejections > rejects moves out of turn 15ms
+   → expected { error: 'unknown_game', status: 400 } to deeply equal { error: 'not_your_turn', status: 409 }
+ × tests/unit/game-move-core.test.js > planMove: rejections > rejects illegal moves 4ms
+   → expected 'unknown_game' to be 'illegal_move' // Object.is equality
+ × tests/unit/game-move-core.test.js > planMove: rejections > rejects callers who are not in the match 2ms
+   → expected 'unknown_game' to be 'not_in_match' // Object.is equality
+ × tests/unit/game-move-core.test.js > planMove: rejections > rejects stale sequence numbers 1ms
+   → expected 'unknown_game' to be 'stale_move' // Object.is equality
+ × tests/unit/game-move-core.test.js > planMove: rejections > rejects games that are not stakeable and matches that are not active 1ms
+   → expected 'unknown_game' to be 'match_not_in_progress' // Object.is equality
+ × tests/unit/game-move-core.test.js > planMove: rejections > ignores a forged initial state and starts from the rules' position 1ms
+   → expected undefined to be false // Object.is equality
+ × tests/unit/game-move-core.test.js > planMove: rejections > awards the pot to the opponent on resign 3ms
+   → expected { error: 'unknown_game', status: 400 } to match object { over: true, …(2) }
+(2 matching properties omitted from actual)
+ × tests/unit/game-move-core.test.js > stakeable allow-list > matches rib_game_create in the latest migration that defines it 8ms
+   → expected [ Array(6) ] to deeply equal []
+ ↓ tests/integration/reliability.test.js > wallet balance > keeps the last known balance when a refresh fails
+ ↓ tests/integration/reliability.test.js > games page > offers free online tables: no entry fee to pick
+ ↓ tests/integration/reliability.test.js > games page > makes the game modal accessible: labelled, focused, Escape returns focus
+ ↓ tests/integration/reliability.test.js > games page > labels board squares for screen readers
+ ↓ tests/integration/reliability.test.js > games page > keeps a board in progress when the games page is opened again
+ ✓ tests/integration/motion.test.js > motion helpers > lands on the final value at once under reduced motion 5ms
+ ↓ tests/integration/console-flows.test.js > friendlies > lists open friendlies as free, with the creator and any required account
+ ↓ tests/integration/console-flows.test.js > friendlies > accepts through the room RPC
+ ↓ tests/integration/console-flows.test.js > friendlies > offers to open the room of a friendly in play
+ ↓ tests/integration/console-flows.test.js > friendlies > posts a free friendly with no entry fee
+ ↓ tests/integration/console-flows.test.js > tournaments > lists tournaments waiting for players with fill and prizes
+ ↓ tests/integration/console-flows.test.js > tournaments > joins through the tournament RPC
+ ↓ tests/integration/console-flows.test.js > tournaments > previews the prize split before creating
+ ↓ tests/integration/console-flows.test.js > tournaments > creates a sit & go with the chosen size and fee
+ ↓ tests/integration/console-flows.test.js > tournaments > shows the match waiting for me
+ ↓ tests/integration/console-flows.test.js > tournaments > draws my bracket by round with an Open room button on my live match
+ ↓ tests/integration/console-flows.test.js > ranking > puts the top three on a podium and highlights me
+ ↓ tests/integration/console-flows.test.js > ranking > pins my standing and shows my record on the profile
+ ↓ tests/integration/console-flows.test.js > ranking > switches period
+ ✓ tests/integration/live.test.js > live match watcher > stays quiet with nothing to do 4ms
+ ✓ tests/integration/live.test.js > live match watcher > flags a match that needs me on every page: strip, badge, title and a toast 23ms
+ ✓ tests/integration/live.test.js > live match watcher > drops the badge once nothing needs me 5ms
+ ✓ tests/integration/live.test.js > joining without what it takes > offers to link the required account instead of a join that fails 56ms
+ ✓ tests/integration/live.test.js > joining without what it takes > offers exactly the missing USD when the balance is short 1ms
+ ✓ tests/integration/profile-settings.test.js > profile > loads through rib_my_profile and fills the form and header 32ms
+ ✓ tests/integration/profile-settings.test.js > profile > keeps the form and marks the field when the username is taken 22ms
+ ✓ tests/integration/profile-settings.test.js > profile > saves the whole form in one call and shows the next allowed change 13ms
+ ✓ tests/integration/profile-settings.test.js > profile > opens the section named by the route 29ms
+ ✓ tests/integration/profile-settings.test.js > settings > renders switches and this month's spend against the limit 8ms
+ ✓ tests/integration/console-guards.test.js > account closure > refuses while the profile hasn't loaded, even for an empty confirmation 52ms
+ ✓ tests/integration/console-guards.test.js > account closure > confirms against the saved username, not an unsaved edit 47ms
+ ✓ tests/integration/console-guards.test.js > withdrawals > rejects decimals instead of rounding them 4ms
+ ✓ tests/integration/motion.test.js > motion helpers > counts toward the target and ends exactly on it 223ms
+ ✓ tests/integration/motion.test.js > motion helpers > renders the first value without animating when there is nothing to count 1ms
+ ✓ tests/integration/motion.test.js > motion helpers > does not add animation classes under reduced motion 1ms
+ ✓ tests/integration/console-guards.test.js > withdrawals > rejects more than the available balance 2ms
+ ✓ tests/integration/console-guards.test.js > withdrawals > sends a valid whole amount in cents 11ms
+ ✓ tests/integration/console-guards.test.js > console history > pushes a hash per page and follows popstate back 64ms
+ ✓ tests/integration/console-guards.test.js > console history > ignores ids that aren't console pages 2ms
+ ✓ tests/integration/room.test.js > match room > keeps an error on screen after the room reloads, and shows the step and the clock 149ms
+ ✓ tests/integration/room.test.js > match room > hands out the lobby details and runs the ready check 108ms
+ ✓ tests/integration/profile-settings.test.js > settings > saves a switch on change and turns match pop-ups off 40ms
+ ✓ tests/integration/profile-settings.test.js > settings > shows a raised limit as pending, with a way to cancel 27ms
+ ✓ tests/integration/profile-settings.test.js > settings > rejects a limit that isn't whole USD before calling the server 5ms
+ ✓ tests/integration/room.test.js > match room > reports the opponent as the winner on 'I lost', after confirming 72ms
+ ✓ tests/integration/profile-settings.test.js > settings > starts a cool-off after confirming and says what stays open 40ms
+ ✓ tests/integration/profile-settings.test.js > security > checks the current password before changing it 30ms
+ ✓ tests/integration/profile-settings.test.js > security > refuses mismatched passwords without calling the server 3ms
+ ✓ tests/integration/profile-settings.test.js > security > signs out the other devices only 12ms
+ ✓ tests/integration/profile-settings.test.js > public player card > shows the card and respects a private record 34ms
+ ✓ tests/unit/format.test.js > formatUsd > formats integer cents as dollars 3ms
+ ✓ tests/unit/format.test.js > formatUsd > treats invalid input as zero 0ms
+ ✓ tests/unit/format.test.js > USD conversion > converts cents to USD with at most two decimals 0ms
+ ✓ tests/unit/format.test.js > parsing user input > accepts dot and comma decimals for dollars 0ms
+ ✓ tests/unit/format.test.js > parsing user input > returns NaN for non-numeric input 0ms
+ ✓ tests/unit/format.test.js > parsing user input > rounds USD to whole units 0ms
+ ✓ tests/unit/format.test.js > quotePurchase > charges a 5% entry fee and floors the credited amount like the backend 1ms
+ ✓ tests/unit/format.test.js > quotePurchase > always sums back to the paid amount 29ms
+ ✓ tests/unit/format.test.js > quotePurchase > quotes zero for invalid or negative amounts 0ms
+ ✓ tests/integration/profile-settings.test.js > public player card > says so when nobody has that name 36ms
+ ✓ tests/integration/profile-settings.test.js > public player card > opens from any link to a player 29ms
+ ✓ tests/unit/profile-helpers.test.js > countries > has every ISO 3166-1 alpha-2 code once 4ms
+ ✓ tests/unit/profile-helpers.test.js > countries > matches the database's list 19ms
+ ✓ tests/unit/profile-helpers.test.js > countries > names a code 38ms
+ ✓ tests/unit/profile-helpers.test.js > avatar > accepts only reasonable images 1ms
+ ✓ tests/unit/profile-helpers.test.js > avatar > stores one photo per player and falls back to an escaped initial 1ms
+ ✓ tests/unit/stake.test.js > parseStake > accepts whole USD within the server's range 3ms
+ ✓ tests/unit/stake.test.js > parseStake > explains what is wrong with an invalid entry fee 20ms
+ ✓ tests/unit/stake.test.js > parseStake > flags a stake above the available balance but keeps the amount 1ms
+ ✓ tests/unit/stake.test.js > stepStake and potFor > steps within the allowed range 0ms
+ ✓ tests/unit/stake.test.js > stepStake and potFor > pays the winner both stakes 0ms
+ ✓ tests/unit/stake.test.js > formatTimeAgo > uses short relative labels 0ms
+ ✓ tests/integration/room.test.js > match room > offers confirm or a dispute with the deposit when the opponent claims the win 65ms
+ ✓ tests/integration/room.test.js > match room > explains that a disputed friendly just ends with no result 61ms
+ ✓ tests/integration/room.test.js > match room > sends chat messages through the rate-limited RPC 38ms
+ ✓ tests/integration/room.test.js > match room > tells the winner of a walkover what happened and closes the chat 25ms
+ ✓ tests/unit/tournament.test.js > prizeSplit > matches the server: 10% platform, then 70/30 2ms
+ ✓ tests/unit/tournament.test.js > prizeSplit > keeps every cent: prizes + platform always equals the pool 1ms
+ ✓ tests/unit/tournament.test.js > prizeSplit > is all zeros for free or invalid events 0ms
+ ✓ tests/unit/tournament.test.js > bracket rounds > names rounds from the final backwards 0ms
+ ✓ tests/unit/errors.test.js > friendlyError > maps stable database hints first 1ms
+ ✓ tests/unit/errors.test.js > friendlyError > still maps legacy Spanish messages from older RPC versions 0ms
+ ✓ tests/unit/errors.test.js > friendlyError > maps English messages and SQLSTATE codes 0ms
+ ✓ tests/unit/errors.test.js > friendlyError > recognizes network failures 0ms
+ ✓ tests/unit/errors.test.js > friendlyError > never leaks an unknown database message 0ms
+ ✓ tests/unit/errors.test.js > friendlyError > ignores unknown hints and falls through to the message rules 0ms
+ ✓ tests/integration/wallet.test.js > wallet > refreshWallet updates DOM elements 12ms
+ ✓ tests/integration/wallet.test.js > wallet > loadLedger populates the ledger 14ms
+ ✓ tests/integration/wallet.test.js > wallet > updatePurchaseQuote calculates correctly 2ms
+ ✓ tests/integration/wallet.test.js > wallet > initWallet binds events and handles test checkout 5ms
+ ✓ tests/integration/wallet.test.js > wallet > handles checkout return success 30ms
+ ✓ tests/integration/errors-dom.test.js > errors DOM interactions > toast > creates and appends a toast element 14ms
+ ✓ tests/integration/errors-dom.test.js > errors DOM interactions > toast > creates ok and info toasts 2ms
+ ✓ tests/integration/errors-dom.test.js > errors DOM interactions > toast > ignores empty text 1ms
+ ✓ tests/integration/errors-dom.test.js > errors DOM interactions > notify > uses toast when document is available 1ms
+ ✓ tests/integration/errors-dom.test.js > errors DOM interactions > functionError > resolves context error from edge function 1ms
+ ✓ tests/integration/errors-dom.test.js > errors DOM interactions > functionError > handles missing context or json gracefully 0ms
+
+⎯⎯⎯⎯⎯⎯ Failed Suites 3 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  tests/integration/console-flows.test.js [ tests/integration/console-flows.test.js ]
+TypeError: Cannot read properties of null (reading 'addEventListener')
+ ❯ initLobbyFilters src/scripts/console/challenges.js:88:18
+     86| function initLobbyFilters() {
+     87|   let timer = null;
+     88|   $("lobby-game").addEventListener("input", function (e) {
+       |                  ^
+     89|     clearTimeout(timer);
+     90|     timer = setTimeout(function () { lobby.game = e.target.value.trim(…
+ ❯ Module.initChallenges src/scripts/console/challenges.js:229:3
+ ❯ tests/integration/console-flows.test.js:87:14
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/11]⎯
+
+ FAIL  tests/integration/reliability.test.js [ tests/integration/reliability.test.js ]
+Error: Failed to resolve import "@game-rules/tictactoe.js" from "src/scripts/games/catalog/core-games.js". Does the file exist?
+  Plugin: vite:import-analysis
+  File: /home/otorozi/portafolio/src/scripts/games/catalog/core-games.js:11:28
+  9  |   * ========================================================================== */
+  10 |  import { el } from "../../lib/dom.js";
+  11 |  import TicTacToeRules from "@game-rules/tictactoe.js";
+     |                              ^
+  12 |  import Connect4Rules, { COLS, ROWS } from "@game-rules/connect4.js";
+  13 |  import ReversiRules from "@game-rules/reversi.js";
+ ❯ TransformPluginContext._formatLog node_modules/vite/dist/node/chunks/node.js:8736:39
+ ❯ TransformPluginContext.error node_modules/vite/dist/node/chunks/node.js:8733:14
+ ❯ normalizeUrl node_modules/vite/dist/node/chunks/node.js:26423:18
+ ❯ node_modules/vite/dist/node/chunks/node.js:26493:30
+ ❯ TransformPluginContext.transform node_modules/vite/dist/node/chunks/node.js:26459:4
+ ❯ EnvironmentPluginContainer.transform node_modules/vite/dist/node/chunks/node.js:8515:14
+ ❯ loadAndTransform node_modules/vite/dist/node/chunks/node.js:19998:26
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/11]⎯
+
+ FAIL  tests/unit/game-move-core.test.js > planMove: full games
+Error: No test found in suite planMove: full games
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/11]⎯
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 8 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  tests/unit/game-move-core.test.js > planMove: rejections > rejects moves out of turn
+AssertionError: expected { error: 'unknown_game', status: 400 } to deeply equal { error: 'not_your_turn', status: 409 }
+
+- Expected
++ Received
+
+  {
+-   "error": "not_your_turn",
+-   "status": 409,
++   "error": "unknown_game",
++   "status": 400,
+  }
+
+ ❯ tests/unit/game-move-core.test.js:56:65
+     54| describe("planMove: rejections", () => {
+     55|   it("rejects moves out of turn", () => {
+     56|     expect(planMove(newMatch("tictactoe"), GUEST, { move: 4 })).toEqua…
+       |                                                                 ^
+     57|   });
+     58|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/11]⎯
+
+ FAIL  tests/unit/game-move-core.test.js > planMove: rejections > rejects illegal moves
+AssertionError: expected 'unknown_game' to be 'illegal_move' // Object.is equality
+
+Expected: "illegal_move"
+Received: "unknown_game"
+
+ ❯ tests/unit/game-move-core.test.js:60:71
+     58|
+     59|   it("rejects illegal moves", () => {
+     60|     expect(planMove(newMatch("tictactoe"), HOST, { move: 42 }).error).…
+       |                                                                       ^
+     61|     const taken = commit(newMatch("tictactoe"), planMove(newMatch("tic…
+     62|     expect(planMove(taken, GUEST, { move: 4 }).error).toBe("illegal_mo…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/11]⎯
+
+ FAIL  tests/unit/game-move-core.test.js > planMove: rejections > rejects callers who are not in the match
+AssertionError: expected 'unknown_game' to be 'not_in_match' // Object.is equality
+
+Expected: "not_in_match"
+Received: "unknown_game"
+
+ ❯ tests/unit/game-move-core.test.js:66:80
+     64|
+     65|   it("rejects callers who are not in the match", () => {
+     66|     expect(planMove(newMatch("tictactoe"), "someone-else", { move: 4 }…
+       |                                                                                ^
+     67|   });
+     68|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/11]⎯
+
+ FAIL  tests/unit/game-move-core.test.js > planMove: rejections > rejects stale sequence numbers
+AssertionError: expected 'unknown_game' to be 'stale_move' // Object.is equality
+
+Expected: "stale_move"
+Received: "unknown_game"
+
+ ❯ tests/unit/game-move-core.test.js:70:78
+     68|
+     69|   it("rejects stale sequence numbers", () => {
+     70|     expect(planMove(newMatch("tictactoe"), HOST, { move: 4, seq: 3 }).…
+       |                                                                              ^
+     71|   });
+     72|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[7/11]⎯
+
+ FAIL  tests/unit/game-move-core.test.js > planMove: rejections > rejects games that are not stakeable and matches that are not active
+AssertionError: expected 'unknown_game' to be 'match_not_in_progress' // Object.is equality
+
+Expected: "match_not_in_progress"
+Received: "unknown_game"
+
+ ❯ tests/unit/game-move-core.test.js:75:93
+     73|   it("rejects games that are not stakeable and matches that are not ac…
+     74|     expect(planMove(newMatch("eights"), HOST, { move: 0 }).error).toBe…
+     75|     expect(planMove({ ...newMatch("tictactoe"), status: "open" }, HOST…
+       |                                                                                             ^
+     76|   });
+     77|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[8/11]⎯
+
+ FAIL  tests/unit/game-move-core.test.js > planMove: rejections > ignores a forged initial state and starts from the rules' position
+AssertionError: expected undefined to be false // Object.is equality
+
+- Expected:
+false
+
++ Received:
+undefined
+
+ ❯ tests/unit/game-move-core.test.js:81:23
+     79|     const forged = { ...newMatch("tictactoe"), state: { b: [0, 0, null…
+     80|     const plan = planMove(forged, HOST, { move: 2 });
+     81|     expect(plan.over).toBe(false);
+       |                       ^
+     82|     expect(plan.state.b).toEqual([null, null, 0, null, null, null, nul…
+     83|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[9/11]⎯
+
+ FAIL  tests/unit/game-move-core.test.js > planMove: rejections > awards the pot to the opponent on resign
+AssertionError: expected { error: 'unknown_game', status: 400 } to match object { over: true, …(2) }
+(2 matching properties omitted from actual)
+
+- Expected
++ Received
+
+  {
+-   "isDraw": false,
+-   "over": true,
+-   "winnerId": "00000000-0000-0000-0000-00000000000a",
++   "error": "unknown_game",
++   "status": 400,
+  }
+
+ ❯ tests/unit/game-move-core.test.js:86:73
+     84|
+     85|   it("awards the pot to the opponent on resign", () => {
+     86|     expect(planMove(newMatch("connect4"), GUEST, { action: "resign" })…
+       |                                                                         ^
+     87|   });
+     88| });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[10/11]⎯
+
+ FAIL  tests/unit/game-move-core.test.js > stakeable allow-list > matches rib_game_create in the latest migration that defines it
+AssertionError: expected [ Array(6) ] to deeply equal []
+
+- Expected
++ Received
+
+- []
++ [
++   "checkers",
++   "connect4",
++   "dots",
++   "mancala",
++   "reversi",
++   "tictactoe",
++ ]
+
+ ❯ tests/unit/game-move-core.test.js:98:30
+     96|     const block = latest.slice(latest.lastIndexOf("create or replace f…
+     97|     const list = block.match(/p_game not in \(([^)]*)\)/)[1].match(/'(…
+     98|     expect([...list].sort()).toEqual([...STAKEABLE_GAME_IDS].sort());
+       |                              ^
+     99|   });
+    100| });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[11/11]⎯
+
+
+ Test Files  3 failed | 12 passed (15)
+      Tests  8 failed | 79 passed | 18 skipped (105)
+   Start at  17:14:19
+   Duration  2.51s (environment 64%, tests 30%, transform 3%, import 2%, worker 1%)
+
+    Isolate  15 workers spawned · ~670ms startup each (spawn + environment, per file)
+             at least ~766ms faster with isolate: false — reuses workers across files instead of one per file
+

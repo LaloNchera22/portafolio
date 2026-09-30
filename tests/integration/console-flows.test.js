@@ -77,54 +77,21 @@ beforeAll(async () => {
   vi.spyOn(window, "confirm").mockReturnValue(true);
   const ctx = await import("../../src/scripts/console/context.js");
   const nav = await import("../../src/scripts/console/navigation.js");
-  const challenges = await import("../../src/scripts/console/challenges.js");
   const tournaments = await import("../../src/scripts/console/tournaments.js");
   const ranking = await import("../../src/scripts/console/leaderboard.js");
   const wallet = await import("../../src/scripts/console/wallet.js");
   ctx.initContext(client, "u1");
   nav.initNavigation({});
   nav.initAmountChips(() => {});
-  challenges.initChallenges();
   tournaments.initTournaments();
   ranking.initRanking();
   await wallet.refreshWallet();
-  challenges.loadChallenges();
   tournaments.loadTournaments();
   ranking.loadRanking();
   ranking.loadProfileRecord();
   await tick();
 });
 
-describe("friendlies", () => {
-  it("lists open friendlies as free, with the creator and any required account", () => {
-    const lobby = $("challenge-open");
-    expect(lobby.querySelectorAll(".row--lobby")).toHaveLength(2);
-    expect(lobby.textContent).toContain("@neo");
-    expect(lobby.textContent).toContain("Riot ID required");
-    expect(lobby.textContent).toContain("free");
-    expect($("lobby-status").textContent).toBe("2 open friendlies");
-  });
-
-  it("accepts through the room RPC", async () => {
-    $("challenge-open").querySelector("[data-accept]").click();
-    await tick();
-    expect(lastCall("rib_challenge_accept")).toBeTruthy();
-  });
-
-  it("offers to open the room of a friendly in play", () => {
-    expect($("challenge-mine").querySelector('[data-room="r9"]')).not.toBeNull();
-  });
-
-  it("posts a free friendly with no entry fee", async () => {
-    $("challenge-new").click();
-    $("challenge-game").value = "Valorant";
-    $("challenge-form").dispatchEvent(new Event("submit", { cancelable: true }));
-    await tick();
-    const args = lastCall("rib_challenge_create")[1];
-    expect(args).toEqual({ p_game: "Valorant", p_mode: "1v1", p_target_username: null, p_network: null });
-    expect($("challenge-msg").textContent).toContain("posted to the lobby");
-  });
-});
 
 describe("tournaments", () => {
   it("lists tournaments waiting for players with fill and prizes", () => {
@@ -132,7 +99,7 @@ describe("tournaments", () => {
     expect(list.querySelectorAll(".tcard")).toHaveLength(2);
     expect(list.textContent).toContain("3/4 players · 1 seat left");
     expect(list.textContent).toContain("Riot ID required");
-    expect(list.textContent).toContain("Champion 25.2 rcoin · runner-up 10.8 rcoin");
+    expect(list.textContent).toContain("Champion 25.2 USD · runner-up 10.8 USD");
     expect(list.querySelector(".seats").getAttribute("aria-label")).toBe("3 of 4 seats taken");
     expect(list.querySelectorAll('[data-tid="t1"] .seat.is-taken')).toHaveLength(3);
     expect(list.querySelector('[data-leave="t2"]')).not.toBeNull();
@@ -148,16 +115,16 @@ describe("tournaments", () => {
     expect($("tournament-prize").textContent).toContain("Platform (10%)");
     document.querySelector('[data-chips="tournament-size"] [data-amt="8"]').click();
     await new Promise((r) => setTimeout(r, 400)); // the numbers count to their new values
-    expect($("tournament-prize").textContent).toContain("Pool80 rcoin");
+    expect($("tournament-prize").textContent).toContain("Pool80 USD");
   });
 
   it("creates a sit & go with the chosen size and fee", async () => {
     $("tournament-new").click();
     $("tournament-name").value = "Cup";
-    $("tournament-game").value = "CS2";
+    $("tournament-game").value = "Wild Rift";
     $("tournament-form").dispatchEvent(new Event("submit", { cancelable: true }));
     await tick();
-    expect(lastCall("rib_tournament_create")[1]).toMatchObject({ p_name: "Cup", p_game: "CS2", p_entry_fee_cents: 1000, p_size: 8 });
+    expect(lastCall("rib_tournament_create")[1]).toMatchObject({ p_name: "Cup", p_game: "Wild Rift", p_entry_fee_cents: 1000, p_size: 8 });
   });
 
   it("shows the match waiting for me", () => {

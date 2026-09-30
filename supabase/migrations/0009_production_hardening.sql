@@ -3,7 +3,7 @@
 --
 -- Closes the findings of the pre-scale security + database review:
 --
---   1) Free rcoin: rib_deposit_test / rib_buy_rcoin_test credited any signed-in
+--   1) Free USD: rib_deposit_test / rib_buy_USD_test credited any signed-in
 --      user with no payment. They now require the server-side platform setting
 --      `test_payments_enabled` (OFF by default). Real top-ups keep flowing only
 --      through the verified Stripe / Coinbase webhooks.
@@ -63,8 +63,8 @@ alter default privileges in schema public revoke execute on functions from anon,
 
 -- Internal-only functions.
 revoke execute on function public.rib_apply(uuid,text,bigint,bigint,text,uuid,text)       from public, anon, authenticated;
-revoke execute on function public.rib_credit_rcoin_purchase(uuid,text,bigint)             from public, anon, authenticated;
-revoke execute on function public.rib_credit_rcoin_purchase_crypto(uuid,text,bigint)      from public, anon, authenticated;
+revoke execute on function public.rib_credit_USD_purchase(uuid,text,bigint)             from public, anon, authenticated;
+revoke execute on function public.rib_credit_USD_purchase_Stripe(uuid,text,bigint)      from public, anon, authenticated;
 revoke execute on function public.rib_cleanup_matches(int)                                from public, anon, authenticated;
 revoke execute on function public.rib_test_payments_enabled()                             from public, anon, authenticated;
 revoke execute on function public.handle_new_user()                                       from public, anon, authenticated;
@@ -77,11 +77,11 @@ revoke execute on all functions in schema public from public, anon;
 -- Money and match tables: read-only for clients, writes only through RPCs.
 revoke insert, update, delete, truncate on
   public.wallets, public.wallet_ledger, public.challenges, public.tournaments,
-  public.tournament_entries, public.game_matches, public.rcoin_purchases
+  public.tournament_entries, public.game_matches, public.USD_purchases
 from anon, authenticated;
 revoke all on
   public.wallets, public.wallet_ledger, public.challenges, public.tournaments,
-  public.tournament_entries, public.game_matches, public.rcoin_purchases,
+  public.tournament_entries, public.game_matches, public.USD_purchases,
   public.profiles, public.projects, public.api_keys
 from anon;
 
@@ -208,7 +208,7 @@ begin
 end;
 $$;
 
-create or replace function public.rib_buy_rcoin_test(p_pay_cents bigint)
+create or replace function public.rib_buy_USD_test(p_pay_cents bigint)
 returns public.wallets
 language plpgsql security definer set search_path = ''
 as $$
@@ -228,8 +228,8 @@ begin
   if coalesce(v_bal, 0) + v_credit > 1000000 then
     raise exception 'test balance cap reached ($10,000)' using hint = 'deposit_cap_reached';
   end if;
-  perform public.rib_apply(v_uid, 'rcoin_purchase', v_credit, 0, null, null,
-    'Bought ' || (v_credit / 100)::text || ' rcoin (5% entry fee)');
+  perform public.rib_apply(v_uid, 'USD_purchase', v_credit, 0, null, null,
+    'Bought ' || (v_credit / 100)::text || ' USD (5% entry fee)');
   select * into v_row from public.wallets where user_id = v_uid;
   return v_row;
 end;
@@ -663,7 +663,7 @@ $$;
 -- 8) Re-assert grants for every client RPC (signatures unchanged).
 -- ----------------------------------------------------------------------------
 grant execute on function public.rib_deposit_test(bigint)                                 to authenticated;
-grant execute on function public.rib_buy_rcoin_test(bigint)                               to authenticated;
+grant execute on function public.rib_buy_USD_test(bigint)                               to authenticated;
 grant execute on function public.rib_withdraw_test(bigint)                                to authenticated;
 grant execute on function public.rib_challenge_create(text,text,bigint,text)              to authenticated;
 grant execute on function public.rib_challenge_accept(uuid)                               to authenticated;
@@ -695,12 +695,12 @@ alter table public.game_matches validate constraint game_matches_distinct_player
 
 do $$
 begin
-  alter table public.rcoin_purchases
-    add constraint rcoin_purchases_provider_check check (provider in ('stripe','coinbase')) not valid;
+  alter table public.USD_purchases
+    add constraint USD_purchases_provider_check check (provider in ('stripe','coinbase')) not valid;
 exception when duplicate_object then null;
 end;
 $$;
-alter table public.rcoin_purchases validate constraint rcoin_purchases_provider_check;
+alter table public.USD_purchases validate constraint USD_purchases_provider_check;
 
 -- ----------------------------------------------------------------------------
 -- 10) Indexes for the console's queries and unindexed foreign keys.
