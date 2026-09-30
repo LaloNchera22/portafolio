@@ -5,8 +5,9 @@
  * title and, the first time, as a toast with "Open room". Without it a
  * player on another page loses by walkover.
  *
- * Realtime on match_rooms (both seats) triggers a refresh; a slow poll
- * covers dropped connections. Countdowns tick locally.
+ * Realtime on match_rooms (both seats) triggers a refresh; bursts of events
+ * collapse into one read. A slow poll runs only while Realtime is down.
+ * Countdowns tick locally, and only while one is on screen.
  * ========================================================================== */
 import { byId as $, escapeHtml as esc, setVisible } from "../lib/dom.js";
 import { toast } from "../lib/errors.js";
@@ -16,7 +17,11 @@ import { openRoom } from "./room.js";
 import { prefs } from "./settings.js";
 
 const POLL_MS = 30000;
-const live = { rows: [], seen: {}, channels: [], timer: 0, poll: 0, title: "", first: true };
+const COALESCE_MS = 250;
+const live = {
+  rows: [], seen: {}, channels: [], timer: 0, poll: 0, title: "", first: true,
+  subscribed: 0, inflight: null, again: null, pending: 0,
+};
 
 function countdown(deadline) {
   const ms = new Date(deadline).getTime() - Date.now();
@@ -58,9 +63,7 @@ function render() {
         '<div class="row__meta">' + d.state + (d.deadline ? ' · <span class="live-room__time" data-deadline="' + esc(d.deadline) + '">' + countdown(d.deadline) + "</span> left" : "") + "</div></div>" +
       '<button type="button" class="btn ' + (m.needs_me ? "btn--cta " : "") + 'btn--sm" data-room="' + esc(m.id) + '">Open room</button></div>';
   }).join("");
-  box.querySelectorAll("[data-room]").forEach(function (b) {
-    b.addEventListener("click", function () { openRoom(b.getAttribute("data-room")); });
-  });
+  syncTicker();
 
   const urgent = rows.filter(function (m) { return m.needs_me; }).length;
   document.querySelectorAll("[data-live-badge]").forEach(function (el) {
@@ -91,16 +94,46 @@ function announce() {
   live.first = false;
 }
 
-/** Re-read my live rooms (called by Realtime, the poll and after actions). */
+function tickCountdowns() {
+  document.querySelectorAll("#live-rooms [data-deadline]").forEach(function (el) { el.textContent = countdown(el.getAttribute("data-deadline")); });
+}
+
+// The 1s ticker only runs while a countdown is on screen.
+function syncTicker() {
+  const needed = !!document.querySelector("#live-rooms [data-deadline]");
+  if (needed && !live.timer) live.timer = setInterval(tickCountdowns, 1000);
+  else if (!needed && live.timer) { clearInterval(live.timer); live.timer = 0; }
+}
+
+/**
+ * Re-read my live rooms (called by Realtime, the poll and after actions).
+ * One read at a time: calls that land while a read is in flight share one
+ * follow-up read, so a burst of room events costs two requests, not N.
+ */
 export function refreshLive() {
   if (!session.client) return Promise.resolve([]);
-  return session.client.rpc("rib_my_rooms").then(function (r) {
+  if (live.inflight) {
+    // The read in flight may predate the caller's change: wait for the next.
+    if (!live.again) live.again = live.inflight.then(function () { return refreshLive(); });
+    return live.again;
+  }
+  live.inflight = session.client.rpc("rib_my_rooms").then(function (r) {
     live.rows = Array.isArray(r && r.data) ? r.data : [];
     render();
     announce();
     document.dispatchEvent(new CustomEvent("rib:live", { detail: live.rows }));
     return live.rows;
-  }).catch(function () { return live.rows; });
+  }).catch(function () { return live.rows; }).finally(function () {
+    live.inflight = null;
+    live.again = null;
+  });
+  return live.inflight;
+}
+
+// Realtime events arrive in bursts (ready, ready, live): read once after them.
+function scheduleRefresh() {
+  clearTimeout(live.pending);
+  live.pending = setTimeout(refreshLive, COALESCE_MS);
 }
 
 /** The room that needs me first, if any (for the start page). */
@@ -110,19 +143,34 @@ export function urgentRoom() {
 
 export function initLiveWatch() {
   if (!session.client) return Promise.resolve([]);
+  const seats = ["player_a", "player_b"];
   if (session.client.channel) {
-    ["player_a", "player_b"].forEach(function (seat) {
+    seats.forEach(function (seat) {
+      let up = false;
+      let dropped = false;
       live.channels.push(session.client.channel("live-" + seat)
-        .on("postgres_changes", { event: "*", schema: "public", table: "match_rooms", filter: seat + "=eq." + session.uid }, refreshLive)
-        .subscribe());
+        .on("postgres_changes", { event: "*", schema: "public", table: "match_rooms", filter: seat + "=eq." + session.uid }, scheduleRefresh)
+        .subscribe(function (status) {
+          const now = status === "SUBSCRIBED";
+          if (now === up) return;
+          up = now;
+          live.subscribed += now ? 1 : -1;
+          if (!now) dropped = true;
+          // Back from a drop: events may have been missed while it was down.
+          else if (dropped) scheduleRefresh();
+        }));
     });
   }
-  clearInterval(live.timer);
-  live.timer = setInterval(function () {
-    document.querySelectorAll("#live-rooms [data-deadline]").forEach(function (el) { el.textContent = countdown(el.getAttribute("data-deadline")); });
-  }, 1000);
+  const box = $("live-rooms");
+  if (box) box.addEventListener("click", function (e) {
+    const b = e.target.closest("[data-room]");
+    if (b) openRoom(b.getAttribute("data-room"));
+  });
   clearInterval(live.poll);
-  live.poll = setInterval(function () { if (document.visibilityState === "visible") refreshLive(); }, POLL_MS);
+  live.poll = setInterval(function () {
+    // Safety net only: while both channels are up, Realtime already covers it.
+    if (document.visibilityState === "visible" && live.subscribed < seats.length) refreshLive();
+  }, POLL_MS);
   document.addEventListener("visibilitychange", function () { if (document.visibilityState === "visible") refreshLive(); });
   return refreshLive();
 }
