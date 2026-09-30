@@ -1,7 +1,7 @@
 /* ==========================================================================
    Runinback — shared interactions (marketing, auth and static pages)
    Nav, scroll reveal (one IntersectionObserver), count-ups,
-   background video, FAQ, mailto forms, magnetic CTAs, cookie notice.
+   FAQ, mailto forms, magnetic CTAs, cookie notice.
    Vanilla JS, no dependencies. Every page is complete without it.
    ========================================================================== */
 import { countUpWithin } from "./count-up.js";
@@ -14,7 +14,6 @@ export function initSiteInteractions() {
 
   initScrollChrome();
   initReveal(reduceMotion);
-  initBackgroundVideos(reduceMotion);
   initFaq();
   initMailtoForms();
   initMagnetic(finePointer && !reduceMotion);
@@ -90,45 +89,6 @@ function initReveal(reduceMotion) {
     });
   }, { threshold: 0.12, rootMargin: "0px 0px -6% 0px" });
   els.forEach((el) => io.observe(el));
-}
-
-/* --- Background videos (hero + auth split panel) ------------------------
-   Play only while on screen (a display:none panel never intersects, so it
-   never downloads), and never under reduced motion. */
-function initBackgroundVideos(reduceMotion) {
-  const videos = [document.getElementById("hero-video")]
-    .concat(Array.from(document.querySelectorAll(".auth-aside__video")))
-    .filter(Boolean);
-  videos.forEach((video) => {
-    // iOS/Android autoplay only honors inline muted playback set in JS too.
-    video.muted = true;
-    video.defaultMuted = true;
-    video.playsInline = true;
-    video.loop = true;
-    if (reduceMotion) { video.removeAttribute("autoplay"); video.pause(); return; }
-
-    const unlockEvents = ["touchstart", "pointerdown", "keydown"];
-    const unlock = () => {
-      video.play().then(() => unlockEvents.forEach((ev) => window.removeEventListener(ev, unlock))).catch(() => {});
-    };
-    const play = () => {
-      const p = video.play();
-      if (p && typeof p.then === "function") {
-        p.catch(() => unlockEvents.forEach((ev) => window.addEventListener(ev, unlock, { passive: true })));
-      }
-    };
-    if (!("IntersectionObserver" in window)) { play(); return; }
-    new IntersectionObserver((entries) => {
-      entries.forEach((entry) => {
-        if (entry.isIntersecting) {
-          if (video.preload === "none") video.preload = "auto";
-          play();
-        } else {
-          video.pause();
-        }
-      });
-    }).observe(video);
-  });
 }
 
 /* --- FAQ accordion ------------------------------------------------------ */

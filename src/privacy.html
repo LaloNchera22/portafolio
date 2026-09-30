@@ -61,7 +61,7 @@
         <p class="eyebrow" data-reveal>Legal</p>
         <h1 class="h-lg page-head__title" data-reveal>Privacy Policy</h1>
         <p class="lead" data-reveal>What data we collect, why we collect it, and the choices you have over it.</p>
-        <p class="legal__meta" data-reveal>Last updated: 2026-09-30 · Version 0.2 (draft, pending legal review)</p>
+        <p class="legal__meta" data-reveal>Last updated: 2026-09-30 · Version 0.3 (draft, pending legal review)</p>
       </div>
     </section>
 
@@ -104,6 +104,7 @@
             <li><strong>Profile &amp; settings</strong> — optional bio, country and avatar, your notification and privacy choices, and any responsible-play limits you set.</li>
             <li><strong>Riot ID</strong> — the Riot ID (<code>Name#TAG</code>) of the Wild Rift account you link, which is required to enter tournaments. A copy of each player's Riot ID is kept with every match room they play.</li>
             <li><strong>Tournament &amp; match data</strong> — tournament entries, brackets, ready checks, result reports, disputes and their reasons, messages in match-room chat, and the screenshots and other evidence you upload (see <a href="#screenshots">section 7</a>).</li>
+            <li><strong>Hosted tournaments</strong> — when you host: the tournament's name, size, entry fee, visibility (public or private), rules text and invite code; the lobby codes, passwords and lobby screenshots you post in match rooms; and each decision you make (winner, walkover or void) with the reason you give. When you appeal: your appeal, its reason, the match it concerns, any deposit and the outcome.</li>
             <li><strong>Payment &amp; balance data</strong> — rcoin purchases, entry fees, prizes, refunds and deposits recorded in our ledger. Card payments are handled by Stripe; we do not receive or store your full card number.</li>
             <li><strong>Communications</strong> — messages you send us through forms or email.</li>
           </ul>
@@ -112,7 +113,7 @@
             <li><strong>Usage &amp; device data</strong> — pages viewed, approximate region, browser and device type, and similar technical information.</li>
             <li><strong>Cookies &amp; local storage</strong> — see our <a href="cookies.html">Cookie Policy</a> for detail and your choices.</li>
             <li><strong>Error reports</strong> — when the console hits an unexpected error, a technical report (error message, page address and browser details) may be sent to us so we can fix it.</li>
-            <li><strong>Fair-play records</strong> — entry rate limits, completed matches, no-shows, disputes lost and any account restrictions.</li>
+            <li><strong>Fair-play records</strong> — entry and tournament-creation rate limits, completed matches, no-shows, disputes lost, hosted tournaments completed, host strikes, match decisions flagged for review and any account restrictions.</li>
           </ul>
           <h3>Data we receive from others</h3>
           <ul>
@@ -125,9 +126,9 @@
           <h2 id="use">3. How we use it</h2>
           <ul>
             <li>To create and secure your account and sign you in.</li>
-            <li>To provide, maintain and improve the Service, including running tournaments, brackets and match rooms, holding entry fees and paying prizes.</li>
-            <li>To check match results, including the automated reading of end-of-match screenshots described in <a href="#screenshots">section 7</a>, and to review disputes.</li>
-            <li>To apply rate limits, entry caps for new accounts, responsible-play limits and account restrictions.</li>
+            <li>To provide, maintain and improve the Service, including running tournaments, brackets and match rooms, letting hosts run their tournaments, holding entry fees and paying prizes and host commissions.</li>
+            <li>To check match results, including the automated reading of end-of-match screenshots described in <a href="#screenshots">section 7</a>, and to review disputes and appeals.</li>
+            <li>To apply rate limits, entry caps for new accounts, limits for new hosts and hosts with strikes, responsible-play limits and account restrictions.</li>
             <li>To communicate with you about your account, support requests and important changes.</li>
             <li>To detect, prevent and investigate fraud, cheating and abuse.</li>
             <li>To comply with legal obligations.</li>
@@ -149,26 +150,26 @@
             <li><strong>Riot Games</strong> — when we check a Riot ID, we send the game name and tag line to Riot Games' account API.</li>
             <li><strong>Identity providers</strong> — Google, GitHub and Apple, when you choose to sign in with them.</li>
           </ul>
-          <p>Other players in your tournaments and matches see your username and your Riot ID, and the other player in a match room sees what you post in its chat and your reports. What appears on your public profile and leaderboards follows your privacy settings.</p>
+          <p>Other players in your tournaments and matches, and the host of a hosted tournament, see your username and your Riot ID. A match room's chat, reports and evidence are visible to the two players in it, the host of a hosted tournament and our review team. The bracket of a public tournament, with its players' usernames, can be seen by anyone signed in; the entrants of a private tournament are visible only to its host, its entrants and our team. Anyone with an invite link sees a preview of that tournament (its name, status, entry fee, prize, number of entrants and, once decided, the champion's username; and — for signed-in users or a public tournament — its host and rules). What appears on your public profile and leaderboards follows your privacy settings.</p>
           <p>We may also disclose data where required by law or to protect our rights and users.</p>
           <!-- LEGAL REVIEW: list the actual hosting, backend (database/auth/storage) and email providers by name and confirm a data-processing agreement is in place with each processor, including Anthropic and Stripe. -->
 
           <h2 id="screenshots">7. Match screenshots &amp; automated checks</h2>
-          <p>After reporting a result, you can upload a screenshot of the Wild Rift end-of-match screen as evidence. Screenshots are stored in a private storage area that other players cannot browse; the other player in the match and our review team can see the evidence for that match.</p>
+          <p>After reporting a result, you can upload a screenshot of the Wild Rift end-of-match screen as evidence. Screenshots are stored in a private storage area that other players cannot browse; the other player in the match, the host of a hosted tournament and our review team can see the evidence for that match.</p>
           <ul>
             <li><strong>What is sent.</strong> To check a result, the screenshot, together with the Riot IDs of the two players in the match, is sent to an AI model (Claude, provided by Anthropic) acting as our processor. We only send it while the match is awaiting confirmation.</li>
-            <li><strong>Purpose.</strong> The model reads the player names and the result shown on the screen. We use its answer only to shorten the confirm window (to 3 minutes) when the screenshot clearly shows the reported winner and both Riot IDs, or to flag a match for our team. The winner is worked out by our own systems from your report and the names matched, not taken from the model. A screenshot never settles, cancels or disputes a match on its own, and disputes are decided by people.</li>
+            <li><strong>Purpose.</strong> The model reads the player names and the result shown on the screen. We use its answer only to shorten the confirm window in Quick Play (to 3 minutes) when the screenshot clearly shows the reported winner and both Riot IDs, to show the result of the check to the host of a hosted tournament, or to flag a match for our team. The winner is worked out by our own systems from your report and the names matched, not taken from the model. A screenshot never settles, cancels or disputes a match on its own, and disputes and appeals are decided by people.</li>
             <li><strong>What we keep.</strong> The screenshot, a fingerprint (hash) of the image used to detect screenshots reused across matches, and the outcome of the check (status, confidence and the names read).</li>
             <li><strong>Retention.</strong> Screenshots and check results are kept with the rest of the match record for as long as described in <a href="#retention">section 8</a>.</li>
           </ul>
           <!-- LEGAL REVIEW: confirm Anthropic's API terms on retention and training of submitted images, and whether the automated check counts as automated decision-making that needs extra notice or a right to human review under applicable law (a human decides every dispute). -->
 
           <h2 id="retention">8. Retention</h2>
-          <p>We keep personal data only as long as needed for the purposes described here, or as required by law, after which we delete or anonymise it. Match records — including reports, room chat, screenshots and automated check results — and balance records are kept to settle disputes, prevent fraud and meet record-keeping duties. Technical error reports are deleted after 14 days. Retention periods are set out in <span class="legal__ph">[retention schedule]</span>.</p>
-          <!-- LEGAL REVIEW: set concrete retention periods for match evidence (screenshots, chat), Riot ID/PUUID and ledger records, and decide how account closure balances deletion against financial-record retention. -->
+          <p>We keep personal data only as long as needed for the purposes described here, or as required by law, after which we delete or anonymise it. Match-room chat messages and the lobby screenshots posted by hosts are deleted once the tournament is finished or cancelled — after its appeal window and any appeal — and, for friendly matches outside a tournament, 24 hours after the match ends. Other match records — including reports, end-of-match screenshots, automated check results and hosts' decisions and reasons — appeals and their outcomes, and balance records are kept with the tournament to settle disputes, prevent fraud and meet record-keeping duties. Technical error reports are deleted after 14 days. Retention periods are set out in <span class="legal__ph">[retention schedule]</span>.</p>
+          <!-- LEGAL REVIEW: set concrete retention periods for match evidence (end-of-match screenshots, host decisions, appeals), Riot ID/PUUID and ledger records, and decide how account closure balances deletion against financial-record retention. -->
 
           <h2 id="security">9. Security</h2>
-          <p>We apply technical and organisational measures to protect your data, including a zero-trust backend, row-level access controls, hashed credentials and encrypted transport. Match screenshots are kept in private storage, and the keys for our Riot Games and AI-model integrations are held only on our servers. No system is perfectly secure, so we cannot guarantee absolute security. Keeping your password and sign-in methods secure remains your responsibility.</p>
+          <p>We apply technical and organisational measures to protect your data, including a zero-trust backend, row-level access controls, hashed credentials and encrypted transport. Match and lobby screenshots are kept in private storage, and the keys for our Riot Games and AI-model integrations are held only on our servers. No system is perfectly secure, so we cannot guarantee absolute security. Keeping your password and sign-in methods secure remains your responsibility.</p>
 
           <h2 id="rights">10. Your rights</h2>
           <p>Depending on where you live, you may have the right to access, correct, delete, restrict or object to the processing of your personal data, to data portability, and to withdraw consent. To exercise these rights, contact us using the details below. You can also download a copy of the data we hold about you, and close your account, from your account settings. You may also have the right to complain to your local data-protection authority.</p>
@@ -195,7 +196,7 @@
       <div class="footer__top">
         <div class="footer__brand">
           <a href="index.html" class="brand" aria-label="Runinback home"><img class="brand__lockup" src="/logo-lockup.png" width="180" height="30" alt="Runinback" /></a>
-          <p class="footer__tagline">1v1 Wild Rift tournaments with fixed entry fees and prizes paid when the final is confirmed.</p>
+          <p class="footer__tagline">1v1 Wild Rift tournaments with fixed entry fees and prizes paid once the result is final.</p>
         </div>
         <nav class="footer__col" aria-label="Play">
           <h2 class="footer__h">Play</h2>
