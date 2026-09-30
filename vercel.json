@@ -4,6 +4,18 @@
   "installCommand": "npm ci",
   "buildCommand": "npm run build",
   "outputDirectory": "dist",
+  "redirects": [
+    {
+      "source": "/how-it-works",
+      "destination": "/#how",
+      "permanent": true
+    },
+    {
+      "source": "/how-it-works.html",
+      "destination": "/#how",
+      "permanent": true
+    }
+  ],
   "headers": [
     {
       "source": "/(.*)",

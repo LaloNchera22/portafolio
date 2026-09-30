@@ -94,9 +94,10 @@ theming and the draw-on-load animation.
 
 ### Behavior on mobile
 
-- The **wordmark lockup stays fixed** at `30 × 25px` across every breakpoint and
-  remains in the top bar even when the nav links collapse into the slide-in menu
-  (`max-width: 640px`) — the logo is always the persistent anchor of the header.
+- The **mark stays fixed** across every breakpoint as the persistent anchor of
+  the header (the wordmark hides below 460px). The header holds only the logo
+  and the account actions (Log in + Sign up), so there is no collapsed menu at
+  any width; both actions fit next to the mark at 320px.
 - The **hero background video** covers the hero at every breakpoint, blurred and
   scrimmed; it is muted, `playsinline`, loops seconds 0–7, and pauses entirely
   under `prefers-reduced-motion`.
@@ -110,13 +111,15 @@ Static, dependency-free site (HTML + CSS + vanilla JS).
 
 | File | Purpose |
 |------|---------|
-| `src/index.html` | Landing: video hero, story (what/why/how), feature blocks (text-only), dev teaser, CTA |
-| `src/how-it-works.html` | The trustless loop: steps, benefits, FAQ |
-| `src/developers.html` | Quickstart, toolkit, waitlist form |
+| `src/index.html` | Landing: video hero + stats, ticker, two ways in (Play / Host), prize calculator (`#prizes`), how it works timeline (`#how`), fair play (`#fair`), FAQ (`#faq`), CTA |
 | `src/contact.html` | Contact channels + form |
+| `src/login.html`, `src/signup.html` | Auth pages |
+| `src/terms.html`, `src/privacy.html`, `src/cookies.html` | Legal pages |
 | `src/404.html` | Not-found page |
-| `src/styles/site.css` | Full design system + components |
-| `src/scripts/site/interactions.js` | Nav, scroll reveal, page-transition curtain, FAQ, forms |
+| `src/styles/site.css` | Full design system + components (landing pieces under the `lx-` prefix) |
+| `src/scripts/site/interactions.js` | Nav chrome, scroll reveal, FAQ, forms, magnetic CTAs, cookie notice |
+| `src/scripts/site/landing.js` | Landing only: prize calculator, card spotlight, timeline progress |
+| `vercel.json` | Headers + permanent redirects (`/how-it-works(.html)` → `/#how`; the old page was folded into the landing) |
 | `public/robots.txt`, `public/sitemap.xml`, `public/site.webmanifest` | SEO / PWA metadata |
 
 ## Interactions
@@ -138,7 +141,32 @@ Static, dependency-free site (HTML + CSS + vanilla JS).
   surfaces (pointer-fine devices only).
 - **Page-transition curtain** on same-origin navigation.
 - **Sticky nav** that hides on scroll-down, reveals on scroll-up, and blurs once
-  scrolled. Mobile slide-in menu.
+  scrolled. It carries only the logo and the account slot (`<nav class="nav__actions"
+  aria-label="Account">` wrapping `#nav-account`): Log in + Sign up, swapped for
+  Console + Log out by `auth/account-nav.js` when signed in. No link list, no
+  menu toggle; every other destination lives in the footer.
+- **Landing (`lx-*`)**:
+  - *Headline* rises word by word on load (`.lx-word`, staggered by `--i`); the
+    last sentence carries the brand gradient as text. This is the page's one
+    orchestrated entrance, done in CSS so the LCP paints on the first frame.
+  - *Stats* under the hero (`.lx-stats`): three facts on hairlines; numbers count up.
+  - *Ticker* (`.lx-ticker`): a full-bleed, hairline-bordered marquee of product
+    facts that scrolls in CSS, pauses on hover and is static under reduced motion.
+  - *Two ways in* (`.lx-path`): Play is blue (matchmaking), Host is orange
+    (escrow / commission). Cards with `[data-spotlight]` get a pointer-tracked
+    radial glow on the surface and the 1px border (`--mx/--my`, fine pointers
+    only, one rAF per frame) — never a box-shadow.
+  - *Prize calculator* (`.lx-calc`): entry fee slider (1–50 rcoin) × players
+    (4/8/16/32) through `hostedSplit` from `lib/hosted.js`, the same math the
+    payout job uses. Numbers count to their new value; the split bar grows in on
+    reveal. Champion = pink (settlement), host = orange, Runinback = muted grey.
+  - *Timeline* (`.lx-steps`): a rail that fills with scroll (`--progress`, set by
+    one passive rAF-throttled scroll listener that only runs while an
+    IntersectionObserver says the section is near) and highlights the step
+    under the reading line; the heading column is sticky on desktop.
+  - *Fair play* (`.lx-fair`): four rule cards with the same spotlight.
+  - *CTA* (`.lx-cta`): a hairline border with a soft light running around it
+    (conic gradient on a registered `--lx-angle`).
 - **FAQ accordion**, smooth in-page anchor scrolling, and hover
   micro-interactions on cards, buttons and social icons.
 - **Accessibility:** skip-to-content link, visible focus rings, `main` landmark.
