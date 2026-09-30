@@ -1,5 +1,5 @@
 /* Entry: public marketing + auth pages (index, contact, login, signup).
- * Site interactions + landing (prize calculator, spotlight, timeline) +
+ * Site interactions + landing (prize calculator, living bracket, story, tabs) +
  * account nav + auth forms. */
 import { initAccountNav } from "../auth/account-nav.js";
 import { initSiteInteractions } from "../site/interactions.js";

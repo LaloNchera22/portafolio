@@ -175,7 +175,7 @@
 
   <main id="main">
     <!-- Hero -->
-    <section class="hero" aria-labelledby="hero-title">
+    <section class="hero" aria-labelledby="hero-title" data-hero>
       <div class="backdrop backdrop--stage" aria-hidden="true">
         <div class="backdrop__grid"></div>
         <svg class="backdrop__ridge" viewBox="0 0 1440 360" preserveAspectRatio="xMaxYMax meet" focusable="false">
@@ -209,9 +209,19 @@
           </dl>
         </div>
 
-        <!-- Animated bracket: 8 players on wide screens, 4 on phones -->
-<figure class="bk bk--hero bk--8" data-reveal="none">
-          <svg class="bk__svg" viewBox="0 0 630 312" width="630" height="312" focusable="false" aria-hidden="true">
+        <!-- Living bracket: 8 players on wide screens, 4 on phones. The markup
+             is the finished bracket; landing.js replays it round by round. -->
+        <figure class="bk bk--hero bk--8" data-reveal="none" data-bracket>
+          <div class="bk__bar">
+            <span class="bk__event" aria-hidden="true">Friday Cup</span>
+            <span class="bk__status" aria-hidden="true"><span class="bk__dot"></span><span data-bk-label>Champion</span></span>
+            <button type="button" class="bk__toggle" data-bk-toggle hidden aria-label="Pause the bracket animation">Pause</button>
+          </div>
+          <svg class="bk__svg" viewBox="0 -30 630 342" width="630" height="342" focusable="false" aria-hidden="true">
+            <text class="bk__round" data-col="0" x="1" y="-14">Quarterfinals</text>
+            <text class="bk__round" data-col="1" x="169" y="-14">Semifinals</text>
+            <text class="bk__round" data-col="2" x="337" y="-14">Final</text>
+            <text class="bk__round" data-col="3" x="505" y="-14">Champion</text>
             <path class="bk__line" pathLength="1" style="--t:0.35s" d="M125 16H147V36H169"/>
             <path class="bk__line" pathLength="1" style="--t:0.38s" d="M125 56H147V36H169"/>
             <path class="bk__line" pathLength="1" style="--t:0.41s" d="M125 96H147V116H169"/>
@@ -220,98 +230,288 @@
             <path class="bk__line" pathLength="1" style="--t:0.50s" d="M125 216H147V196H169"/>
             <path class="bk__line" pathLength="1" style="--t:0.53s" d="M125 256H147V276H169"/>
             <path class="bk__line" pathLength="1" style="--t:0.56s" d="M125 296H147V276H169"/>
-            <path class="bk__line" pathLength="1" style="--t:0.90s" d="M293 36H315V76H337"/>
-            <path class="bk__line" pathLength="1" style="--t:0.93s" d="M293 116H315V76H337"/>
-            <path class="bk__line" pathLength="1" style="--t:0.96s" d="M293 196H315V236H337"/>
-            <path class="bk__line" pathLength="1" style="--t:0.99s" d="M293 276H315V236H337"/>
-            <path class="bk__line" pathLength="1" style="--t:1.45s" d="M461 76H483V156H505"/>
-            <path class="bk__line" pathLength="1" style="--t:1.48s" d="M461 236H483V156H505"/>
-            <path class="bk__run" pathLength="1" style="--t:0.55s" d="M125 96H147V116H169"/>
-            <path class="bk__run" pathLength="1" style="--t:1.10s" d="M293 116H315V76H337"/>
-            <path class="bk__run" pathLength="1" style="--t:1.65s" d="M461 76H483V156H505"/>
-            <g class="bk__slot" style="--t:0.15s"><rect x="1" y="1" width="124" height="30" rx="4"/><text x="11" y="21" class="bk__name">Nyx#EUW</text></g>
-            <g class="bk__slot" style="--t:0.20s"><rect x="1" y="41" width="124" height="30" rx="4"/><text x="11" y="61" class="bk__name">Kiro#NA1</text></g>
-            <g class="bk__slot bk__slot--win" style="--t:0.25s"><rect x="1" y="81" width="124" height="30" rx="4"/><text x="11" y="101" class="bk__name">You#TAG</text></g>
-            <g class="bk__slot" style="--t:0.30s"><rect x="1" y="121" width="124" height="30" rx="4"/><text x="11" y="141" class="bk__name">Vexa#LAN</text></g>
-            <g class="bk__slot" style="--t:0.35s"><rect x="1" y="161" width="124" height="30" rx="4"/><text x="11" y="181" class="bk__name">Orin#BR1</text></g>
-            <g class="bk__slot" style="--t:0.40s"><rect x="1" y="201" width="124" height="30" rx="4"/><text x="11" y="221" class="bk__name">Sable#OCE</text></g>
-            <g class="bk__slot" style="--t:0.45s"><rect x="1" y="241" width="124" height="30" rx="4"/><text x="11" y="261" class="bk__name">Juno#NA1</text></g>
-            <g class="bk__slot" style="--t:0.50s"><rect x="1" y="281" width="124" height="30" rx="4"/><text x="11" y="301" class="bk__name">Mako#KR</text></g>
-            <g class="bk__slot" style="--t:0.70s"><rect x="169" y="21" width="124" height="30" rx="4"/><text x="179" y="41" class="bk__name">Kiro#NA1</text></g>
-            <g class="bk__slot bk__slot--win" style="--t:0.75s"><rect x="169" y="101" width="124" height="30" rx="4"/><text x="179" y="121" class="bk__name">You#TAG</text></g>
-            <g class="bk__slot" style="--t:0.80s"><rect x="169" y="181" width="124" height="30" rx="4"/><text x="179" y="201" class="bk__name">Sable#OCE</text></g>
-            <g class="bk__slot" style="--t:0.85s"><rect x="169" y="261" width="124" height="30" rx="4"/><text x="179" y="281" class="bk__name">Juno#NA1</text></g>
-            <g class="bk__slot bk__slot--win" style="--t:1.25s"><rect x="337" y="61" width="124" height="30" rx="4"/><text x="347" y="81" class="bk__name">You#TAG</text></g>
-            <g class="bk__slot" style="--t:1.30s"><rect x="337" y="221" width="124" height="30" rx="4"/><text x="347" y="241" class="bk__name">Sable#OCE</text></g>
-            <g class="bk__slot bk__slot--win bk__slot--champ" style="--t:1.80s"><rect x="505" y="135" width="124" height="42" rx="6"/><text x="517" y="154" class="bk__name">You#TAG</text><text x="517" y="171" class="bk__prize">+<tspan data-count="68" data-count-delay="2000">68</tspan> rcoin</text></g>
+            <path class="bk__line" pathLength="1" style="--t:0.62s" d="M293 36H315V76H337"/>
+            <path class="bk__line" pathLength="1" style="--t:0.65s" d="M293 116H315V76H337"/>
+            <path class="bk__line" pathLength="1" style="--t:0.68s" d="M293 196H315V236H337"/>
+            <path class="bk__line" pathLength="1" style="--t:0.71s" d="M293 276H315V236H337"/>
+            <path class="bk__line" pathLength="1" style="--t:0.77s" d="M461 76H483V156H505"/>
+            <path class="bk__line" pathLength="1" style="--t:0.80s" d="M461 236H483V156H505"/>
+            <path class="bk__run" data-r="1" d="M125 56H147V36H169"/>
+            <path class="bk__run" data-r="1" d="M125 96H147V116H169"/>
+            <path class="bk__run" data-r="1" d="M125 216H147V196H169"/>
+            <path class="bk__run" data-r="1" d="M125 256H147V276H169"/>
+            <path class="bk__run" data-r="2" d="M293 116H315V76H337"/>
+            <path class="bk__run" data-r="2" d="M293 196H315V236H337"/>
+            <path class="bk__run" data-r="3" d="M461 76H483V156H505"/>
+            <g class="bk__slot" data-out="1" style="--t:0.15s"><rect x="1" y="1" width="124" height="30" rx="4"/><text x="11" y="21" class="bk__name">Nyx#EUW</text></g>
+            <g class="bk__slot" data-out="2" style="--t:0.20s"><rect x="1" y="41" width="124" height="30" rx="4"/><text x="11" y="61" class="bk__name">Kiro#NA1</text></g>
+            <g class="bk__slot bk__slot--you" style="--t:0.25s"><rect x="1" y="81" width="124" height="30" rx="4"/><text x="11" y="101" class="bk__name">You#TAG</text></g>
+            <g class="bk__slot" data-out="1" style="--t:0.30s"><rect x="1" y="121" width="124" height="30" rx="4"/><text x="11" y="141" class="bk__name">Vexa#LAN</text></g>
+            <g class="bk__slot" data-out="1" style="--t:0.35s"><rect x="1" y="161" width="124" height="30" rx="4"/><text x="11" y="181" class="bk__name">Orin#BR1</text></g>
+            <g class="bk__slot" data-out="3" style="--t:0.40s"><rect x="1" y="201" width="124" height="30" rx="4"/><text x="11" y="221" class="bk__name">Sable#OCE</text></g>
+            <g class="bk__slot" data-out="2" style="--t:0.45s"><rect x="1" y="241" width="124" height="30" rx="4"/><text x="11" y="261" class="bk__name">Juno#NA1</text></g>
+            <g class="bk__slot" data-out="1" style="--t:0.50s"><rect x="1" y="281" width="124" height="30" rx="4"/><text x="11" y="301" class="bk__name">Mako#KR</text></g>
+            <g class="bk__slot" data-r="1" data-out="2" style="--t:0.60s"><rect x="169" y="21" width="124" height="30" rx="4"/><text x="179" y="41" class="bk__name">Kiro#NA1</text></g>
+            <g class="bk__slot bk__slot--you" data-r="1" style="--t:0.62s"><rect x="169" y="101" width="124" height="30" rx="4"/><text x="179" y="121" class="bk__name">You#TAG</text></g>
+            <g class="bk__slot" data-r="1" data-out="3" style="--t:0.64s"><rect x="169" y="181" width="124" height="30" rx="4"/><text x="179" y="201" class="bk__name">Sable#OCE</text></g>
+            <g class="bk__slot" data-r="1" data-out="2" style="--t:0.66s"><rect x="169" y="261" width="124" height="30" rx="4"/><text x="179" y="281" class="bk__name">Juno#NA1</text></g>
+            <g class="bk__slot bk__slot--you" data-r="2" style="--t:0.72s"><rect x="337" y="61" width="124" height="30" rx="4"/><text x="347" y="81" class="bk__name">You#TAG</text></g>
+            <g class="bk__slot" data-r="2" data-out="3" style="--t:0.74s"><rect x="337" y="221" width="124" height="30" rx="4"/><text x="347" y="241" class="bk__name">Sable#OCE</text></g>
+            <g class="bk__slot bk__slot--you bk__slot--champ" data-r="3" style="--t:0.84s"><rect class="bk__halo" x="505" y="135" width="124" height="42" rx="6"/><rect x="505" y="135" width="124" height="42" rx="6"/><text x="517" y="154" class="bk__name">You#TAG</text><text x="517" y="171" class="bk__prize">+<tspan data-bk-prize="68">68</tspan> rcoin</text></g>
           </svg>
           <figcaption class="bk__caption">8 players at 10 rcoin each: the champion takes 68 rcoin, the host 4.</figcaption>
         </figure>
-        <figure class="bk bk--hero bk--4" data-reveal="none">
-          <svg class="bk__svg" viewBox="0 0 366 152" width="366" height="152" focusable="false" aria-hidden="true">
+        <figure class="bk bk--hero bk--4" data-reveal="none" data-bracket>
+          <div class="bk__bar">
+            <span class="bk__event" aria-hidden="true">Friday Cup</span>
+            <span class="bk__status" aria-hidden="true"><span class="bk__dot"></span><span data-bk-label>Champion</span></span>
+            <button type="button" class="bk__toggle" data-bk-toggle hidden aria-label="Pause the bracket animation">Pause</button>
+          </div>
+          <svg class="bk__svg" viewBox="0 -30 366 182" width="366" height="182" focusable="false" aria-hidden="true">
+            <text class="bk__round" data-col="0" x="1" y="-14">Semifinals</text>
+            <text class="bk__round" data-col="1" x="131" y="-14">Final</text>
+            <text class="bk__round" data-col="2" x="261" y="-14">Champion</text>
             <path class="bk__line" pathLength="1" style="--t:0.35s" d="M105 16H118V36H131"/>
             <path class="bk__line" pathLength="1" style="--t:0.38s" d="M105 56H118V36H131"/>
             <path class="bk__line" pathLength="1" style="--t:0.41s" d="M105 96H118V116H131"/>
             <path class="bk__line" pathLength="1" style="--t:0.44s" d="M105 136H118V116H131"/>
-            <path class="bk__line" pathLength="1" style="--t:0.90s" d="M235 36H248V76H261"/>
-            <path class="bk__line" pathLength="1" style="--t:0.93s" d="M235 116H248V76H261"/>
-            <path class="bk__run" pathLength="1" style="--t:0.55s" d="M105 56H118V36H131"/>
-            <path class="bk__run" pathLength="1" style="--t:1.10s" d="M235 36H248V76H261"/>
-            <g class="bk__slot" style="--t:0.15s"><rect x="1" y="1" width="104" height="30" rx="4"/><text x="11" y="21" class="bk__name">Kiro#NA1</text></g>
-            <g class="bk__slot bk__slot--win" style="--t:0.20s"><rect x="1" y="41" width="104" height="30" rx="4"/><text x="11" y="61" class="bk__name">You#TAG</text></g>
-            <g class="bk__slot" style="--t:0.25s"><rect x="1" y="81" width="104" height="30" rx="4"/><text x="11" y="101" class="bk__name">Vexa#LAN</text></g>
-            <g class="bk__slot" style="--t:0.30s"><rect x="1" y="121" width="104" height="30" rx="4"/><text x="11" y="141" class="bk__name">Juno#NA1</text></g>
-            <g class="bk__slot bk__slot--win" style="--t:0.70s"><rect x="131" y="21" width="104" height="30" rx="4"/><text x="141" y="41" class="bk__name">You#TAG</text></g>
-            <g class="bk__slot" style="--t:0.75s"><rect x="131" y="101" width="104" height="30" rx="4"/><text x="141" y="121" class="bk__name">Vexa#LAN</text></g>
-            <g class="bk__slot bk__slot--win bk__slot--champ" style="--t:1.25s"><rect x="261" y="55" width="104" height="42" rx="6"/><text x="273" y="74" class="bk__name">You#TAG</text><text x="273" y="91" class="bk__prize">+<tspan data-count="34" data-count-delay="1450">34</tspan> rcoin</text></g>
+            <path class="bk__line" pathLength="1" style="--t:0.60s" d="M235 36H248V76H261"/>
+            <path class="bk__line" pathLength="1" style="--t:0.63s" d="M235 116H248V76H261"/>
+            <path class="bk__run" data-r="1" d="M105 56H118V36H131"/>
+            <path class="bk__run" data-r="1" d="M105 96H118V116H131"/>
+            <path class="bk__run" data-r="2" d="M235 36H248V76H261"/>
+            <g class="bk__slot" data-out="1" style="--t:0.15s"><rect x="1" y="1" width="104" height="30" rx="4"/><text x="11" y="21" class="bk__name">Kiro#NA1</text></g>
+            <g class="bk__slot bk__slot--you" style="--t:0.20s"><rect x="1" y="41" width="104" height="30" rx="4"/><text x="11" y="61" class="bk__name">You#TAG</text></g>
+            <g class="bk__slot" data-out="2" style="--t:0.25s"><rect x="1" y="81" width="104" height="30" rx="4"/><text x="11" y="101" class="bk__name">Vexa#LAN</text></g>
+            <g class="bk__slot" data-out="1" style="--t:0.30s"><rect x="1" y="121" width="104" height="30" rx="4"/><text x="11" y="141" class="bk__name">Juno#NA1</text></g>
+            <g class="bk__slot bk__slot--you" data-r="1" style="--t:0.55s"><rect x="131" y="21" width="104" height="30" rx="4"/><text x="141" y="41" class="bk__name">You#TAG</text></g>
+            <g class="bk__slot" data-r="1" data-out="2" style="--t:0.58s"><rect x="131" y="101" width="104" height="30" rx="4"/><text x="141" y="121" class="bk__name">Vexa#LAN</text></g>
+            <g class="bk__slot bk__slot--you bk__slot--champ" data-r="2" style="--t:0.70s"><rect class="bk__halo" x="261" y="55" width="104" height="42" rx="6"/><rect x="261" y="55" width="104" height="42" rx="6"/><text x="273" y="74" class="bk__name">You#TAG</text><text x="273" y="91" class="bk__prize">+<tspan data-bk-prize="34">34</tspan> rcoin</text></g>
           </svg>
           <figcaption class="bk__caption">4 players at 10 rcoin each: the champion takes 34 rcoin, the host 2.</figcaption>
         </figure>
       </div>
     </section>
 
-    <!-- Highlights -->
-    <div class="lx-strip">
-      <ul class="shell lx-strip__list" aria-label="Highlights" data-stagger>
-        <li class="lx-strip__item" data-reveal>Public or private brackets</li>
-        <li class="lx-strip__item" data-reveal>Share one link</li>
-        <li class="lx-strip__item" data-reveal>Host posts the lobby</li>
-        <li class="lx-strip__item" data-reveal>Host decides every match</li>
-        <li class="lx-strip__item" data-reveal>24h to appeal</li>
-        <li class="lx-strip__item" data-reveal>85% to the champion</li>
-        <li class="lx-strip__item" data-reveal>4 · 8 · 16 · 32 players</li>
-        <li class="lx-strip__item" data-reveal>Free practice brackets</li>
-      </ul>
-    </div>
+    <!-- How it works: one bracket, pinned and told in six steps -->
+    <section class="section lx-story" id="how" aria-labelledby="how-heading" data-story>
+      <div class="lx-story__track">
+        <div class="shell lx-story__pin">
+          <div class="section-head lx-story__head" data-reveal="head">
+            <p class="eyebrow">How it works</p>
+            <h2 class="h1" id="how-heading">One bracket, start to finish.</h2>
+            <p class="lead muted">Every match is a 1v1 Wild Rift custom game. Link your Riot ID (<span class="riot-id">Name#TAG</span>) once; you need it to enter.</p>
+          </div>
+          <div class="lx-rail" aria-hidden="true">
+            <span class="lx-rail__fill"></span>
+            <span class="lx-rail__tick" style="--k:0">01</span>
+            <span class="lx-rail__tick" style="--k:1">02</span>
+            <span class="lx-rail__tick" style="--k:2">03</span>
+            <span class="lx-rail__tick" style="--k:3">04</span>
+            <span class="lx-rail__tick" style="--k:4">05</span>
+            <span class="lx-rail__tick" style="--k:5">06</span>
+          </div>
+          <ol class="lx-story__steps" role="list">
+            <li class="lx-story__step" style="--k:0">
+              <div class="lx-story__copy">
+                <span class="lx-story__n" aria-hidden="true">01</span>
+                <h3 class="lx-story__title">Create and share</h3>
+                <p class="lx-story__text">A host names the tournament, picks 4 to 32 players and an entry fee, and makes it public or private. One link invites everyone.</p>
+              </div>
+              <div class="lx-scene lx-scene--share" aria-hidden="true">
+                <div class="lx-card">
+                  <div class="lx-card__top"><span class="lx-card__title">Friday Cup</span><span class="lx-tag lx-tag--host">Public</span></div>
+                  <div class="lx-card__meta"><span>Wild Rift 1v1</span><span>8 players</span><span>10 rcoin entry</span></div>
+                  <div class="lx-link">
+                    <span class="lx-link__url"><bdi>runinback.com/console.html#join/<b>K7QM2XRA9P</b></bdi></span>
+                    <span class="lx-link__copy"><svg viewBox="0 0 16 16" focusable="false"><path class="lx-link__tick" pathLength="1" d="M3 8.5L6.5 12L13 4"/></svg><span class="lx-link__label">Copied</span></span>
+                  </div>
+                </div>
+                <div class="lx-scene__note">Link copied. Send it anywhere.</div>
+              </div>
+            </li>
+            <li class="lx-story__step" style="--k:1">
+              <div class="lx-story__copy">
+                <span class="lx-story__n" aria-hidden="true">02</span>
+                <h3 class="lx-story__title">Seats fill</h3>
+                <p class="lx-story__text">Players open the link, see the entry fee and prize, and join. The bracket starts when the last seat fills, or early with 4 or more players. Seeds are random.</p>
+              </div>
+              <div class="lx-scene lx-scene--seats" aria-hidden="true">
+                <div class="lx-card">
+                  <div class="lx-card__top"><span class="lx-card__title">Seats</span><span class="lx-card__count">8/8</span></div>
+                  <span class="lx-meter"><span class="lx-meter__fill"></span></span>
+                  <ul class="lx-seats">
+                    <li style="--d:0">Nyx#EUW</li><li style="--d:1">Kiro#NA1</li><li style="--d:2">You#TAG</li><li style="--d:3">Vexa#LAN</li>
+                    <li style="--d:4">Orin#BR1</li><li style="--d:5">Sable#OCE</li><li style="--d:6">Juno#NA1</li><li style="--d:7">Mako#KR</li>
+                  </ul>
+                </div>
+                <div class="lx-scene__note">Full. The bracket is drawn.</div>
+              </div>
+            </li>
+            <li class="lx-story__step" style="--k:2">
+              <div class="lx-story__copy">
+                <span class="lx-story__n" aria-hidden="true">03</span>
+                <h3 class="lx-story__title">The host opens the lobby</h3>
+                <p class="lx-story__text">For each match the host creates the Wild Rift custom game and posts the lobby code or a screenshot in the match room.</p>
+              </div>
+              <div class="lx-scene lx-scene--lobby" aria-hidden="true">
+                <div class="lx-card">
+                  <div class="lx-card__top"><span class="lx-card__title">Match room</span><span class="lx-card__sub">Round 1, match 3</span></div>
+                  <div class="lx-versus"><span>You#TAG</span><i>vs</i><span>Vexa#LAN</span></div>
+                  <div class="lx-lobby">
+                    <span class="lx-lobby__label">Lobby code <span class="lx-tag lx-tag--host">Posted by host</span></span>
+                    <span class="lx-lobby__code"><b style="--d:0">W</b><b style="--d:1">R</b><b style="--d:2">4</b><b style="--d:3">8</b><b style="--d:4">2</b><b style="--d:5">1</b></span>
+                  </div>
+                  <div class="lx-shot"><span></span><span></span><span></span></div>
+                </div>
+              </div>
+            </li>
+            <li class="lx-story__step" style="--k:3">
+              <div class="lx-story__copy">
+                <span class="lx-story__n" aria-hidden="true">04</span>
+                <h3 class="lx-story__title">The host decides, the winner advances</h3>
+                <p class="lx-story__text">You play the 1v1 and can upload the end screen. The host picks the winner, who moves on; the loser is out.</p>
+              </div>
+              <div class="lx-scene lx-scene--decide" aria-hidden="true">
+                <svg class="lx-node" viewBox="0 0 360 132" focusable="false">
+                  <path class="lx-node__line" d="M132 26H158V66H184M132 106H158V66H184"/>
+                  <path class="lx-node__run" pathLength="1" d="M132 26H158V66H184"/>
+                  <g class="lx-node__slot lx-node__slot--win"><rect x="1" y="8" width="130" height="36" rx="4"/><text x="14" y="31">You#TAG</text></g>
+                  <g class="lx-node__slot lx-node__slot--out"><rect x="1" y="88" width="130" height="36" rx="4"/><text x="14" y="111">Vexa#LAN</text></g>
+                  <g class="lx-node__slot lx-node__slot--next"><rect class="lx-node__empty" x="185" y="48" width="160" height="36" rx="4"/><rect class="lx-node__fill" x="185" y="48" width="160" height="36" rx="4"/><text x="198" y="71">You#TAG</text></g>
+                </svg>
+                <div class="lx-pick">
+                  <span class="lx-pick__label">Pick winner</span>
+                  <span class="lx-pick__opt lx-pick__opt--win">You#TAG</span>
+                  <span class="lx-pick__opt">Vexa#LAN</span>
+                </div>
+              </div>
+            </li>
+            <li class="lx-story__step" style="--k:4">
+              <div class="lx-story__copy">
+                <span class="lx-story__n" aria-hidden="true">05</span>
+                <h3 class="lx-story__title">24 hours to appeal <span class="chip" aria-hidden="true">24h</span></h3>
+                <p class="lx-story__text">After the final, any player can appeal a decision. An appeal holds the prize until a person on our team reviews it.</p>
+              </div>
+              <div class="lx-scene lx-scene--appeal" aria-hidden="true">
+                <div class="lx-clock">
+                  <svg viewBox="0 0 160 160" focusable="false">
+                    <circle class="lx-clock__track" cx="80" cy="80" r="66"/>
+                    <circle class="lx-clock__arc" cx="80" cy="80" r="66" pathLength="100"/>
+                    <path class="lx-clock__ticks" d="M80 4V12M156 80H148M80 156V148M4 80H12M118 14.2L114 21.1M145.8 42L138.9 46M145.8 118L138.9 114M118 145.8L114 138.9M42 145.8L46 138.9M14.2 118L21.1 114M14.2 42L21.1 46M42 14.2L46 21.1"/>
+                  </svg>
+                  <span class="lx-clock__value">24h</span>
+                </div>
+                <div class="lx-scene__rows">
+                  <span class="lx-scene__row">Appeal window open</span>
+                  <span class="lx-scene__row lx-scene__row--hold">Prize held until review</span>
+                </div>
+              </div>
+            </li>
+            <li class="lx-story__step" style="--k:5">
+              <div class="lx-story__copy">
+                <span class="lx-story__n" aria-hidden="true">06</span>
+                <h3 class="lx-story__title">Everyone gets paid</h3>
+                <p class="lx-story__text">The champion's prize and the host's commission land in their wallets. Match chats are deleted once it's all settled.</p>
+              </div>
+              <div class="lx-scene lx-scene--paid" aria-hidden="true">
+                <div class="lx-card">
+                  <div class="lx-card__top"><span class="lx-card__title">Friday Cup settled</span><span class="lx-card__sub">Prize pool 80 rcoin</span></div>
+                  <span class="lx-payout"><span class="lx-payout__seg lx-payout__seg--champ" style="--w:85"></span><span class="lx-payout__seg lx-payout__seg--platform" style="--w:10"></span><span class="lx-payout__seg lx-payout__seg--host" style="--w:5"></span></span>
+                  <dl class="lx-payout__legend">
+                    <div class="lx-payout__row--champ"><dt>Champion 85%</dt><dd>68 rcoin</dd></div>
+                    <div class="lx-payout__row--host"><dt>Host 5%</dt><dd>4 rcoin</dd></div>
+                    <div class="lx-payout__row--platform"><dt>Runinback 10%</dt><dd>8 rcoin</dd></div>
+                  </dl>
+                </div>
+                <div class="lx-toast">You#TAG <b>+68 rcoin</b></div>
+              </div>
+            </li>
+          </ol>
+        </div>
+      </div>
+    </section>
 
-    <!-- Two ways in -->
+    <!-- Choose your side -->
     <section class="section" id="paths" aria-labelledby="paths-heading">
       <div class="shell">
-        <div class="section-head" data-reveal>
-          <p class="eyebrow">Two ways in</p>
-          <h2 class="h1" id="paths-heading">Compete, or run the show.</h2>
+        <div class="lx-side__head">
+          <div class="section-head" data-reveal="head">
+            <p class="eyebrow">Two ways in</p>
+            <h2 class="h1" id="paths-heading">Choose your side.</h2>
+          </div>
+          <div class="lx-tabs" role="tablist" aria-label="Choose your side" data-tabs data-reveal>
+            <span class="lx-tabs__ink" aria-hidden="true"></span>
+            <button type="button" class="lx-tabs__tab" role="tab" id="side-tab-play" aria-controls="side-play" aria-selected="true">Player</button>
+            <button type="button" class="lx-tabs__tab" role="tab" id="side-tab-host" aria-controls="side-host" aria-selected="false" tabindex="-1">Host</button>
+          </div>
         </div>
-        <div class="lx-paths" data-stagger>
-          <article class="lx-path lx-path--play" data-reveal data-spotlight>
-            <p class="lx-path__tag">Play</p>
-            <h3 class="lx-path__title">Join a bracket</h3>
-            <p class="lx-path__text">Open a friend's invite link or pick a public tournament. Pay the entry fee, get seated, and play 1v1 custom games until one player is left.</p>
-            <ul class="lx-path__list">
-              <li>Quick Play seats you in the next open bracket in one tap</li>
-              <li>Leave for a full refund until it starts</li>
-              <li>Chat with your opponent and the host in each match room</li>
-            </ul>
-          </article>
-          <article class="lx-path lx-path--host" data-reveal data-spotlight>
-            <p class="lx-path__tag">Host</p>
-            <h3 class="lx-path__title">Run a tournament</h3>
-            <p class="lx-path__text">Name it, pick 4 to 32 players and an entry fee, make it public or private. You set up each Wild Rift lobby and decide who advances, and you earn 5% of the entry fees.</p>
-            <ul class="lx-path__list">
-              <li>One share link, even for private brackets</li>
-              <li>Start early with 4+ players; empty seats become byes</li>
-              <li>Your commission is paid with the prize</li>
-            </ul>
-          </article>
+        <div class="lx-side" data-side data-reveal="none">
+          <div class="lx-side__panel lx-side__panel--play" role="tabpanel" id="side-play" aria-labelledby="side-tab-play" tabindex="0">
+            <div class="lx-side__copy">
+              <h3 class="lx-side__title">Join a bracket</h3>
+              <p class="lx-side__text">Open a friend's invite link or pick a public tournament. Pay the entry fee, get seated, and play 1v1 custom games until one player is left.</p>
+              <ul class="lx-side__list" role="list">
+                <li>Quick Play seats you in the next open bracket in one tap</li>
+                <li>The host's lobby code waits in your match room</li>
+                <li>Leave for a full refund until it starts</li>
+                <li>Chat with your opponent and the host in each match room</li>
+              </ul>
+            </div>
+            <div class="lx-mock" data-tilt aria-hidden="true">
+              <div class="lx-mock__card">
+                <div class="lx-mock__top" style="--d:0"><span class="lx-mock__title">Match room</span><span class="lx-mock__sub">Round 1, match 3</span></div>
+                <div class="lx-mock__versus" style="--d:1">
+                  <span class="lx-mock__player"><i>Y</i>You#TAG</span>
+                  <span class="lx-mock__vs">vs</span>
+                  <span class="lx-mock__player lx-mock__player--opp">Vexa#LAN<i>V</i></span>
+                </div>
+                <div class="lx-mock__lobby" style="--d:2">
+                  <span class="lx-mock__label">Lobby from the host</span>
+                  <span class="lx-mock__code">WR-4821</span>
+                  <span class="lx-mock__btn">Copy</span>
+                </div>
+                <p class="lx-mock__chat" style="--d:3"><b>Host</b> Lobby's up. Join when you're ready.</p>
+                <div class="lx-mock__actions" style="--d:4">
+                  <span class="lx-mock__btn lx-mock__btn--play">I won</span>
+                  <span class="lx-mock__drop">Upload end screen</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="lx-side__panel lx-side__panel--host" role="tabpanel" id="side-host" aria-labelledby="side-tab-host" tabindex="0">
+            <div class="lx-side__copy">
+              <h3 class="lx-side__title">Run a tournament</h3>
+              <p class="lx-side__text">Name it, pick 4 to 32 players and an entry fee, make it public or private. You set up each Wild Rift lobby and decide who advances, and you earn 5% of the entry fees.</p>
+              <ul class="lx-side__list" role="list">
+                <li>One share link, even for private brackets</li>
+                <li>Start early with 4+ players; empty seats become byes</li>
+                <li>Post the lobby code or a screenshot for each match</li>
+                <li>Your commission is paid with the prize</li>
+              </ul>
+            </div>
+            <div class="lx-mock" data-tilt aria-hidden="true">
+              <div class="lx-mock__card">
+                <div class="lx-mock__top" style="--d:0"><span class="lx-mock__title">Hosting: Friday Cup</span><span class="lx-tag lx-tag--host">Open</span></div>
+                <div class="lx-mock__share" style="--d:1">
+                  <span class="lx-mock__label">Share link</span>
+                  <span class="lx-mock__url"><bdi>runinback.com/console.html#join/K7QM2XRA9P</bdi></span>
+                  <span class="lx-mock__btn">Copy</span>
+                </div>
+                <div class="lx-mock__entrants" style="--d:2">
+                  <span class="lx-mock__label">Entrants <b>6/8</b></span>
+                  <span class="lx-mock__seats"><i></i><i></i><i></i><i></i><i></i><i></i><i class="is-empty"></i><i class="is-empty"></i></span>
+                  <span class="lx-mock__btn lx-mock__btn--host">Start now</span>
+                </div>
+                <div class="lx-mock__pick" style="--d:3">
+                  <span class="lx-mock__label">Match 2: pick winner</span>
+                  <span class="lx-mock__opt is-picked">Kiro#NA1</span>
+                  <span class="lx-mock__opt">Juno#NA1</span>
+                </div>
+                <p class="lx-mock__foot" style="--d:4">Your commission <b>4 rcoin</b></p>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </section>
@@ -319,7 +519,7 @@
     <!-- Prize calculator -->
     <section class="section" id="prizes" aria-labelledby="prizes-heading">
       <div class="shell lx-prize">
-        <div class="section-head lx-prize__head" data-reveal>
+        <div class="section-head lx-prize__head" data-reveal="head">
           <p class="eyebrow">Prizes</p>
           <h2 class="h1" id="prizes-heading">Where every entry fee goes.</h2>
           <p class="lead muted">The prize pool is every entry fee paid. The champion takes 85%, the host 5%, and Runinback keeps 10%. Try it:</p>
@@ -327,7 +527,7 @@
         <div class="lx-calc" data-prize-calc data-reveal>
           <div class="lx-calc__controls">
             <div class="lx-calc__field">
-              <label class="lx-calc__label" for="calc-fee">Entry fee <output class="lx-calc__value" for="calc-fee" role="none" aria-live="off" data-calc-fee-out>10 rcoin</output></label>
+              <label class="lx-calc__label" for="calc-fee">Entry fee <output class="lx-calc__value" for="calc-fee" aria-hidden="true" data-calc-fee-out>10 rcoin</output></label>
               <input class="lx-range" id="calc-fee" type="range" min="1" max="50" step="1" value="10" aria-valuetext="10 rcoin" data-calc-fee />
             </div>
             <fieldset class="lx-calc__field lx-calc__sizes">
@@ -337,88 +537,53 @@
               <label class="lx-seg"><input type="radio" name="calc-size" value="16" /><span>16</span></label>
               <label class="lx-seg"><input type="radio" name="calc-size" value="32" /><span>32</span></label>
             </fieldset>
+            <p class="lx-calc__note">1 rcoin = $1. Quick Play brackets have no host: 90% is prize, 70% to the champion and 30% to the runner-up. Free brackets cost nothing and pay no prize.</p>
           </div>
-          <div class="lx-split" aria-hidden="true">
-            <span class="lx-split__bar lx-split__bar--winner" style="--w:85%"></span>
-            <span class="lx-split__bar lx-split__bar--platform" style="--w:10%"></span>
-            <span class="lx-split__bar lx-split__bar--host" style="--w:5%"></span>
+          <div class="lx-calc__result" data-calc-result>
+            <svg class="lx-ring" viewBox="0 0 200 200" focusable="false" aria-hidden="true">
+              <circle class="lx-ring__track" cx="100" cy="100" r="86"/>
+              <circle class="lx-ring__seg lx-ring__seg--winner" cx="100" cy="100" r="86" pathLength="100" style="--len:84.2;--at:0;--t:0s"/>
+              <circle class="lx-ring__seg lx-ring__seg--platform" cx="100" cy="100" r="86" pathLength="100" style="--len:9.2;--at:85;--t:0.25s"/>
+              <circle class="lx-ring__seg lx-ring__seg--host" cx="100" cy="100" r="86" pathLength="100" style="--len:4.2;--at:95;--t:0.4s"/>
+              <path class="lx-ring__ticks" d="M100 4V10M196 100H190M100 196V190M4 100H10"/>
+            </svg>
+            <dl class="lx-calc__out">
+              <div class="lx-calc__row lx-calc__row--pool"><dt>Prize pool</dt><dd><span data-calc="pool">80</span> <small>rcoin</small></dd></div>
+              <div class="lx-calc__row lx-calc__row--winner"><dt>Champion <span>85%</span></dt><dd><span data-calc="winner">68</span> <small>rcoin</small></dd></div>
+              <div class="lx-calc__row lx-calc__row--host"><dt>Host <span>5%</span></dt><dd><span data-calc="host">4</span> <small>rcoin</small></dd></div>
+              <div class="lx-calc__row lx-calc__row--platform"><dt>Runinback <span>10%</span></dt><dd><span data-calc="platform">8</span> <small>rcoin</small></dd></div>
+            </dl>
           </div>
-          <dl class="lx-calc__out">
-            <div class="lx-calc__row lx-calc__row--winner"><dt>Champion <span>85%</span></dt><dd><span data-calc="winner">68</span> rcoin</dd></div>
-            <div class="lx-calc__row lx-calc__row--host"><dt>Host <span>5%</span></dt><dd><span data-calc="host">4</span> rcoin</dd></div>
-            <div class="lx-calc__row lx-calc__row--platform"><dt>Runinback <span>10%</span></dt><dd><span data-calc="platform">8</span> rcoin</dd></div>
-            <div class="lx-calc__row lx-calc__row--pool"><dt>Prize pool</dt><dd><span data-calc="pool">80</span> rcoin</dd></div>
-          </dl>
           <p class="sr-only" role="status" data-calc-status></p>
-          <p class="lx-calc__note">1 rcoin = $1. Quick Play brackets have no host: 90% is prize, 70% to the champion and 30% to the runner-up. Free brackets cost nothing and pay no prize.</p>
         </div>
-      </div>
-    </section>
-
-    <!-- How it works -->
-    <section class="section" id="how" aria-labelledby="how-heading">
-      <div class="shell split">
-        <div class="section-head split__head lx-sticky" data-reveal>
-          <p class="eyebrow">How it works</p>
-          <h2 class="h1" id="how-heading">From invite link to prize.</h2>
-          <p class="lead muted">Every match is a 1v1 Wild Rift custom game. Link your Riot ID (<span class="riot-id">Name#TAG</span>) once; you need it to enter.</p>
-        </div>
-        <ol class="lx-steps" data-steps>
-          <li class="lx-step" data-reveal>
-            <span class="lx-step__n" aria-hidden="true">01</span>
-            <h3 class="lx-step__title">Create or join</h3>
-            <p class="lx-step__text">A host creates the tournament and shares its link. Players open it, see the entry fee and prize, and join.</p>
-          </li>
-          <li class="lx-step" data-reveal>
-            <span class="lx-step__n" aria-hidden="true">02</span>
-            <h3 class="lx-step__title">The bracket is drawn</h3>
-            <p class="lx-step__text">It starts when the last seat fills, or earlier when the host starts it with 4 or more players. Seeds are random.</p>
-          </li>
-          <li class="lx-step" data-reveal>
-            <span class="lx-step__n" aria-hidden="true">03</span>
-            <h3 class="lx-step__title">The host opens the lobby</h3>
-            <p class="lx-step__text">For each match the host creates the Wild Rift custom game and posts the lobby code or a screenshot in the match room.</p>
-          </li>
-          <li class="lx-step" data-reveal>
-            <span class="lx-step__n" aria-hidden="true">04</span>
-            <h3 class="lx-step__title">Play, then the host decides</h3>
-            <p class="lx-step__text">You play the 1v1 and can upload the end screen. The host picks the winner, who advances; the loser is out.</p>
-          </li>
-          <li class="lx-step" data-reveal>
-            <span class="lx-step__n" aria-hidden="true">05</span>
-            <h3 class="lx-step__title">24 hours to appeal <span class="chip">24h</span></h3>
-            <p class="lx-step__text">After the final, any player can appeal a decision. An appeal holds the prize until a person on our team reviews it.</p>
-          </li>
-          <li class="lx-step" data-reveal>
-            <span class="lx-step__n" aria-hidden="true">06</span>
-            <h3 class="lx-step__title">Everyone gets paid</h3>
-            <p class="lx-step__text">The champion's prize and the host's commission land in their wallets. Match chats are deleted once it's all settled.</p>
-          </li>
-        </ol>
       </div>
     </section>
 
     <!-- Fair play -->
     <section class="section" id="fair" aria-labelledby="fair-heading">
       <div class="shell">
-        <div class="section-head" data-reveal>
+        <div class="section-head" data-reveal="head">
           <p class="eyebrow">Fair play</p>
           <h2 class="h1" id="fair-heading">Hosts decide. People review.</h2>
         </div>
-        <ul class="lx-fair" data-stagger>
-          <li class="lx-fair__item" data-reveal data-spotlight>
+        <ul class="lx-fair" role="list" data-stagger>
+          <li class="lx-fair__item" data-reveal>
+            <svg class="lx-fair__icon" viewBox="0 0 40 40" focusable="false" aria-hidden="true"><path pathLength="1" d="M6 14H34V28H6Z"/><path pathLength="1" d="M13 18V24M10 21H16"/><path pathLength="1" d="M26 19H28M24 23H26"/><path class="lx-fair__accent" pathLength="1" d="M4 36L36 4"/></svg>
             <h3 class="lx-fair__title">Hosts can't play</h3>
             <p class="lx-fair__text">The person who decides the matches can't enter their own tournament.</p>
           </li>
-          <li class="lx-fair__item" data-reveal data-spotlight>
+          <li class="lx-fair__item" data-reveal>
+            <svg class="lx-fair__icon" viewBox="0 0 40 40" focusable="false" aria-hidden="true"><path pathLength="1" d="M20 5L27 12L20 19L13 12Z"/><path pathLength="1" d="M6 35L11 24H29L34 35"/><path class="lx-fair__accent" pathLength="1" d="M15 29L19 32L26 26"/></svg>
             <h3 class="lx-fair__title">Appeals go to a person</h3>
             <p class="lx-fair__text">Our team reviews appeals with the match chat and screenshots. A wrong call moves the prize and the host's commission to the right winner.</p>
           </li>
-          <li class="lx-fair__item" data-reveal data-spotlight>
+          <li class="lx-fair__item" data-reveal>
+            <svg class="lx-fair__icon" viewBox="0 0 40 40" focusable="false" aria-hidden="true"><path pathLength="1" d="M20 4L34 12V28L20 36L6 28V12Z"/><path pathLength="1" d="M20 11V20L26 24"/><path class="lx-fair__accent" pathLength="1" d="M31 3L27 9H33L29 15"/></svg>
             <h3 class="lx-fair__title">Quick calls get checked</h3>
             <p class="lx-fair__text">A walkover needs a 10-minute wait and a reason. Suspiciously fast decisions are flagged, and new hosts have a longer appeal window.</p>
           </li>
-          <li class="lx-fair__item" data-reveal data-spotlight>
+          <li class="lx-fair__item" data-reveal>
+            <svg class="lx-fair__icon" viewBox="0 0 40 40" focusable="false" aria-hidden="true"><path pathLength="1" d="M10 5H30M10 35H30"/><path pathLength="1" d="M12 5L20 20L12 35M28 5L20 20L28 35"/><path class="lx-fair__accent" pathLength="1" d="M31 26A6 6 0 1 1 25 20M25 20L28 17M25 20L28 23"/></svg>
             <h3 class="lx-fair__title">Hosts who stall lose it</h3>
             <p class="lx-fair__text">A bracket that stops moving for 24 hours is cancelled and every entry fee is refunded. Hosts with repeated bad calls can only run free brackets.</p>
           </li>
@@ -429,7 +594,7 @@
     <!-- FAQ -->
     <section class="section" id="faq" aria-labelledby="faq-heading">
       <div class="shell split">
-        <div class="section-head split__head" data-reveal>
+        <div class="section-head split__head" data-reveal="head">
           <p class="eyebrow">FAQ</p>
           <h2 class="h1" id="faq-heading">Questions, answered.</h2>
           <a href="contact.html" class="text-link">Still stuck? Contact us</a>
@@ -470,6 +635,24 @@
     <!-- CTA -->
     <section class="section">
       <div class="shell cta-band lx-cta" data-reveal>
+        <svg class="lx-cta__art" viewBox="0 0 1200 420" preserveAspectRatio="none" focusable="false" aria-hidden="true">
+          <g class="lx-cta__lines">
+            <path pathLength="1" style="--t:0s" d="M0 60H100V100H180"/>
+            <path pathLength="1" style="--t:0.05s" d="M0 140H100V100"/>
+            <path pathLength="1" style="--t:0.1s" d="M0 280H100V320H180"/>
+            <path pathLength="1" style="--t:0.15s" d="M0 360H100V320"/>
+            <path pathLength="1" style="--t:0.35s" d="M180 100H240V210H300"/>
+            <path pathLength="1" style="--t:0.4s" d="M180 320H240V210"/>
+            <path pathLength="1" style="--t:0.6s" d="M300 210H360"/>
+            <path pathLength="1" style="--t:0s" d="M1200 60H1100V100H1020"/>
+            <path pathLength="1" style="--t:0.05s" d="M1200 140H1100V100"/>
+            <path pathLength="1" style="--t:0.1s" d="M1200 280H1100V320H1020"/>
+            <path pathLength="1" style="--t:0.15s" d="M1200 360H1100V320"/>
+            <path pathLength="1" style="--t:0.35s" d="M1020 100H960V210H900"/>
+            <path pathLength="1" style="--t:0.4s" d="M1020 320H960V210"/>
+            <path pathLength="1" style="--t:0.6s" d="M900 210H840"/>
+          </g>
+        </svg>
         <h2 class="display">Your bracket is one link away.</h2>
         <p class="lead muted mx-auto">Create a free account, link your Riot ID, and host or join a tournament with test rcoin.</p>
         <div class="cta-band__actions">

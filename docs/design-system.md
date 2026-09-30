@@ -27,8 +27,9 @@ display headlines, and a discipline-based color taxonomy.
    gradient placeholders. The landing hero and the auth split panel carry the
    **stage backdrop** (see the row below): the technical grid, the one glow and
    a faint angular ridge in the mark's language. The site ships no raster or
-   video backgrounds, and never game art or third-party IP. The landing's
-   feature blocks are text-only (no illustration panels).
+   video backgrounds, and never game art or third-party IP. Landing
+   illustrations are crafted HTML/CSS mocks and inline SVG line art (the
+   living bracket, the story scenes, the console mocks, the fair-play icons).
 7. **Depth via geometry, never shadow.** No decorative `box-shadow`; separation
    comes from surface steps, hairlines, a fine technical grid and a single
    restrained brand glow — no blurry blob soup.
@@ -113,14 +114,14 @@ Static, dependency-free site (HTML + CSS + vanilla JS).
 
 | File | Purpose |
 |------|---------|
-| `src/index.html` | Landing: hero (stage backdrop + bracket) + stats, highlights strip, two ways in (Play / Host), prize calculator (`#prizes`), how it works timeline (`#how`), fair play (`#fair`), FAQ (`#faq`), CTA |
+| `src/index.html` | Landing: hero (stage backdrop + living bracket) + stats, one bracket start to finish (pinned story, `#how`), choose your side (Player / Host tabs, `#paths`), prize calculator (`#prizes`), fair play (`#fair`), FAQ (`#faq`), CTA |
 | `src/contact.html` | Contact channels + form |
 | `src/login.html`, `src/signup.html` | Auth pages |
 | `src/terms.html`, `src/privacy.html`, `src/cookies.html` | Legal pages |
 | `src/404.html` | Not-found page |
 | `src/styles/site.css` | Full design system + components (landing pieces under the `lx-` prefix) |
 | `src/scripts/site/interactions.js` | Nav chrome, scroll reveal, FAQ, forms, magnetic CTAs, cookie notice |
-| `src/scripts/site/landing.js` | Landing only: prize calculator, card spotlight, timeline progress |
+| `src/scripts/site/landing.js` | Landing only: prize calculator, living bracket loop, backdrop parallax, pinned story, Player/Host tabs, mock tilt |
 | `vercel.json` | Headers + permanent redirects (`/how-it-works(.html)` → `/#how`; the old page was folded into the landing) |
 | `public/robots.txt`, `public/sitemap.xml`, `public/site.webmanifest` | SEO / PWA metadata |
 
@@ -147,34 +148,72 @@ Static, dependency-free site (HTML + CSS + vanilla JS).
   aria-label="Account">` wrapping `#nav-account`): Log in + Sign up, swapped for
   Console + Log out by `auth/account-nav.js` when signed in. No link list, no
   menu toggle; every other destination lives in the footer.
-- **Landing (`lx-*`)**:
+- **Section heads** (`[data-reveal="head"]`): the `{eyebrow}` slides in from
+  the left, the heading unmasks upward (`clip-path`), the lead follows.
+- **Landing (`lx-*`)**, top to bottom:
   - *Headline* rises word by word on load (`.lx-word`, staggered by `--i`); the
-    last sentence carries the brand gradient as text. This is the page's one
-    orchestrated entrance, done in CSS so the LCP paints on the first frame.
+    last sentence carries the brand gradient as text. Done in CSS so the LCP
+    paints on the first frame.
   - *Stats* under the hero (`.lx-stats`): three facts on hairlines; numbers count up.
-  - *Highlights* (`.lx-strip`): a static, full-bleed hairline-bordered strip of
-    product facts, each phrase once, as a centered wrapping list
-    (`<ul aria-label="Highlights">`) with a small peak glyph leading each item.
-    No marquee; items fade in once, staggered, on reveal (none under reduced
-    motion).
-  - *Two ways in* (`.lx-path`): Play is blue (matchmaking), Host is orange
-    (escrow / commission). Cards with `[data-spotlight]` get a pointer-tracked
-    radial glow on the surface and the 1px border (`--mx/--my`, fine pointers
-    only, one rAF per frame) — never a box-shadow.
+  - *Hero backdrop parallax*: on mouse pointers the grid and the ridge drift a
+    few pixels in opposite directions (`--px/--py`, one rAF per frame).
+  - *Living bracket* (`.bk[data-bracket]`, 8 players wide / 4 on phones): the
+    markup is the finished bracket. `landing.js` replays it on a slow loop —
+    winners' runs extend (transform), names slide into the next round, the
+    knocked-out dim, the champion card lights with a one-off pink halo and
+    "+68 rcoin" counts up, then the results fade and it rewinds. The status
+    line names the round being played. It runs only while on screen and the
+    tab is visible, pauses while a mouse rests on it, and has a visible
+    Pause/Play button (WCAG 2.2.2); the choice is shared by both bracket
+    sizes, so it survives a breakpoint change.
+  - *One bracket, start to finish* (`.lx-story`, `#how`): six steps (Create and
+    share, Seats fill, The host opens the lobby, The host decides, 24 hours to
+    appeal, Everyone gets paid), each with a scene: a share-link card whose
+    copy tick draws, seats filling in blue, a lobby code flipping in under an
+    orange "Posted by host", a bracket node advancing after the host's pick,
+    an appeal ring sweeping round, a payout bar filling 85/10/5. On wide
+    screens (≥960 × 620) `data-mode="pin"`: the section pins for the length of
+    its track, the copy crossfades on the left while the scenes change inside
+    one persistent stage frame, and a hairline rail with six ticks fills with
+    the scroll — a CSS scroll-driven animation (`view-timeline`) where
+    supported, otherwise `--progress` from one passive, rAF-throttled scroll
+    listener that only runs while an IntersectionObserver says the section is
+    near (the same listener picks the active step). Narrow screens get a
+    stacked list of step cards whose scenes play once as they scroll in. All
+    step text stays in the DOM (inactive steps are only transparent).
+  - *Choose your side* (`.lx-tabs`, `#paths`): WAI-ARIA tabs (arrow keys,
+    Home/End, automatic activation) between Player (blue) and Host (orange).
+    The ink pill slides and takes the tab's hue; the new panel slides in from
+    the side it came from and its console mock's rows cascade. The mocks (a
+    match room with the host's lobby code, a hosting dashboard with share
+    link, entrants 6/8, Start now and a pick-winner row) tilt gently toward a
+    mouse pointer. Without JS both panels show and the tab bar hides. Share
+    links in the mocks use the real `runinback.com/console.html#join/<CODE>`
+    format and are cut at the start on narrow screens so the code stays
+    readable.
   - *Prize calculator* (`.lx-calc`): entry fee slider (1–50 rcoin) × players
     (4/8/16/32) through `hostedSplit` from `lib/hosted.js`, the same math the
-    payout job uses. Numbers count to their new value; the split bar grows in on
-    reveal. Champion = pink (settlement), host = orange, Runinback = muted grey.
-  - *Timeline* (`.lx-steps`): a rail that fills with scroll (`--progress`, set by
-    one passive rAF-throttled scroll listener that only runs while an
-    IntersectionObserver says the section is near) and highlights the step
-    under the reading line; the heading column is sticky on desktop.
-  - *Fair play* (`.lx-fair`): four rule cards with the same spotlight.
+    payout job uses. A segmented ring (champion pink 85 / Runinback grey 10 /
+    host orange 5) draws in on reveal around the prize pool; the champion's
+    number is set large. On change the numbers roll to their new value and the
+    ring gives a small turn; screen readers get one debounced status sentence.
+  - *Fair play* (`.lx-fair`): four rules on hairlines that wipe in, each with
+    an angular inline-SVG line icon that draws itself (`stroke-dashoffset`),
+    staggered.
   - *CTA* (`.lx-cta`): a hairline border with a soft light running around it
-    (conic gradient on a registered `--lx-angle`).
+    (conic gradient on a registered `--lx-angle`, one 4s lap) over a faint
+    bracket on each side that draws in once.
+  - Under `prefers-reduced-motion: reduce` every piece renders its finished
+    state: the bracket is complete and still (no loop, no button), the story
+    is the stacked list with finished scenes, the ring is full, icons and
+    lines are drawn, and nothing tilts or drifts.
 - **FAQ accordion**, smooth in-page anchor scrolling, and hover
   micro-interactions on cards, buttons and social icons.
-- **Accessibility:** skip-to-content link, visible focus rings, `main` landmark.
+- **Accessibility:** skip-to-content link, visible focus rings, `main` landmark,
+  `scroll-padding-top: 96px` so focused elements never sit under the fixed nav
+  (anchors still land ~110px down via a 14px `scroll-margin-top`), forced-colors
+  fallbacks for gradient/stroked text and for meaningful fills (checked player
+  count, slider, payout/progress bars).
   All motion is fully disabled under `prefers-reduced-motion: reduce`.
 
 ## SEO
